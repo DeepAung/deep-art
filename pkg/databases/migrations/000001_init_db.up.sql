@@ -23,7 +23,7 @@ CREATE TABLE "users" (
   "username" VARCHAR NOT NULL,
   "email" VARCHAR NOT NULL,
   "password" VARCHAR NOT NULL,
-  "avatar_url" VARCHAR NOT NULL,
+  "avatar_url" VARCHAR,
   "created_at" TIMESTAMP DEFAULT now(),
   "updated_at" TIMESTAMP DEFAULT now()
 );
@@ -129,7 +129,7 @@ ALTER TABLE "users_used_codes" ADD FOREIGN KEY ("code_id") REFERENCES "codes" ("
 
 CREATE TRIGGER set_updated_at_timestamp_users_table BEFORE UPDATE ON "users" FOR EACH ROW EXECUTE PROCEDURE set_updated_at_column();
 CREATE TRIGGER set_updated_at_timestamp_tokens_table BEFORE UPDATE ON "tokens" FOR EACH ROW EXECUTE PROCEDURE set_updated_at_column();
-CREATE TRIGGER set_updated_at_timestamp_auths_table BEFORE UPDATE ON "auths" FOR EACH ROW EXECUTE PROCEDURE set_updated_at_column();
+CREATE TRIGGER set_updated_at_timestamp_oauths_table BEFORE UPDATE ON "oauths" FOR EACH ROW EXECUTE PROCEDURE set_updated_at_column();
 CREATE TRIGGER set_updated_at_timestamp_arts_table BEFORE UPDATE ON "arts" FOR EACH ROW EXECUTE PROCEDURE set_updated_at_column();
 CREATE TRIGGER set_updated_at_timestamp_files_table BEFORE UPDATE ON "files" FOR EACH ROW EXECUTE PROCEDURE set_updated_at_column();
 CREATE TRIGGER set_updated_at_timestamp_codes_table BEFORE UPDATE ON "codes" FOR EACH ROW EXECUTE PROCEDURE set_updated_at_column();

@@ -1,0 +1,13 @@
+-- BEGIN;
+--
+-- INSERT INTO "users" (
+--   "username",
+--   "email",
+--   "password",
+-- )
+-- VALUES
+--   ('deepaung', 'i.deepaung@gmail.com', 'password'),
+--   ('test', 'test@gmail.com', 'password'),
+--   ('example', 'example@gmail.com', 'password'),
+--
+-- COMMIT;

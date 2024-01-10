@@ -2,7 +2,7 @@ BEGIN;
 
 DROP TRIGGER IF EXISTS set_updated_at_timestamp_users_table ON "users";
 DROP TRIGGER IF EXISTS set_updated_at_timestamp_tokens_table ON "tokens";
-DROP TRIGGER IF EXISTS set_updated_at_timestamp_auths_table ON "auths";
+DROP TRIGGER IF EXISTS set_updated_at_timestamp_oauths_table ON "oauths";
 DROP TRIGGER IF EXISTS set_updated_at_timestamp_arts_table ON "arts";
 DROP TRIGGER IF EXISTS set_updated_at_timestamp_files_table ON "files";
 DROP TRIGGER IF EXISTS set_updated_at_timestamp_codes_table ON "codes";
