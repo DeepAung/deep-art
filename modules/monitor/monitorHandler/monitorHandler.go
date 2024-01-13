@@ -3,6 +3,7 @@ package monitorHandler
 import (
 	"github.com/DeepAung/deep-art/config"
 	"github.com/DeepAung/deep-art/modules/monitor"
+	"github.com/DeepAung/deep-art/pkg/response"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -25,5 +26,5 @@ func (h *monitorHandler) HealthCheck(c *fiber.Ctx) error {
 		Name:    h.cfg.App().Name(),
 		Version: h.cfg.App().Version(),
 	}
-	return c.Status(fiber.StatusOK).JSON(res)
+	return response.Success(c, fiber.StatusOK, res)
 }
