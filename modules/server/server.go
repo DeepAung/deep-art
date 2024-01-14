@@ -38,11 +38,20 @@ func NewServer(db *sqlx.DB, cfg config.IConfig) IServer {
 }
 
 func (s *server) Start() {
+	// Middlewares
+	mid := InitMiddlewares()
+	s.app.Use(mid.Logger())
+	s.app.Use(mid.Cors())
+
+	// Modules
 	v1 := s.app.Group("/api/v1")
-	modules := InitModuleFactory(v1, s)
+	modules := InitModules(v1, s, mid)
 
 	modules.MonitorModule()
 
+	s.app.Use(mid.RouterCheck())
+
+	// Graceful shutdown
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt)
 	go func() {
@@ -51,9 +60,10 @@ func (s *server) Start() {
 		_ = s.app.Shutdown()
 	}()
 
+	// Listen to url
 	if err := s.app.Listen(s.cfg.App().Url()); err != nil {
 		log.Fatal(err)
 	}
 
-	// clean up tasks go here...
+	// Clean up tasks go here...
 }

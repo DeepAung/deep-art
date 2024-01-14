@@ -5,6 +5,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+type TraceId string
+
 type errorRes struct {
 	TraceId string `json:"trace_id"`
 	Msg     string `json:"message"`
@@ -15,9 +17,9 @@ func Success(c *fiber.Ctx, code int, data any) error {
 	return c.Status(code).JSON(data)
 }
 
-func Error(c *fiber.Ctx, code int, traceId, msg string) error {
+func Error(c *fiber.Ctx, code int, traceId TraceId, msg string) error {
 	errRes := &errorRes{
-		TraceId: traceId,
+		TraceId: string(traceId),
 		Msg:     msg,
 	}
 	logger.NewLogger(c, code, errRes).Print().Save()
