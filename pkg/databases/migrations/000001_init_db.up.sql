@@ -20,10 +20,10 @@ CREATE TYPE "social" AS ENUM (
 
 CREATE TABLE "users" (
   "id" SERIAL PRIMARY KEY,
-  "username" VARCHAR NOT NULL,
-  "email" VARCHAR NOT NULL,
+  "username" VARCHAR UNIQUE NOT NULL,
+  "email" VARCHAR UNIQUE NOT NULL,
   "password" VARCHAR NOT NULL,
-  "avatar_url" VARCHAR,
+  "avatar_url" VARCHAR NOT NULL DEFAULT '',
   "created_at" TIMESTAMP DEFAULT now(),
   "updated_at" TIMESTAMP DEFAULT now()
 );
@@ -43,7 +43,8 @@ CREATE TABLE "oauths" (
   "social" social NOT NULL,
   "social_id" VARCHAR NOT NULL,
   "created_at" TIMESTAMP DEFAULT now(),
-  "updated_at" TIMESTAMP DEFAULT now()
+  "updated_at" TIMESTAMP DEFAULT now(),
+  UNIQUE ("social", "social_id")
 );
 
 CREATE TABLE "arts" (
@@ -54,7 +55,8 @@ CREATE TABLE "arts" (
   "price" FLOAT NOT NULL DEFAULT 0,
   "download_count" INT NOT NULL DEFAULT 0,
   "created_at" TIMESTAMP DEFAULT now(),
-  "updated_at" TIMESTAMP DEFAULT now()
+  "updated_at" TIMESTAMP DEFAULT now(),
+  UNIQUE ("name", "author_id")
 );
 
 CREATE TABLE "users_starred_arts" (
@@ -77,7 +79,7 @@ CREATE TABLE "users_authored_arts" (
 
 CREATE TABLE "tags" (
   "id" SERIAL PRIMARY KEY,
-  "name" VARCHAR NOT NULL
+  "name" VARCHAR UNIQUE NOT NULL
 );
 
 CREATE TABLE "arts_tags" (
@@ -99,7 +101,7 @@ CREATE TABLE "files" (
 
 CREATE TABLE "codes" (
   "id" SERIAL PRIMARY KEY,
-  "name" VARCHAR NOT NULL,
+  "name" VARCHAR UNIQUE NOT NULL,
   "value" FLOAT NOT NULL,
   "exp_time" TIMESTAMP NOT NULL,
   "created_at" TIMESTAMP DEFAULT now(),
