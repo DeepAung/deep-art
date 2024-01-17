@@ -1,9 +1,11 @@
 DATABASE_URL = postgres://myuser:mypassword@0.0.0.0:5432/mydb?sslmode=disable
 MIGRATION_FOLDER = file://$(abspath ./pkg/databases/migrations)
 
-run.dev:
+run: db.start fiber.dev
+
+fiber.dev:
 	air -c .air.dev.toml
-run.prod:
+fiber.prod:
 	air -c .air.prod.toml
 
 db.create:
@@ -23,5 +25,5 @@ migrate.up:
 	migrate -database $(DATABASE_URL) -source $(MIGRATION_FOLDER) -verbose up
 migrate.down:
 	migrate -database $(DATABASE_URL) -source $(MIGRATION_FOLDER) -verbose down
-migrate.force:
-	migrate -database $(DATABASE_URL) -source $(MIGRATION_FOLDER) -verbose force $(version)
+migrate.goto:
+	migrate -database $(DATABASE_URL) -source $(MIGRATION_FOLDER) -verbose goto $(version)
