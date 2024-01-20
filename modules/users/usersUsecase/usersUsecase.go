@@ -16,10 +16,12 @@ import (
 )
 
 type IUsersUsecase interface {
-	Register(req *users.RegisterReq) (*users.User, error)
+	Register(req *users.RegisterReq) (*users.UserPassport, error)
 	Login(req *users.LoginReq) (*users.UserPassport, error)
+	GetUserPassport(user *users.User) (*users.UserPassport, error)
 	GetGothUser(c *fiber.Ctx) (*goth.User, error)
-	GetUserIdByOAuth(social users.SocialEnum, socialId string) (bool, int, error)
+	GetUserByOAuth(social users.SocialEnum, socialId string) (bool, *users.User, error)
+	CreateOAuth(req *users.OAuthReq) error
 	// Login(req *users.LoginReq) (*users.UserPassport, error) // ???
 	// Logout(id int) error
 	// RefreshTokens(refreshToken string, id int) (*users.Token, error)
@@ -43,7 +45,7 @@ func NewUsersUsecase(
 	}
 }
 
-func (u *usersUsecase) Register(req *users.RegisterReq) (*users.User, error) {
+func (u *usersUsecase) Register(req *users.RegisterReq) (*users.UserPassport, error) {
 	if err := req.HashPassword(); err != nil {
 		return nil, err
 	}
@@ -61,12 +63,21 @@ func (u *usersUsecase) Login(req *users.LoginReq) (*users.UserPassport, error) {
 		return nil, fmt.Errorf("invalid password")
 	}
 
-	accessToken, err := mytoken.GenerateToken(u.cfg.Jwt(), mytoken.Access, user.Id)
+	return u.GetUserPassport(&users.User{
+		Id:        user.Id,
+		Username:  user.Username,
+		Email:     user.Email,
+		AvatarUrl: user.AvatarUrl,
+	})
+}
+
+func (u *usersUsecase) GetUserPassport(user *users.User) (*users.UserPassport, error) {
+	accessToken, err := mytoken.GenerateToken(u.cfg.Jwt(), &mytoken.Access, user.Id)
 	if err != nil {
 		return nil, err // TODO: should this be fmt.Errorf("generate access token failed")???
 	}
 
-	refreshToken, err := mytoken.GenerateToken(u.cfg.Jwt(), mytoken.Refresh, user.Id)
+	refreshToken, err := mytoken.GenerateToken(u.cfg.Jwt(), &mytoken.Refresh, user.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -103,9 +114,13 @@ func (u *usersUsecase) GetGothUser(c *fiber.Ctx) (*goth.User, error) {
 	return &gothUser, err
 }
 
-func (u *usersUsecase) GetUserIdByOAuth(
+func (u *usersUsecase) GetUserByOAuth(
 	social users.SocialEnum,
 	socialId string,
-) (bool, int, error) {
-	return u.usersRepository.GetUserIdByOAuth(social, socialId)
+) (bool, *users.User, error) {
+	return u.usersRepository.GetUserByOAuth(social, socialId)
+}
+
+func (u *usersUsecase) CreateOAuth(req *users.OAuthReq) error {
+	return u.usersRepository.CreateOAuth(req)
 }

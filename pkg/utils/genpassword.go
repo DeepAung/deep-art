@@ -14,9 +14,10 @@ const (
 
 func GenRandomPassword(length int) string {
 	password := make([]rune, length)
+	lenAllCharSet := len(allCharSet)
 
 	for i := 0; i < length; i++ {
-		randIndex := rand.Intn(len(allCharSet))
+		randIndex := rand.Intn(lenAllCharSet)
 		password[i] = rune(allCharSet[randIndex])
 	}
 

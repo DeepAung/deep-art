@@ -45,10 +45,10 @@ func LoadConfig(path string) IConfig {
 			refreshExpires: loadToSecond(envMap, "JWT_REFRESH_EXPIRES"),
 		},
 		oauth: &oauth{
-			googleKey:    envMap["GOOGLE_KEY"],
-			googleSecret: envMap["GOOGLE_SECRET"],
-			githubKey:    envMap["GITHUB_KEY"],
-			githubSecret: envMap["GITHUB_SECRET"],
+			googleKey:    envMap["OAUTH_GOOGLE_KEY"],
+			googleSecret: envMap["OAUTH_GOOGLE_SECRET"],
+			githubKey:    envMap["OAUTH_GITHUB_KEY"],
+			githubSecret: envMap["OAUTH_GITHUB_SECRET"],
 		},
 	}
 }

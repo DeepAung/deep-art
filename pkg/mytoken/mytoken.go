@@ -8,12 +8,24 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type TokenType string
+type TokenType struct {
+	Subject   string
+	ExpiresAt func(cfg config.IJwtConfig) time.Time
+}
 
-const (
-	Access  TokenType = "access-token"
-	Refresh TokenType = "refresh-token"
-)
+var Access = TokenType{
+	Subject: "access-token",
+	ExpiresAt: func(cfg config.IJwtConfig) time.Time {
+		return time.Now().Add(cfg.AccessExpires())
+	},
+}
+
+var Refresh = TokenType{
+	Subject: "refresh-token",
+	ExpiresAt: func(cfg config.IJwtConfig) time.Time {
+		return time.Now().Add(cfg.RefreshExpires())
+	},
+}
 
 type JwtClaims struct {
 	Payload *Payload
@@ -26,20 +38,18 @@ type Payload struct {
 
 func GenerateToken(
 	cfg config.IJwtConfig,
-	tokenType TokenType,
+	tokenType *TokenType,
 	userId int,
 ) (string, error) {
 
-	expDuration := getExpDuration(cfg, tokenType)
 	claims := &JwtClaims{
 		Payload: &Payload{
 			Id: userId,
 		},
-		RegisteredClaims: jwt.RegisteredClaims{ // TODO: should we have this field or ignore it???
-			Issuer:    "deep-art-claims",
-			Subject:   string(tokenType),
-			Audience:  []string{"user"},
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(expDuration)),
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "deep-art-api",
+			Subject:   tokenType.Subject,
+			ExpiresAt: jwt.NewNumericDate(tokenType.ExpiresAt(cfg)),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
@@ -55,7 +65,7 @@ func GenerateToken(
 }
 
 func ParseToken(cfg config.IJwtConfig, tokenString string) (*JwtClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &JwtClaims{}, returnKeyFunc(cfg))
+	token, err := jwt.ParseWithClaims(tokenString, &JwtClaims{}, keyFunc(cfg))
 	if err != nil {
 		return nil, err
 	}
@@ -67,22 +77,11 @@ func ParseToken(cfg config.IJwtConfig, tokenString string) (*JwtClaims, error) {
 	}
 }
 
-func returnKeyFunc(cfg config.IJwtConfig) jwt.Keyfunc {
+func keyFunc(cfg config.IJwtConfig) jwt.Keyfunc {
 	return func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("invalid signing method")
 		}
 		return cfg.SecretKey(), nil
-	}
-}
-
-func getExpDuration(cfg config.IJwtConfig, tokenType TokenType) time.Duration {
-	switch tokenType {
-	case Access:
-		return cfg.AccessExpires()
-	case Refresh:
-		return cfg.RefreshExpires()
-	default:
-		return cfg.AccessExpires() // TODO: maybe handle some error
 	}
 }

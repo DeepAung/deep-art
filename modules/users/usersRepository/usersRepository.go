@@ -10,10 +10,11 @@ import (
 )
 
 type IUsersRepository interface {
-	CreateUser(req *users.RegisterReq) (*users.User, error)
+	CreateUser(req *users.RegisterReq) (*users.UserPassport, error)
 	GetUserByEmail(email string) (*users.UserWithPassword, error)
 	CreateToken(userId int, accessToken, refreshToken string) (int, error)
-	GetUserIdByOAuth(social users.SocialEnum, socialId string) (bool, int, error)
+	GetUserByOAuth(social users.SocialEnum, socialId string) (bool, *users.User, error)
+	CreateOAuth(req *users.OAuthReq) error
 }
 
 type usersRepository struct {
@@ -26,7 +27,7 @@ func NewUsersRepository(db *sqlx.DB) IUsersRepository {
 	}
 }
 
-func (r *usersRepository) CreateUser(req *users.RegisterReq) (*users.User, error) {
+func (r *usersRepository) CreateUser(req *users.RegisterReq) (*users.UserPassport, error) {
 	query := `
 	INSERT INTO "users" (
 		"username",
@@ -65,7 +66,11 @@ func (r *usersRepository) CreateUser(req *users.RegisterReq) (*users.User, error
 		return nil, fmt.Errorf("create user failed: %v", err)
 	}
 
-	return user, nil
+	passport := &users.UserPassport{
+		User:  user,
+		Token: nil,
+	}
+	return passport, nil
 }
 
 func (r *usersRepository) GetUserByEmail(email string) (*users.UserWithPassword, error) {
@@ -121,24 +126,45 @@ func (r *usersRepository) CreateToken(userId int, accessToken, refreshToken stri
 	return tokenId, nil
 }
 
-func (r *usersRepository) GetUserIdByOAuth(
+func (r *usersRepository) GetUserByOAuth(
 	social users.SocialEnum,
 	socialId string,
-) (bool, int, error) {
+) (bool, *users.User, error) {
 	query := `
-  SELECT "user_id" FROM "oauths"
+  SELECT 
+      "u"."id",
+      "u"."username",
+      "u"."email",
+      "u"."avatar_url"
+  FROM "oauths" AS "o"
+  LEFT JOIN "users" AS "u"
+  ON "o"."user_id" = "u"."id"
   WHERE "social" = $1 AND "social_id" = $2
   LIMIT 1;`
 
-	var userId int
-	err := r.db.Get(&userId, query, social, socialId)
+	user := new(users.User)
+	err := r.db.Get(user, query, social, socialId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return false, 0, nil
+			return false, nil, nil
 		}
 
-		return false, 0, fmt.Errorf("get user id by oauth failed: %v", err)
+		return false, nil, fmt.Errorf("get user by oauth failed: %v", err)
 	}
 
-	return true, userId, nil
+	return true, user, nil
+}
+
+func (r *usersRepository) CreateOAuth(req *users.OAuthReq) error {
+	query := `
+  INSERT INTO "oauths" (
+    "user_id",
+    "social",
+    "social_id"
+  )
+  VALUES
+    ($1, $2, $3);`
+
+	_, err := r.db.Exec(query, req.UserId, req.Social, req.SocialId)
+	return err
 }

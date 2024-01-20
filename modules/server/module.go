@@ -55,4 +55,6 @@ func (m *moduleFactory) UsersModule() {
 
 	router.Post("/register", handler.Register)
 	router.Post("/login", handler.Login)
+	router.Get("/:provider", handler.AuthenticateOAuth)
+	router.Get("/:provider/callback", handler.CallbackOAuth)
 }

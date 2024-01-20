@@ -3,7 +3,6 @@ package users
 import (
 	"fmt"
 	"regexp"
-	"time"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -40,6 +39,12 @@ type RegisterReq struct {
 	AvatarUrl string `db:"avatar_url" json:"avatar_url"`
 }
 
+type RegisterOAuthReq struct {
+	Username  string `db:"username"   json:"username"`
+	Email     string `db:"email"      json:"email"`
+	AvatarUrl string `db:"avatar_url" json:"avatar_url"`
+}
+
 func (obj *RegisterReq) IsEmail() bool {
 	matched, err := regexp.Match(`^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$`, []byte(obj.Email))
 	if err != nil {
@@ -59,8 +64,7 @@ func (obj *RegisterReq) HashPassword() error {
 }
 
 type UpdateReq struct {
-	Username string `db:"username"   json:"username"`
-	// Email     string `db:"email"      json:"email"` // TODO: should user be able to update email?
+	Username  string `db:"username"   json:"username"`
 	Password  string `db:"password"   json:"password"`
 	AvatarUrl string `db:"avatar_url" json:"avatar_url"`
 }
@@ -78,12 +82,18 @@ type TokenReq struct {
 }
 
 type OAuth struct {
-	Id        int        `db:"id"         json:"id"`
-	UserId    int        `db:"user_id"    json:"user_id"`
-	Social    SocialEnum `db:"social"     json:"social"`
-	SocialId  string     `db:"social_id"  json:"social_id"`
-	CreatedAt time.Time  `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time  `db:"updated_at" json:"updated_at"`
+	Id       int        `db:"id"        json:"id"`
+	UserId   int        `db:"user_id"   json:"user_id"`
+	Social   SocialEnum `db:"social"    json:"social"`
+	SocialId string     `db:"social_id" json:"social_id"`
+	// CreatedAt time.Time  `db:"created_at" json:"created_at"`
+	// UpdatedAt time.Time  `db:"updated_at" json:"updated_at"`
+}
+
+type OAuthReq struct {
+	UserId   int        `db:"user_id"   json:"user_id"`
+	Social   SocialEnum `db:"social"    json:"social"`
+	SocialId string     `db:"social_id" json:"social_id"`
 }
 
 type SocialEnum string

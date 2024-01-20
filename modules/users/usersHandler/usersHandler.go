@@ -1,10 +1,14 @@
 package usersHandler
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/DeepAung/deep-art/config"
 	"github.com/DeepAung/deep-art/modules/users"
 	"github.com/DeepAung/deep-art/modules/users/usersUsecase"
 	"github.com/DeepAung/deep-art/pkg/response"
+	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
 	"github.com/markbates/goth/gothic"
@@ -13,17 +17,18 @@ import (
 const (
 	registerErr          response.TraceId = "users-001"
 	loginErr             response.TraceId = "users-002"
-	authenticateOAuthErr response.TraceId = "users-003"
-	callbackOAuthErr     response.TraceId = "users-004"
+	logoutErr            response.TraceId = "users-003"
+	authenticateOAuthErr response.TraceId = "users-004"
+	callbackOAuthErr     response.TraceId = "users-005"
 )
 
 type IUsersHandler interface {
 	Register(c *fiber.Ctx) error
 	Login(c *fiber.Ctx) error
+	Logout(c *fiber.Ctx) error
+
 	AuthenticateOAuth(c *fiber.Ctx) error
 	CallbackOAuth(c *fiber.Ctx) error
-
-	// Logout(c *fiber.Ctx) error
 	// RefreshTokens(c *fiber.Ctx) error
 	// ConnectOAuth(c *fiber.Ctx) error
 	// DisconnectOAuth(c *fiber.Ctx) error
@@ -83,44 +88,72 @@ func (h *usersHandler) Login(c *fiber.Ctx) error {
 	return response.Success(c, fiber.StatusOK, passport)
 }
 
+func (h *usersHandler) Logout(c *fiber.Ctx) error {
+	_, err := strconv.Atoi(c.FormValue("oauth_id"))
+	if err != nil {
+		return response.Error(c, fiber.StatusBadRequest, logoutErr, "invalid input")
+	}
+
+	return nil
+	// h.usersUsecase.DeleteOAuth(oauthId) // check if this oauth belong to the user
+}
+
 func (h *usersHandler) AuthenticateOAuth(c *fiber.Ctx) error {
-	return adaptor.HTTPHandlerFunc(gothic.BeginAuthHandler)(c)
+	return adaptor.HTTPHandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		gothic.BeginAuthHandler(res, req)
+	})(c)
 }
 
 /*
-1) return username email profile for register handler
-2) return token for login
+	if found oauth {
+	  login and return passport (user and token)
+	} else {
+
+	  register with goth user info and return passport(user and nil token)
+	  but if email or username has been used .... TODO:
+	}
 */
 func (h *usersHandler) CallbackOAuth(c *fiber.Ctx) error {
-	_, err := h.usersUsecase.GetGothUser(c)
+	gothUser, err := h.usersUsecase.GetGothUser(c)
 	if err != nil {
 		return response.Error(c, fiber.StatusInternalServerError, callbackOAuthErr, err.Error())
 	}
 
-	return nil
+	social := users.SocialEnum(gothUser.Provider)
+	socialId := gothUser.UserID
 
-	/*
-		found, userId, err := h.usersUsecase.GetUserIdByOAuth(
-			users.SocialEnum(gothUser.Provider),
-			gothUser.UserID,
-		)
+	found, user, err := h.usersUsecase.GetUserByOAuth(social, socialId)
+	if err != nil {
+		return response.Error(c, fiber.StatusInternalServerError, callbackOAuthErr, err.Error())
+	}
+
+	if found {
+		passport, err := h.usersUsecase.GetUserPassport(user)
 		if err != nil {
-			return nil // TODO:
+			return response.Error(c, fiber.StatusBadRequest, callbackOAuthErr, err.Error())
 		}
 
-		// TODO:
-		if found {
-			// login and return passport
-			// h.usersUsecase.GetPassport(userId)
-			return nil
-		} else {
-			// register with default values (username, email, profile)
-			h.usersUsecase.CreateUser(&users.RegisterReq{
-				Username:  gothUser.Name,
-				Email:     gothUser.Email,
-				Password:  genpass, // TODO: genpassword.GenRandomPassword and Hash it
-				AvatarUrl: gothUser.AvatarURL,
-			})
-		}
-	*/
+		return response.Success(c, fiber.StatusOK, passport)
+	}
+
+	passport, err := h.usersUsecase.Register(&users.RegisterReq{
+		Username:  gothUser.Name,
+		Email:     gothUser.Email,
+		Password:  utils.GenRandomPassword(16),
+		AvatarUrl: gothUser.AvatarURL,
+	})
+	if err != nil {
+		return response.Error(c, fiber.StatusBadRequest, callbackOAuthErr, err.Error())
+	}
+
+	err = h.usersUsecase.CreateOAuth(&users.OAuthReq{
+		UserId:   user.Id,
+		Social:   social,
+		SocialId: socialId,
+	})
+	if err != nil {
+		return response.Error(c, fiber.StatusBadRequest, callbackOAuthErr, err.Error())
+	}
+
+	return response.Success(c, fiber.StatusOK, passport)
 }
