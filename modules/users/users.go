@@ -77,7 +77,6 @@ type RefreshTokensReq struct {
 	RefreshToken string `db:"refresh_token" json:"refresh_token" form:"refresh_token"`
 }
 
-// TODO: better name
 type TokenInfo struct {
 	Id     int `db:"id"      json:"id"      form:"id"`
 	UserId int `db:"user_id" json:"user_id" form:"user_id"`

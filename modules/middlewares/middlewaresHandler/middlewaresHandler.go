@@ -72,7 +72,7 @@ func (h *middlewaresHandler) JwtAuth() fiber.Handler {
 			return response.Error(c, fiber.StatusUnauthorized, jwtAuthErr, "invalid token")
 		}
 
-		c.Locals("userId", claims.Payload.UserId) // TODO: maybe store payload instead of userid???
+		c.Locals("userId", claims.Payload.UserId)
 		return c.Next()
 	}
 }

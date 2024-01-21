@@ -81,7 +81,7 @@ func (u *usersUsecase) Logout(userId, tokenId int) error {
 func (u *usersUsecase) GetUserPassport(user *users.User) (*users.UserPassport, error) {
 	accessToken, err := mytoken.GenerateToken(u.cfg.Jwt(), &mytoken.Access, user.Id)
 	if err != nil {
-		return nil, err // TODO: should this be fmt.Errorf("generate access token failed")???
+		return nil, err
 	}
 
 	refreshToken, err := mytoken.GenerateToken(u.cfg.Jwt(), &mytoken.Refresh, user.Id)
