@@ -18,6 +18,7 @@ import (
 type IUsersUsecase interface {
 	Register(req *users.RegisterReq) (*users.UserPassport, error)
 	Login(req *users.LoginReq) (*users.UserPassport, error)
+	Logout(userId, tokenId int) error
 	GetUserPassport(user *users.User) (*users.UserPassport, error)
 	GetGothUser(c *fiber.Ctx) (*goth.User, error)
 	GetUserByOAuth(social users.SocialEnum, socialId string) (bool, *users.User, error)
@@ -69,6 +70,11 @@ func (u *usersUsecase) Login(req *users.LoginReq) (*users.UserPassport, error) {
 		Email:     user.Email,
 		AvatarUrl: user.AvatarUrl,
 	})
+}
+
+// TODO: should we pass accessToken too??? this user might delete tokenId from anoter device login
+func (u *usersUsecase) Logout(userId, tokenId int) error {
+	return u.usersRepository.DeleteToken(userId, tokenId)
 }
 
 func (u *usersUsecase) GetUserPassport(user *users.User) (*users.UserPassport, error) {

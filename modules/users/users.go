@@ -32,16 +32,14 @@ type LoginReq struct {
 	Password string `db:"password" json:"password"`
 }
 
+type LogoutReq struct {
+	TokenId int `db:"id" json:"token_id"`
+}
+
 type RegisterReq struct {
 	Username  string `db:"username"   json:"username"`
 	Email     string `db:"email"      json:"email"`
 	Password  string `db:"password"   json:"password"`
-	AvatarUrl string `db:"avatar_url" json:"avatar_url"`
-}
-
-type RegisterOAuthReq struct {
-	Username  string `db:"username"   json:"username"`
-	Email     string `db:"email"      json:"email"`
 	AvatarUrl string `db:"avatar_url" json:"avatar_url"`
 }
 

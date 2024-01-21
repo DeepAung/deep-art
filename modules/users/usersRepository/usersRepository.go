@@ -13,6 +13,7 @@ type IUsersRepository interface {
 	CreateUser(req *users.RegisterReq) (*users.UserPassport, error)
 	GetUserByEmail(email string) (*users.UserWithPassword, error)
 	CreateToken(userId int, accessToken, refreshToken string) (int, error)
+	DeleteToken(userId, tokenId int) error
 	GetUserByOAuth(social users.SocialEnum, socialId string) (bool, *users.User, error)
 	CreateOAuth(req *users.OAuthReq) error
 }
@@ -167,4 +168,22 @@ func (r *usersRepository) CreateOAuth(req *users.OAuthReq) error {
 
 	_, err := r.db.Exec(query, req.UserId, req.Social, req.SocialId)
 	return err
+}
+
+func (r *usersRepository) DeleteToken(userId, tokenId int) error {
+	query := `
+  DELETE FROM "tokens"
+  WHERE "id" = $1 AND "user_id" = $2;`
+
+	result, err := r.db.Exec(query, tokenId, userId)
+	if err != nil {
+		return fmt.Errorf("delete token failed")
+	}
+
+	num, err := result.RowsAffected()
+	if err != nil || num == 0 {
+		return fmt.Errorf("token not found")
+	}
+
+	return nil
 }

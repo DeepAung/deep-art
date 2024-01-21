@@ -2,7 +2,6 @@ package usersHandler
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/DeepAung/deep-art/config"
 	"github.com/DeepAung/deep-art/modules/users"
@@ -89,13 +88,18 @@ func (h *usersHandler) Login(c *fiber.Ctx) error {
 }
 
 func (h *usersHandler) Logout(c *fiber.Ctx) error {
-	_, err := strconv.Atoi(c.FormValue("oauth_id"))
-	if err != nil {
-		return response.Error(c, fiber.StatusBadRequest, logoutErr, "invalid input")
+	req := new(users.LogoutReq)
+	if err := c.BodyParser(req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, logoutErr, err.Error())
 	}
 
-	return nil
-	// h.usersUsecase.DeleteOAuth(oauthId) // check if this oauth belong to the user
+	userId := c.Locals("userId").(int)
+
+	if err := h.usersUsecase.Logout(userId, req.TokenId); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, logoutErr, err.Error())
+	}
+
+	return response.Success(c, fiber.StatusOK, nil)
 }
 
 func (h *usersHandler) AuthenticateOAuth(c *fiber.Ctx) error {
@@ -107,10 +111,15 @@ func (h *usersHandler) AuthenticateOAuth(c *fiber.Ctx) error {
 /*
 	if found oauth {
 	  login and return passport (user and token)
-	} else {
+	} else { // register part
 
-	  register with goth user info and return passport(user and nil token)
-	  but if email or username has been used .... TODO:
+	  if username has been used {
+	    append random string after username
+	  } else if email has been used {
+	    tell user to connect this oauth from normal login(the email way)
+	  } else {
+	    register with goth user info and return passport(user and nil token)
+	  }
 	}
 */
 func (h *usersHandler) CallbackOAuth(c *fiber.Ctx) error {

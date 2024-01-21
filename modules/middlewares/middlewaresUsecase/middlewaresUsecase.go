@@ -3,6 +3,7 @@ package middlewaresUsecase
 import "github.com/DeepAung/deep-art/modules/middlewares/middlewaresRepository"
 
 type IMiddlewaresUsecase interface {
+	FindAccessToken(userId int, accessToken string) bool
 }
 
 type middlewaresUsecase struct {
@@ -15,4 +16,8 @@ func NewMiddlewaresUsecase(
 	return &middlewaresUsecase{
 		middlewaresRepository: middlewaresRepository,
 	}
+}
+
+func (u *middlewaresUsecase) FindAccessToken(userId int, accessToken string) bool {
+	return u.middlewaresRepository.FindAccessToken(userId, accessToken)
 }

@@ -33,7 +33,7 @@ type JwtClaims struct {
 }
 
 type Payload struct {
-	Id int `json:"id"`
+	UserId int `json:"user_id"`
 }
 
 func GenerateToken(
@@ -44,7 +44,7 @@ func GenerateToken(
 
 	claims := &JwtClaims{
 		Payload: &Payload{
-			Id: userId,
+			UserId: userId,
 		},
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "deep-art-api",

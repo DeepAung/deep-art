@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/DeepAung/deep-art/config"
 	"github.com/DeepAung/deep-art/modules/middlewares/middlewaresHandler"
 	"github.com/DeepAung/deep-art/modules/middlewares/middlewaresRepository"
 	"github.com/DeepAung/deep-art/modules/middlewares/middlewaresUsecase"
@@ -9,6 +10,7 @@ import (
 	"github.com/DeepAung/deep-art/modules/users/usersRepository"
 	"github.com/DeepAung/deep-art/modules/users/usersUsecase"
 	"github.com/gofiber/fiber/v2"
+	"github.com/jmoiron/sqlx"
 )
 
 type IModuleFactory interface {
@@ -34,10 +36,10 @@ func InitModules(
 	}
 }
 
-func InitMiddlewares() middlewaresHandler.IMiddlewaresHandler {
-	repo := middlewaresRepository.NewMiddlewaresRepository()
+func InitMiddlewares(cfg config.IConfig, db *sqlx.DB) middlewaresHandler.IMiddlewaresHandler {
+	repo := middlewaresRepository.NewMiddlewaresRepository(db)
 	usecase := middlewaresUsecase.NewMiddlewaresUsecase(repo)
-	return middlewaresHandler.NewMiddlewaresHandler(usecase)
+	return middlewaresHandler.NewMiddlewaresHandler(cfg, usecase)
 }
 
 func (m *moduleFactory) MonitorModule() {
@@ -55,6 +57,7 @@ func (m *moduleFactory) UsersModule() {
 
 	router.Post("/register", handler.Register)
 	router.Post("/login", handler.Login)
+	router.Post("/logout", m.mid.JwtAuth(), handler.Logout)
 	router.Get("/:provider", handler.AuthenticateOAuth)
 	router.Get("/:provider/callback", handler.CallbackOAuth)
 }
