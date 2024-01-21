@@ -16,6 +16,8 @@ type IUsersRepository interface {
 	DeleteToken(userId, tokenId int) error
 	GetUserByOAuth(social users.SocialEnum, socialId string) (bool, *users.User, error)
 	CreateOAuth(req *users.OAuthReq) error
+	GetToken(refreshToken string) (*users.TokenInfo, error)
+	UpdateToken(token *users.Token) error
 }
 
 type usersRepository struct {
@@ -183,6 +185,39 @@ func (r *usersRepository) DeleteToken(userId, tokenId int) error {
 	num, err := result.RowsAffected()
 	if err != nil || num == 0 {
 		return fmt.Errorf("token not found")
+	}
+
+	return nil
+}
+
+func (r *usersRepository) GetToken(refreshToken string) (*users.TokenInfo, error) {
+	query := `
+  SELECT
+    "id",
+    "user_id"
+  FROM "tokens"
+  WHERE "refresh_token" = $1
+  LIMIT 1;`
+
+	token := new(users.TokenInfo)
+	err := r.db.Get(token, query, refreshToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return token, nil
+}
+
+func (r *usersRepository) UpdateToken(token *users.Token) error {
+	query := `
+  UPDATE "tokens" SET
+    "access_token" = $1,
+    "refresh_token" = $2
+  WHERE "id" = $3;`
+
+	_, err := r.db.Exec(query, token.AccessToken, token.RefreshToken, token.Id)
+	if err != nil {
+		return fmt.Errorf("update token failed: %v", err)
 	}
 
 	return nil

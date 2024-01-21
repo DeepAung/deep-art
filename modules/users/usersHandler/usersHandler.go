@@ -19,6 +19,7 @@ const (
 	logoutErr            response.TraceId = "users-003"
 	authenticateOAuthErr response.TraceId = "users-004"
 	callbackOAuthErr     response.TraceId = "users-005"
+	refreshTokensErr     response.TraceId = "users-006"
 )
 
 type IUsersHandler interface {
@@ -28,7 +29,7 @@ type IUsersHandler interface {
 
 	AuthenticateOAuth(c *fiber.Ctx) error
 	CallbackOAuth(c *fiber.Ctx) error
-	// RefreshTokens(c *fiber.Ctx) error
+	RefreshTokens(c *fiber.Ctx) error
 	// ConnectOAuth(c *fiber.Ctx) error
 	// DisconnectOAuth(c *fiber.Ctx) error
 	// GetUserProfile(c *fiber.Ctx) error
@@ -109,18 +110,17 @@ func (h *usersHandler) AuthenticateOAuth(c *fiber.Ctx) error {
 }
 
 /*
-	if found oauth {
-	  login and return passport (user and token)
-	} else { // register part
-
-	  if username has been used {
-	    append random string after username
-	  } else if email has been used {
-	    tell user to connect this oauth from normal login(the email way)
-	  } else {
-	    register with goth user info and return passport(user and nil token)
-	  }
-	}
+	  if found oauth {
+			  login and return passport (user and token)
+		} else { // TODO: implement register part
+		  if username has been used {
+		    append random string after username
+		  } else if email has been used {
+		    tell user to connect this oauth from normal login(the email way)
+		  } else {
+		    register with goth user info and return passport(user and nil token)
+		  }
+		}
 */
 func (h *usersHandler) CallbackOAuth(c *fiber.Ctx) error {
 	gothUser, err := h.usersUsecase.GetGothUser(c)
@@ -165,4 +165,20 @@ func (h *usersHandler) CallbackOAuth(c *fiber.Ctx) error {
 	}
 
 	return response.Success(c, fiber.StatusOK, passport)
+}
+
+func (h *usersHandler) RefreshTokens(c *fiber.Ctx) error {
+	req := new(users.RefreshTokensReq)
+	if err := c.BodyParser(req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, refreshTokensErr, err.Error())
+	}
+
+	userId := c.Locals("userId").(int)
+
+	token, err := h.usersUsecase.RefreshTokens(req, userId)
+	if err != nil {
+		return response.Error(c, fiber.StatusBadRequest, refreshTokensErr, err.Error())
+	}
+
+	return response.Success(c, fiber.StatusOK, token)
 }

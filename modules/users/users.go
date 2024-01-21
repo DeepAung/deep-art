@@ -8,39 +8,39 @@ import (
 )
 
 type UserPassport struct {
-	User  *User  `json:"user"`
-	Token *Token `json:"token"`
+	User  *User  `json:"user"  form:"user"`
+	Token *Token `json:"token" form:"token"`
 }
 
 type User struct {
-	Id        int    `db:"id"         json:"id"`
-	Username  string `db:"username"   json:"username"`
-	Email     string `db:"email"      json:"email"`
-	AvatarUrl string `db:"avatar_url" json:"avatar_url"`
+	Id        int    `db:"id"         json:"id"         form:"id"`
+	Username  string `db:"username"   json:"username"   form:"username"`
+	Email     string `db:"email"      json:"email"      form:"email"`
+	AvatarUrl string `db:"avatar_url" json:"avatar_url" form:"avatar_url"`
 }
 
 type UserWithPassword struct {
-	Id        int    `db:"id"         json:"id"`
-	Username  string `db:"username"   json:"username"`
-	Email     string `db:"email"      json:"email"`
-	Password  string `db:"password"   json:"password"`
-	AvatarUrl string `db:"avatar_url" json:"avatar_url"`
+	Id        int    `db:"id"         json:"id"         form:"id"`
+	Username  string `db:"username"   json:"username"   form:"username"`
+	Email     string `db:"email"      json:"email"      form:"email"`
+	Password  string `db:"password"   json:"password"   form:"password"`
+	AvatarUrl string `db:"avatar_url" json:"avatar_url" form:"avatar_url"`
 }
 
 type LoginReq struct {
-	Email    string `db:"email"    json:"email"`
-	Password string `db:"password" json:"password"`
+	Email    string `db:"email"    json:"email"    form:"email"`
+	Password string `db:"password" json:"password" form:"password"`
 }
 
 type LogoutReq struct {
-	TokenId int `db:"id" json:"token_id"`
+	TokenId int `db:"id" json:"token_id" form:"token_id"`
 }
 
 type RegisterReq struct {
-	Username  string `db:"username"   json:"username"`
-	Email     string `db:"email"      json:"email"`
-	Password  string `db:"password"   json:"password"`
-	AvatarUrl string `db:"avatar_url" json:"avatar_url"`
+	Username  string `db:"username"   json:"username"   form:"username"`
+	Email     string `db:"email"      json:"email"      form:"email"`
+	Password  string `db:"password"   json:"password"   form:"password"`
+	AvatarUrl string `db:"avatar_url" json:"avatar_url" form:"avatar_url"`
 }
 
 func (obj *RegisterReq) IsEmail() bool {
@@ -62,36 +62,46 @@ func (obj *RegisterReq) HashPassword() error {
 }
 
 type UpdateReq struct {
-	Username  string `db:"username"   json:"username"`
-	Password  string `db:"password"   json:"password"`
-	AvatarUrl string `db:"avatar_url" json:"avatar_url"`
+	Username  string `db:"username"   json:"username"   form:"username"`
+	Password  string `db:"password"   json:"password"   form:"password"`
+	AvatarUrl string `db:"avatar_url" json:"avatar_url" form:"avatar_url"`
 }
 
 type Token struct {
-	Id           int    `db:"id"            json:"id"`
-	AccessToken  string `db:"access_token"  json:"access_token"`
-	RefreshToken string `db:"refresh_token" json:"refresh_token"`
+	Id           int    `db:"id"            json:"id"            form:"id"`
+	AccessToken  string `db:"access_token"  json:"access_token"  form:"access_token"`
+	RefreshToken string `db:"refresh_token" json:"refresh_token" form:"refresh_token"`
 }
 
-type TokenReq struct {
-	UserId       int    `db:"user_id"       json:"user_id"`
-	AccessToken  string `db:"access_token"  json:"access_token"`
-	RefreshToken string `db:"refresh_token" json:"refresh_token"`
+type RefreshTokensReq struct {
+	RefreshToken string `db:"refresh_token" json:"refresh_token" form:"refresh_token"`
 }
+
+// TODO: better name
+type TokenInfo struct {
+	Id     int `db:"id"      json:"id"      form:"id"`
+	UserId int `db:"user_id" json:"user_id" form:"user_id"`
+}
+
+// type TokenReq struct {
+// 	UserId       int    `db:"user_id"       json:"user_id"`
+// 	AccessToken  string `db:"access_token"  json:"access_token"`
+// 	RefreshToken string `db:"refresh_token" json:"refresh_token"`
+// }
 
 type OAuth struct {
-	Id       int        `db:"id"        json:"id"`
-	UserId   int        `db:"user_id"   json:"user_id"`
-	Social   SocialEnum `db:"social"    json:"social"`
-	SocialId string     `db:"social_id" json:"social_id"`
+	Id       int        `db:"id"        json:"id"        form:"id"`
+	UserId   int        `db:"user_id"   json:"user_id"   form:"user_id"`
+	Social   SocialEnum `db:"social"    json:"social"    form:"social"`
+	SocialId string     `db:"social_id" json:"social_id" form:"social_id"`
 	// CreatedAt time.Time  `db:"created_at" json:"created_at"`
 	// UpdatedAt time.Time  `db:"updated_at" json:"updated_at"`
 }
 
 type OAuthReq struct {
-	UserId   int        `db:"user_id"   json:"user_id"`
-	Social   SocialEnum `db:"social"    json:"social"`
-	SocialId string     `db:"social_id" json:"social_id"`
+	UserId   int        `db:"user_id"   json:"user_id"   form:"user_id"`
+	Social   SocialEnum `db:"social"    json:"social"    form:"social"`
+	SocialId string     `db:"social_id" json:"social_id" form:"social_id"`
 }
 
 type SocialEnum string

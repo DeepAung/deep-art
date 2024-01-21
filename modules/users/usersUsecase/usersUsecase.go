@@ -23,6 +23,7 @@ type IUsersUsecase interface {
 	GetGothUser(c *fiber.Ctx) (*goth.User, error)
 	GetUserByOAuth(social users.SocialEnum, socialId string) (bool, *users.User, error)
 	CreateOAuth(req *users.OAuthReq) error
+	RefreshTokens(req *users.RefreshTokensReq, userId int) (*users.Token, error)
 	// Login(req *users.LoginReq) (*users.UserPassport, error) // ???
 	// Logout(id int) error
 	// RefreshTokens(refreshToken string, id int) (*users.Token, error)
@@ -129,4 +130,40 @@ func (u *usersUsecase) GetUserByOAuth(
 
 func (u *usersUsecase) CreateOAuth(req *users.OAuthReq) error {
 	return u.usersRepository.CreateOAuth(req)
+}
+
+func (u *usersUsecase) RefreshTokens(
+	req *users.RefreshTokensReq,
+	userId int,
+) (*users.Token, error) {
+	tokenInfo, err := u.usersRepository.GetToken(req.RefreshToken)
+	if err != nil {
+		return nil, fmt.Errorf("invalid refresh token")
+	}
+
+	if tokenInfo.UserId != userId {
+		return nil, fmt.Errorf("invalid refresh token")
+	}
+
+	accessToken, err := mytoken.GenerateToken(u.cfg.Jwt(), &mytoken.Access, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, err := mytoken.GenerateToken(u.cfg.Jwt(), &mytoken.Refresh, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	token := &users.Token{
+		Id:           tokenInfo.Id,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}
+
+	if err := u.usersRepository.UpdateToken(token); err != nil {
+		return nil, err
+	}
+
+	return token, nil
 }
