@@ -39,7 +39,7 @@ func NewServer(db *sqlx.DB, cfg config.IConfig) IServer {
 
 func (s *server) Start() {
 	// Middlewares
-	mid := InitMiddlewares()
+	mid := InitMiddlewares(s.cfg, s.db)
 	s.app.Use(mid.Logger())
 	s.app.Use(mid.Cors())
 
@@ -48,6 +48,7 @@ func (s *server) Start() {
 	modules := InitModules(v1, s, mid)
 
 	modules.MonitorModule()
+	modules.UsersModule()
 
 	s.app.Use(mid.RouterCheck())
 

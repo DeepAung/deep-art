@@ -44,6 +44,12 @@ func LoadConfig(path string) IConfig {
 			accessExpires:  loadToSecond(envMap, "JWT_ACCESS_EXPIRES"),
 			refreshExpires: loadToSecond(envMap, "JWT_REFRESH_EXPIRES"),
 		},
+		oauth: &oauth{
+			googleKey:    envMap["OAUTH_GOOGLE_KEY"],
+			googleSecret: envMap["OAUTH_GOOGLE_SECRET"],
+			githubKey:    envMap["OAUTH_GITHUB_KEY"],
+			githubSecret: envMap["OAUTH_GITHUB_SECRET"],
+		},
 	}
 }
 
@@ -71,17 +77,20 @@ type IConfig interface {
 	App() IAppConfig
 	Db() IDbConfig
 	Jwt() IJwtConfig
+	OAuth() IOAuthConfig
 }
 
 type config struct {
-	app *app
-	db  *db
-	jwt *jwt
+	app   *app
+	db    *db
+	jwt   *jwt
+	oauth *oauth
 }
 
-func (c *config) App() IAppConfig { return c.app }
-func (c *config) Db() IDbConfig   { return c.db }
-func (c *config) Jwt() IJwtConfig { return c.jwt }
+func (c *config) App() IAppConfig     { return c.app }
+func (c *config) Db() IDbConfig       { return c.db }
+func (c *config) Jwt() IJwtConfig     { return c.jwt }
+func (c *config) OAuth() IOAuthConfig { return c.oauth }
 
 // ------------------------------------------------------------- //
 
@@ -170,3 +179,24 @@ func (j *jwt) AdminKey() []byte              { return j.adminKey }
 func (j *jwt) SecretKey() []byte             { return j.secretKey }
 func (j *jwt) AccessExpires() time.Duration  { return j.accessExpires }
 func (j *jwt) RefreshExpires() time.Duration { return j.refreshExpires }
+
+// ------------------------------------------------------------- //
+
+type IOAuthConfig interface {
+	GoogleKey() string
+	GoogleSecret() string
+	GithubKey() string
+	GithubSecret() string
+}
+
+type oauth struct {
+	googleKey    string
+	googleSecret string
+	githubKey    string
+	githubSecret string
+}
+
+func (o *oauth) GoogleKey() string    { return o.googleKey }
+func (o *oauth) GoogleSecret() string { return o.googleSecret }
+func (o *oauth) GithubKey() string    { return o.githubKey }
+func (o *oauth) GithubSecret() string { return o.githubSecret }
