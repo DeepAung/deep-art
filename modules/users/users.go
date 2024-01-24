@@ -103,6 +103,10 @@ type OAuthReq struct {
 	SocialId string     `db:"social_id" json:"social_id" form:"social_id"`
 }
 
+type UserIdReq struct {
+	UserId int `db:"user_id" json:"user_id" form:"user_id"`
+}
+
 type SocialEnum string
 
 const (

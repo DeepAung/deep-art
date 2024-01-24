@@ -1,7 +1,9 @@
 package middlewaresHandler
 
 import (
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/DeepAung/deep-art/config"
 	"github.com/DeepAung/deep-art/modules/middlewares/middlewaresUsecase"
@@ -72,7 +74,17 @@ func (h *middlewaresHandler) JwtAuth() fiber.Handler {
 			return response.Error(c, fiber.StatusUnauthorized, jwtAuthErr, "invalid token")
 		}
 
+		// use cookie instead of local
 		c.Locals("userId", claims.Payload.UserId)
+		c.Cookie(&fiber.Cookie{
+			Name:     "userId",
+			Value:    strconv.Itoa(claims.Payload.UserId),
+			Path:     "/",
+			Expires:  time.Now().Add(h.cfg.Jwt().AccessExpires()),
+			Secure:   true,
+			HTTPOnly: true,
+		})
+
 		return c.Next()
 	}
 }

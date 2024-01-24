@@ -18,6 +18,7 @@ type IUsersRepository interface {
 	CreateOAuth(req *users.OAuthReq) error
 	GetToken(refreshToken string) (*users.TokenInfo, error)
 	UpdateToken(token *users.Token) error
+	GetUserEmailById(userId int) (string, error)
 }
 
 type usersRepository struct {
@@ -169,7 +170,11 @@ func (r *usersRepository) CreateOAuth(req *users.OAuthReq) error {
     ($1, $2, $3);`
 
 	_, err := r.db.Exec(query, req.UserId, req.Social, req.SocialId)
-	return err
+	if err != nil {
+		return fmt.Errorf("create oauth failed: %v", err)
+	}
+
+	return nil
 }
 
 func (r *usersRepository) DeleteToken(userId, tokenId int) error {
@@ -221,4 +226,21 @@ func (r *usersRepository) UpdateToken(token *users.Token) error {
 	}
 
 	return nil
+}
+
+func (r *usersRepository) GetUserEmailById(userId int) (string, error) {
+	query := `
+  SELECT
+    "email",
+  FROM "users"
+  WHERE "id" = $1
+  LIMIT 1`
+
+	var email string
+	err := r.db.Get(&email, query, userId)
+	if err != nil {
+		return "", fmt.Errorf("user not found")
+	}
+
+	return email, nil
 }

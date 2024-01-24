@@ -24,6 +24,7 @@ type IUsersUsecase interface {
 	GetUserByOAuth(social users.SocialEnum, socialId string) (bool, *users.User, error)
 	CreateOAuth(req *users.OAuthReq) error
 	RefreshTokens(req *users.RefreshTokensReq, userId int) (*users.Token, error)
+	GetUserEmailById(userId int) (string, error)
 	// Login(req *users.LoginReq) (*users.UserPassport, error) // ???
 	// Logout(id int) error
 	// RefreshTokens(refreshToken string, id int) (*users.Token, error)
@@ -166,4 +167,8 @@ func (u *usersUsecase) RefreshTokens(
 	}
 
 	return token, nil
+}
+
+func (u *usersUsecase) GetUserEmailById(userId int) (string, error) {
+	return u.usersRepository.GetUserEmailById(userId)
 }

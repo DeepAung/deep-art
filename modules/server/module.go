@@ -60,6 +60,8 @@ func (m *moduleFactory) UsersModule() {
 	router.Post("/logout", m.mid.JwtAuth(), handler.Logout)
 	router.Post("/refresh", m.mid.JwtAuth(), handler.RefreshTokens)
 
-	router.Get("/:provider", handler.AuthenticateOAuth)
-	router.Get("/:provider/callback", handler.CallbackOAuth)
+	router.Get("/:provider/login-or-register", handler.OAuthLoginOrRegister)
+	router.Get("/:provider/connect", m.mid.JwtAuth(), handler.OAuthConnect)
+	router.Get("/:provider/disconnect", m.mid.JwtAuth(), handler.OAuthDisconnect)
+	router.Get("/:provider/callback", handler.OAuthCallback)
 }
