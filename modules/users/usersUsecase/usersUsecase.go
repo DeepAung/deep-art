@@ -16,7 +16,7 @@ import (
 )
 
 type IUsersUsecase interface {
-	Register(req *users.RegisterReq) (*users.UserPassport, error)
+	Register(req *users.RegisterReq, isAdmin bool) (*users.UserPassport, error)
 	Login(req *users.LoginReq) (*users.UserPassport, error)
 	Logout(userId, tokenId int) error
 	GetUserPassport(user *users.User) (*users.UserPassport, error)
@@ -49,12 +49,12 @@ func NewUsersUsecase(
 	}
 }
 
-func (u *usersUsecase) Register(req *users.RegisterReq) (*users.UserPassport, error) {
+func (u *usersUsecase) Register(req *users.RegisterReq, isAdmin bool) (*users.UserPassport, error) {
 	if err := req.HashPassword(); err != nil {
 		return nil, err
 	}
 
-	return u.usersRepository.CreateUser(req)
+	return u.usersRepository.CreateUser(req, isAdmin)
 }
 
 func (u *usersUsecase) Login(req *users.LoginReq) (*users.UserPassport, error) {
@@ -72,6 +72,7 @@ func (u *usersUsecase) Login(req *users.LoginReq) (*users.UserPassport, error) {
 		Username:  user.Username,
 		Email:     user.Email,
 		AvatarUrl: user.AvatarUrl,
+		IsAdmin:   user.IsAdmin,
 	})
 }
 

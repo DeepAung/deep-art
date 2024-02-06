@@ -10,7 +10,7 @@ import (
 )
 
 type IUsersRepository interface {
-	CreateUser(req *users.RegisterReq) (*users.UserPassport, error)
+	CreateUser(req *users.RegisterReq, isAdmin bool) (*users.UserPassport, error)
 	GetUserById(userId int) (*users.User, error)
 	GetUserByEmail(email string) (*users.UserWithPassword, error)
 	CreateToken(userId int, accessToken, refreshToken string) (int, error)
@@ -34,17 +34,21 @@ func NewUsersRepository(db *sqlx.DB) IUsersRepository {
 	}
 }
 
-func (r *usersRepository) CreateUser(req *users.RegisterReq) (*users.UserPassport, error) {
+func (r *usersRepository) CreateUser(
+	req *users.RegisterReq,
+	isAdmin bool,
+) (*users.UserPassport, error) {
 	query := `
 	INSERT INTO "users" (
 		"username",
 		"email",
-		"password"
+		"password",
+    "is_admin"
 	)
 	VALUES
-		($1, $2, $3)
+		($1, $2, $3, $4)
 	RETURNING
-    "id", "username", "email", "avatar_url";`
+    "id", "username", "email", "avatar_url", "is_admin";`
 
 	tx, err := r.db.Beginx()
 	if err != nil {
@@ -53,7 +57,7 @@ func (r *usersRepository) CreateUser(req *users.RegisterReq) (*users.UserPasspor
 
 	user := new(users.User)
 	err = tx.
-		QueryRowx(query, req.Username, req.Email, req.Password).
+		QueryRowx(query, req.Username, req.Email, req.Password, isAdmin).
 		StructScan(user)
 	if err != nil {
 		tx.Rollback()
@@ -108,7 +112,8 @@ func (r *usersRepository) GetUserByEmail(email string) (*users.UserWithPassword,
     "username",
     "email",
     "password",
-    "avatar_url"
+    "avatar_url",
+    "is_admin"
   FROM "users"
   WHERE "email" = $1
   LIMIT 1`
@@ -160,10 +165,11 @@ func (r *usersRepository) GetUserByOAuth(
 ) (bool, *users.User, error) {
 	query := `
   SELECT 
-      "u"."id",
-      "u"."username",
-      "u"."email",
-      "u"."avatar_url"
+    "u"."id",
+    "u"."username",
+    "u"."email",
+    "u"."avatar_url",
+    "u"."is_admin"
   FROM "oauths" AS "o"
   LEFT JOIN "users" AS "u"
   ON "o"."user_id" = "u"."id"

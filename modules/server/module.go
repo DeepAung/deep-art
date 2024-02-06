@@ -69,8 +69,8 @@ func (m *moduleFactory) UsersModule() {
 	router.Post("/logout", m.mid.JwtAuth(), handler.Logout)
 	router.Post("/refresh", m.mid.JwtAuth(), handler.RefreshTokens)
 
-	router.Post("/admin/token", m.mid.JwtAuth(), m.mid.AdminAuth(), handler.GenerateAdminToken)
-	// router.Post("/admin/register", m.mid.AdminTokenAuth())
+	router.Post("/admin/token", m.mid.JwtAuth(), m.mid.OnlyAdmin(), handler.GenerateAdminToken)
+	router.Post("/admin/register", m.mid.AdminAuth(), handler.RegisterAdmin)
 
 	router.Get("/:provider/login", handler.OAuthLoginOrRegister)
 	router.Get("/:provider/register", handler.OAuthLoginOrRegister)

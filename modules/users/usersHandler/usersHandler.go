@@ -43,9 +43,11 @@ const (
 			string('0'+iota/1%10))
 
 	registerErr
+	registerAdminErr
 	loginErr
 	logoutErr
 	refreshTokensErr
+	generateAdminTokenErr
 
 	oauthLoginOrRegisterErr
 	oauthConnectErr
@@ -55,8 +57,6 @@ const (
 	loginCallbackErr
 	registerCallbackErr
 	connectCallbackErr
-
-	generateAdminTokenErr
 )
 
 type CallbackEnum string
@@ -68,9 +68,11 @@ const (
 
 type IUsersHandler interface {
 	Register(c *fiber.Ctx) error
+	RegisterAdmin(c *fiber.Ctx) error
 	Login(c *fiber.Ctx) error
 	Logout(c *fiber.Ctx) error
 	RefreshTokens(c *fiber.Ctx) error
+	GenerateAdminToken(c *fiber.Ctx) error
 
 	OAuthLoginOrRegister(c *fiber.Ctx) error
 	OAuthConnect(c *fiber.Ctx) error
@@ -87,7 +89,6 @@ type IUsersHandler interface {
 	) error
 	ConnectCallback(c *fiber.Ctx, email string, social users.SocialEnum, socialId string) error
 
-	GenerateAdminToken(c *fiber.Ctx) error
 	// GetUserProfile(c *fiber.Ctx) error
 	// UpdateUserProfile(c *fiber.Ctx) error
 	// DeleteUser(c *fiber.Ctx) error
@@ -115,7 +116,30 @@ func (h *usersHandler) Register(c *fiber.Ctx) error {
 		return response.Error(c, fiber.StatusBadRequest, registerErr, "invalid email pattern")
 	}
 
-	user, err := h.usersUsecase.Register(req)
+	user, err := h.usersUsecase.Register(req, false)
+	if err != nil {
+		switch err.Error() {
+		case "email has been used", "username has been used":
+			return response.Error(c, fiber.StatusBadRequest, registerErr, err.Error())
+		default:
+			return response.Error(c, fiber.StatusInternalServerError, registerErr, err.Error())
+		}
+	}
+
+	return response.Success(c, fiber.StatusCreated, user)
+}
+
+func (h *usersHandler) RegisterAdmin(c *fiber.Ctx) error {
+	req := new(users.RegisterReq)
+	if err := c.BodyParser(req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, registerErr, err.Error())
+	}
+
+	if !req.IsEmail() {
+		return response.Error(c, fiber.StatusBadRequest, registerErr, "invalid email pattern")
+	}
+
+	user, err := h.usersUsecase.Register(req, true)
 	if err != nil {
 		switch err.Error() {
 		case "email has been used", "username has been used":
@@ -181,6 +205,22 @@ func (h *usersHandler) RefreshTokens(c *fiber.Ctx) error {
 	}
 
 	return response.Success(c, fiber.StatusOK, token)
+}
+
+func (h *usersHandler) GenerateAdminToken(c *fiber.Ctx) error {
+	token, err := mytoken.GenerateToken(h.cfg.Jwt(), &mytoken.Admin, nil)
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusInternalServerError,
+			generateAdminTokenErr,
+			err.Error(),
+		)
+	}
+
+	return response.Success(c, fiber.StatusCreated, &users.AdminTokenRes{
+		AdminToken: token,
+	})
 }
 
 func (h *usersHandler) OAuthLoginOrRegister(c *fiber.Ctx) error {
@@ -276,7 +316,7 @@ func (h *usersHandler) RegisterCallback(
 		Email:     gothUser.Email,
 		Password:  utils.GenRandomPassword(16),
 		AvatarUrl: gothUser.AvatarURL,
-	})
+	}, false)
 	if err != nil {
 		return response.Error(c, fiber.StatusBadRequest, registerCallbackErr, err.Error())
 	}
@@ -334,20 +374,4 @@ func (h *usersHandler) ConnectCallback(
 	}
 
 	return response.Success(c, fiber.StatusCreated, nil)
-}
-
-func (h *usersHandler) GenerateAdminToken(c *fiber.Ctx) error {
-	token, err := mytoken.GenerateToken(h.cfg.Jwt(), &mytoken.Admin, nil)
-	if err != nil {
-		return response.Error(
-			c,
-			fiber.StatusInternalServerError,
-			generateAdminTokenErr,
-			err.Error(),
-		)
-	}
-
-	return response.Success(c, fiber.StatusCreated, &users.AdminTokenRes{
-		AdminToken: token,
-	})
 }

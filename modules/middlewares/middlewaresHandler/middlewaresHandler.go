@@ -17,8 +17,9 @@ import (
 const (
 	routerCheckErr response.TraceId = "middlwares-001"
 	jwtAuthErr     response.TraceId = "middlwares-002"
-	adminAuthErr   response.TraceId = "middlwares-003"
-	apiKeyAuthErr  response.TraceId = "middlwares-004"
+	onlyAdminErr   response.TraceId = "middlwares-003"
+	adminAuthErr   response.TraceId = "middlwares-004"
+	apiKeyAuthErr  response.TraceId = "middlwares-005"
 )
 
 type IMiddlewaresHandler interface {
@@ -26,9 +27,9 @@ type IMiddlewaresHandler interface {
 	RouterCheck() fiber.Handler
 	Logger() fiber.Handler
 	JwtAuth() fiber.Handler
+	OnlyAdmin() fiber.Handler
 	AdminAuth() fiber.Handler
 	ApiKeyAuth() fiber.Handler
-	AdminTokenAuth() fiber.Handler
 }
 
 type middlewaresHandler struct {
@@ -80,7 +81,7 @@ func (h *middlewaresHandler) JwtAuth() fiber.Handler {
 			return response.Error(c, fiber.StatusUnauthorized, jwtAuthErr, "invalid token")
 		}
 
-		// TODO: use cookie instead of local
+		// TODO: should i use cookie???
 		userId := claims.Payload.UserId
 		c.Locals("userId", userId)
 		utils.SetCookie(c, "userId", strconv.Itoa(userId), h.cfg.Jwt().AccessExpires())
@@ -92,14 +93,15 @@ func (h *middlewaresHandler) JwtAuth() fiber.Handler {
 		return c.Next()
 	}
 }
-func (m *middlewaresHandler) AdminAuth() fiber.Handler {
+
+func (h *middlewaresHandler) OnlyAdmin() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		isAdmin := c.Locals("isAdmin").(bool)
 		if !isAdmin {
 			return response.Error(
 				c,
 				fiber.StatusUnauthorized,
-				adminAuthErr,
+				onlyAdminErr,
 				"no permission to access",
 			)
 		}
@@ -108,20 +110,36 @@ func (m *middlewaresHandler) AdminAuth() fiber.Handler {
 	}
 }
 
-func (m *middlewaresHandler) ApiKeyAuth() fiber.Handler {
+func (h *middlewaresHandler) AdminAuth() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		tokenString := c.Get("X-Api-Key")
-		err := mytoken.VerifyToken(m.cfg.Jwt(), &mytoken.ApiKey, tokenString)
+		tokenString := strings.TrimPrefix(c.Get("Authorization"), "Bearer ")
+		if tokenString == "" {
+			return response.Error(c, fiber.StatusUnauthorized, adminAuthErr, "token required")
+		}
+
+		err := mytoken.VerifyToken(h.cfg.Jwt(), &mytoken.Admin, tokenString)
 		if err != nil {
-			return response.Error(c, fiber.StatusUnauthorized, adminAuthErr, "invalid or no apikey")
+			return response.Error(c, fiber.StatusUnauthorized, adminAuthErr, err.Error())
 		}
 
 		return c.Next()
+
 	}
 }
 
-func (m *middlewaresHandler) AdminTokenAuth() fiber.Handler {
+func (h *middlewaresHandler) ApiKeyAuth() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		return nil // TODO:
+		tokenString := c.Get("X-Api-Key")
+		err := mytoken.VerifyToken(h.cfg.Jwt(), &mytoken.ApiKey, tokenString)
+		if err != nil {
+			return response.Error(
+				c,
+				fiber.StatusUnauthorized,
+				apiKeyAuthErr,
+				"invalid or no apikey",
+			)
+		}
+
+		return c.Next()
 	}
 }

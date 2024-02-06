@@ -88,7 +88,7 @@ func GenerateToken(
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(cfg.SecretKey())
+	tokenString, err := token.SignedString(tokenType.Key(cfg))
 	if err != nil {
 		return "", fmt.Errorf("generate token failed: %v", err)
 	}
