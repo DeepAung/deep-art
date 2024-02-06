@@ -9,6 +9,7 @@ import (
 	"github.com/DeepAung/deep-art/config"
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/template/html/v2"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -23,6 +24,8 @@ type server struct {
 }
 
 func NewServer(db *sqlx.DB, cfg config.IConfig) IServer {
+	engine := html.New("./views", ".html")
+
 	return &server{
 		app: fiber.New(fiber.Config{
 			AppName:      cfg.App().Name(),
@@ -31,6 +34,7 @@ func NewServer(db *sqlx.DB, cfg config.IConfig) IServer {
 			WriteTimeout: cfg.App().WriteTimeout(),
 			JSONEncoder:  json.Marshal,
 			JSONDecoder:  json.Unmarshal,
+			Views:        engine,
 		}),
 		db:  db,
 		cfg: cfg,
@@ -48,6 +52,7 @@ func (s *server) Start() {
 	modules := InitModules(v1, s, mid)
 
 	modules.MonitorModule()
+	modules.ViewsModule()
 	modules.UsersModule()
 
 	s.app.Use(mid.RouterCheck())

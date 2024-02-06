@@ -11,12 +11,15 @@ import (
 
 type IUsersRepository interface {
 	CreateUser(req *users.RegisterReq) (*users.UserPassport, error)
+	GetUserById(userId int) (*users.User, error)
 	GetUserByEmail(email string) (*users.UserWithPassword, error)
 	CreateToken(userId int, accessToken, refreshToken string) (int, error)
 	DeleteToken(userId, tokenId int) error
 	GetUserByOAuth(social users.SocialEnum, socialId string) (bool, *users.User, error)
-	CreateOAuth(req *users.OAuthReq) error
-	GetToken(refreshToken string) (*users.TokenInfo, error)
+	HasOAuth(req *users.OAuthReq) bool
+	CreateOAuth(req *users.OAuthCreateReq) error
+	DeleteOAuth(req *users.OAuthReq) error
+	GetTokenInfo(refreshToken string) (*users.TokenInfo, error)
 	UpdateToken(token *users.Token) error
 	GetUserEmailById(userId int) (string, error)
 }
@@ -75,6 +78,27 @@ func (r *usersRepository) CreateUser(req *users.RegisterReq) (*users.UserPasspor
 		Token: nil,
 	}
 	return passport, nil
+}
+
+func (r *usersRepository) GetUserById(userId int) (*users.User, error) {
+	query := `
+  SELECT
+    "id",
+    "username",
+    "email",
+    "avatar_url",
+    "is_admin"
+  FROM "users"
+  WHERE "id" = $1
+  LIMIT 1`
+
+	user := new(users.User)
+	err := r.db.Get(user, query, userId)
+	if err != nil {
+		return nil, fmt.Errorf("user not found")
+	}
+
+	return user, nil
 }
 
 func (r *usersRepository) GetUserByEmail(email string) (*users.UserWithPassword, error) {
@@ -159,7 +183,23 @@ func (r *usersRepository) GetUserByOAuth(
 	return true, user, nil
 }
 
-func (r *usersRepository) CreateOAuth(req *users.OAuthReq) error {
+func (r *usersRepository) HasOAuth(req *users.OAuthReq) bool {
+	query := `
+	 SELECT count(*)
+	 FROM "oauths"
+	 WHERE "user_id" = $1 AND "social" = $2
+	 LIMIT 1;`
+
+	var count int
+	err := r.db.Get(&count, query, req.UserId, req.Social)
+	if err != nil || count == 0 {
+		return false
+	}
+
+	return true
+}
+
+func (r *usersRepository) CreateOAuth(req *users.OAuthCreateReq) error {
 	query := `
   INSERT INTO "oauths" (
     "user_id",
@@ -177,14 +217,14 @@ func (r *usersRepository) CreateOAuth(req *users.OAuthReq) error {
 	return nil
 }
 
-func (r *usersRepository) DeleteToken(userId, tokenId int) error {
+func (r *usersRepository) DeleteOAuth(req *users.OAuthReq) error {
 	query := `
-  DELETE FROM "tokens"
-  WHERE "id" = $1 AND "user_id" = $2;`
+  DELETE FROM "oauths"
+  WHERE "user_id" = $1 AND "social" = $2;`
 
-	result, err := r.db.Exec(query, tokenId, userId)
+	result, err := r.db.Exec(query, req.UserId, req.Social)
 	if err != nil {
-		return fmt.Errorf("delete token failed")
+		return fmt.Errorf("delete oauth failed: %v", err)
 	}
 
 	num, err := result.RowsAffected()
@@ -195,7 +235,25 @@ func (r *usersRepository) DeleteToken(userId, tokenId int) error {
 	return nil
 }
 
-func (r *usersRepository) GetToken(refreshToken string) (*users.TokenInfo, error) {
+func (r *usersRepository) DeleteToken(userId, tokenId int) error {
+	query := `
+  DELETE FROM "tokens"
+  WHERE "id" = $1 AND "user_id" = $2;`
+
+	result, err := r.db.Exec(query, tokenId, userId)
+	if err != nil {
+		return fmt.Errorf("delete token failed: %v", err)
+	}
+
+	num, err := result.RowsAffected()
+	if err != nil || num == 0 {
+		return fmt.Errorf("token not found")
+	}
+
+	return nil
+}
+
+func (r *usersRepository) GetTokenInfo(refreshToken string) (*users.TokenInfo, error) {
 	query := `
   SELECT
     "id",

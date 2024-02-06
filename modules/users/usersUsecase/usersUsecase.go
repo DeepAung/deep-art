@@ -22,8 +22,9 @@ type IUsersUsecase interface {
 	GetUserPassport(user *users.User) (*users.UserPassport, error)
 	GetGothUser(c *fiber.Ctx) (*goth.User, error)
 	GetUserByOAuth(social users.SocialEnum, socialId string) (bool, *users.User, error)
-	CreateOAuth(req *users.OAuthReq) error
-	RefreshTokens(req *users.RefreshTokensReq, userId int) (*users.Token, error)
+	CreateOAuth(req *users.OAuthCreateReq) error
+	DeleteOAuth(req *users.OAuthReq) error
+	RefreshTokens(refreshToken string, userId int) (*users.Token, error)
 	GetUserEmailById(userId int) (string, error)
 	// Login(req *users.LoginReq) (*users.UserPassport, error) // ???
 	// Logout(id int) error
@@ -80,12 +81,17 @@ func (u *usersUsecase) Logout(userId, tokenId int) error {
 }
 
 func (u *usersUsecase) GetUserPassport(user *users.User) (*users.UserPassport, error) {
-	accessToken, err := mytoken.GenerateToken(u.cfg.Jwt(), &mytoken.Access, user.Id)
+	payload := &mytoken.Payload{
+		UserId:  user.Id,
+		IsAdmin: user.IsAdmin,
+	}
+
+	accessToken, err := mytoken.GenerateToken(u.cfg.Jwt(), &mytoken.Access, payload)
 	if err != nil {
 		return nil, err
 	}
 
-	refreshToken, err := mytoken.GenerateToken(u.cfg.Jwt(), &mytoken.Refresh, user.Id)
+	refreshToken, err := mytoken.GenerateToken(u.cfg.Jwt(), &mytoken.Refresh, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -101,6 +107,7 @@ func (u *usersUsecase) GetUserPassport(user *users.User) (*users.UserPassport, e
 			Username:  user.Username,
 			Email:     user.Email,
 			AvatarUrl: user.AvatarUrl,
+			IsAdmin:   user.IsAdmin,
 		},
 		Token: &users.Token{
 			Id:           tokenId,
@@ -129,15 +136,26 @@ func (u *usersUsecase) GetUserByOAuth(
 	return u.usersRepository.GetUserByOAuth(social, socialId)
 }
 
-func (u *usersUsecase) CreateOAuth(req *users.OAuthReq) error {
+func (u *usersUsecase) CreateOAuth(req *users.OAuthCreateReq) error {
+	if !u.usersRepository.HasOAuth(&users.OAuthReq{UserId: req.UserId, Social: req.Social}) {
+		return fmt.Errorf("oauth already connected")
+	}
+
 	return u.usersRepository.CreateOAuth(req)
 }
 
+func (u *usersUsecase) DeleteOAuth(req *users.OAuthReq) error {
+	return u.usersRepository.DeleteOAuth(req)
+}
+
+// compare refresh token with database
+// verify refresh token???
+// gen new one
 func (u *usersUsecase) RefreshTokens(
-	req *users.RefreshTokensReq,
+	refreshToken string,
 	userId int,
 ) (*users.Token, error) {
-	tokenInfo, err := u.usersRepository.GetToken(req.RefreshToken)
+	tokenInfo, err := u.usersRepository.GetTokenInfo(refreshToken)
 	if err != nil {
 		return nil, fmt.Errorf("invalid refresh token")
 	}
@@ -146,20 +164,26 @@ func (u *usersUsecase) RefreshTokens(
 		return nil, fmt.Errorf("invalid refresh token")
 	}
 
-	accessToken, err := mytoken.GenerateToken(u.cfg.Jwt(), &mytoken.Access, userId)
+	// TODO: if user change isAdmin in database, this claims is not up-to-date. this value persist forever...
+	claims, err := mytoken.ParseToken(u.cfg.Jwt(), &mytoken.Refresh, refreshToken)
+	if err != nil {
+		return nil, fmt.Errorf("parse token failed: %v", err)
+	}
+
+	newAccessToken, err := mytoken.GenerateToken(u.cfg.Jwt(), &mytoken.Access, claims.Payload)
 	if err != nil {
 		return nil, err
 	}
 
-	refreshToken, err := mytoken.GenerateToken(u.cfg.Jwt(), &mytoken.Refresh, userId)
+	newRefreshToken, err := mytoken.GenerateToken(u.cfg.Jwt(), &mytoken.Refresh, claims.Payload)
 	if err != nil {
 		return nil, err
 	}
 
 	token := &users.Token{
 		Id:           tokenInfo.Id,
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
+		AccessToken:  newAccessToken,
+		RefreshToken: newRefreshToken,
 	}
 
 	if err := u.usersRepository.UpdateToken(token); err != nil {

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title></title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+  </head>
+  <body>
+    <div>
+      <h1>User Info</h1>
+      <p>ID:</p>
+      <p>Username:</p>
+      <p>Email:</p>
+      <p>Avatar Url:</p>
+      <p>Is Admin:</p>
+      <p>Token ID:</p>
+      <p>Access Token:</p>
+      <p>Refresh Token:</p>
+    </div>
+
+    <hr class="m-4" />
+
+    <form hx-post="/api/v1/users/login">
+      <p>Login Form</p>
+      <input type="text" name="email" placeholder="email" />
+      <input type="password" name="password" placeholder="password" />
+      <input type="submit" value="Login" />
+    </form>
+
+    <hr class="m-4" />
+
+    <button class="block" hx-get="/api/v1/users/google/login?provider=google">
+      Login With Google
+    </button>
+    <button
+      class="block"
+      hx-get="/api/v1/users/google/register?provider=google"
+    >
+      Register With Google
+    </button>
+    <button class="block" hx-get="/api/v1/users/google/connect?provider=google">
+      Connect Google
+    </button>
+    <button
+      class="block"
+      hx-get="/api/v1/users/google/disconnect?provider=google"
+    >
+      Disconnect Google
+    </button>
+  </body>
+</html>

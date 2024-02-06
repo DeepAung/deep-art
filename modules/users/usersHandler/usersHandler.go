@@ -8,6 +8,7 @@ import (
 	"github.com/DeepAung/deep-art/config"
 	"github.com/DeepAung/deep-art/modules/users"
 	"github.com/DeepAung/deep-art/modules/users/usersUsecase"
+	"github.com/DeepAung/deep-art/pkg/mytoken"
 	"github.com/DeepAung/deep-art/pkg/response"
 	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/gofiber/fiber/v2"
@@ -16,21 +17,53 @@ import (
 	"github.com/markbates/goth/gothic"
 )
 
+/*
+case of authentications
+
+1) user register with example@gmail.com
+   and try to connect google with example2@gmail.com
+   response: this google email is not the same as current email
+
+2) user register with example@gmail.com
+   and try to login/register google with example@gmail.com
+   response: this email already exist try login and connect it
+   or: connect it automatically???
+
+3) user register google with example@gmail.com
+   and try to register with example@gmail.com
+   reponse: this email is already used
+*/
+
 const (
-	registerErr      response.TraceId = "users-001"
-	loginErr         response.TraceId = "users-002"
-	logoutErr        response.TraceId = "users-003"
-	refreshTokensErr response.TraceId = "users-006"
+	// users-000, users-001, and so on
+	_ = response.TraceId(
+		"users-" +
+			string('0'+iota/100%10) +
+			string('0'+iota/10%10) +
+			string('0'+iota/1%10))
 
-	oauthLoginOrRegisterErr response.TraceId = "users-007"
-	oauthConnectErr         response.TraceId = "users-007"
-	oauthDisconnectErr      response.TraceId = "users-007"
+	registerErr
+	loginErr
+	logoutErr
+	refreshTokensErr
 
-	oauthCallbackErr      response.TraceId = "users-007"
-	loginCallbackErr      response.TraceId = "users-007"
-	registerCallbackErr   response.TraceId = "users-007"
-	connectCallbackErr    response.TraceId = "users-007"
-	disconnectCallbackErr response.TraceId = "users-007"
+	oauthLoginOrRegisterErr
+	oauthConnectErr
+	oauthDisconnectErr
+
+	oauthCallbackErr
+	loginCallbackErr
+	registerCallbackErr
+	connectCallbackErr
+
+	generateAdminTokenErr
+)
+
+type CallbackEnum string
+
+const (
+	LoginOrRegister CallbackEnum = "LoginOrRegister"
+	Connect         CallbackEnum = "Connect"
 )
 
 type IUsersHandler interface {
@@ -52,9 +85,9 @@ type IUsersHandler interface {
 		social users.SocialEnum,
 		socialId string,
 	) error
-	ConnectCallback(c *fiber.Ctx, gothEmail string, social users.SocialEnum, socialId string) error
-	DisconnectCallback(c *fiber.Ctx, gothUser *goth.User) error
+	ConnectCallback(c *fiber.Ctx, email string, social users.SocialEnum, socialId string) error
 
+	GenerateAdminToken(c *fiber.Ctx) error
 	// GetUserProfile(c *fiber.Ctx) error
 	// UpdateUserProfile(c *fiber.Ctx) error
 	// DeleteUser(c *fiber.Ctx) error
@@ -85,9 +118,7 @@ func (h *usersHandler) Register(c *fiber.Ctx) error {
 	user, err := h.usersUsecase.Register(req)
 	if err != nil {
 		switch err.Error() {
-		case "ERROR: duplicate key value violates unique constraint \"users_username_key\" (SQLSTATE 23505)":
-			return response.Error(c, fiber.StatusBadRequest, registerErr, err.Error())
-		case "ERROR: duplicate key value violates unique constraint \"users_email_key\" (SQLSTATE 23505)":
+		case "email has been used", "username has been used":
 			return response.Error(c, fiber.StatusBadRequest, registerErr, err.Error())
 		default:
 			return response.Error(c, fiber.StatusInternalServerError, registerErr, err.Error())
@@ -137,9 +168,14 @@ func (h *usersHandler) RefreshTokens(c *fiber.Ctx) error {
 		return response.Error(c, fiber.StatusBadRequest, refreshTokensErr, err.Error())
 	}
 
+	err := mytoken.VerifyToken(h.cfg.Jwt(), &mytoken.Refresh, req.RefreshToken)
+	if err != nil {
+		return response.Error(c, fiber.StatusBadRequest, refreshTokensErr, err.Error())
+	}
+
 	userId := c.Locals("userId").(int)
 
-	token, err := h.usersUsecase.RefreshTokens(req, userId)
+	token, err := h.usersUsecase.RefreshTokens(req.RefreshToken, userId)
 	if err != nil {
 		return response.Error(c, fiber.StatusBadRequest, refreshTokensErr, err.Error())
 	}
@@ -148,18 +184,32 @@ func (h *usersHandler) RefreshTokens(c *fiber.Ctx) error {
 }
 
 func (h *usersHandler) OAuthLoginOrRegister(c *fiber.Ctx) error {
-	h.setCallbackCookie(c, LoginOrRegister)
+	utils.SetCookie(c, "callback", string(LoginOrRegister), 5*time.Minute) // TODO: is 5 minute OK?
 	return adaptor.HTTPHandlerFunc(gothic.BeginAuthHandler)(c)
 }
 
 func (h *usersHandler) OAuthConnect(c *fiber.Ctx) error {
-	h.setCallbackCookie(c, Connect)
+	utils.SetCookie(c, "callback", string(Connect), 5*time.Minute)
 	return adaptor.HTTPHandlerFunc(gothic.BeginAuthHandler)(c)
 }
 
 func (h *usersHandler) OAuthDisconnect(c *fiber.Ctx) error {
-	h.setCallbackCookie(c, Disconnect)
-	return adaptor.HTTPHandlerFunc(gothic.BeginAuthHandler)(c)
+	userId := c.Locals("userId").(int)
+
+	req := new(users.OAuthDisconnectReq)
+	if err := c.BodyParser(req); err != nil {
+		return response.Error(c, fiber.StatusBadRequest, oauthDisconnectErr, err.Error())
+	}
+
+	err := h.usersUsecase.DeleteOAuth(&users.OAuthReq{
+		UserId: userId,
+		Social: req.Social,
+	})
+	if err != nil {
+		return response.Error(c, fiber.StatusInternalServerError, connectCallbackErr, err.Error())
+	}
+
+	return response.Success(c, fiber.StatusCreated, nil)
 }
 
 /*
@@ -184,12 +234,11 @@ func (h *usersHandler) OAuthCallback(c *fiber.Ctx) error {
 	social := users.SocialEnum(gothUser.Provider)
 	socialId := gothUser.UserID
 
-	callback := h.getCallbackCookie(c)
-	switch callback {
-	case Connect:
+	callback := CallbackEnum(c.Cookies("callback"))
+	c.ClearCookie("callback")
+
+	if callback == Connect {
 		return h.ConnectCallback(c, gothUser.Email, social, socialId)
-	case Disconnect:
-		return h.DisconnectCallback(c, gothUser)
 	}
 
 	// case LoginOrRegister
@@ -232,7 +281,7 @@ func (h *usersHandler) RegisterCallback(
 		return response.Error(c, fiber.StatusBadRequest, registerCallbackErr, err.Error())
 	}
 
-	err = h.usersUsecase.CreateOAuth(&users.OAuthReq{
+	err = h.usersUsecase.CreateOAuth(&users.OAuthCreateReq{
 		UserId:   user.Id,
 		Social:   social,
 		SocialId: socialId,
@@ -247,7 +296,7 @@ func (h *usersHandler) RegisterCallback(
 // get userid, check if email is the same, then link the id
 func (h *usersHandler) ConnectCallback(
 	c *fiber.Ctx,
-	gothEmail string,
+	email string,
 	social users.SocialEnum,
 	socialId string,
 ) error {
@@ -266,11 +315,16 @@ func (h *usersHandler) ConnectCallback(
 		return response.Error(c, fiber.StatusInternalServerError, connectCallbackErr, err.Error())
 	}
 
-	if userEmail != gothEmail {
-		return response.Error(c, fiber.StatusBadRequest, connectCallbackErr, "invalid user id")
+	if userEmail != email {
+		return response.Error(
+			c,
+			fiber.StatusBadRequest,
+			connectCallbackErr,
+			"email in this social connect is not the same as current email",
+		)
 	}
 
-	err = h.usersUsecase.CreateOAuth(&users.OAuthReq{
+	err = h.usersUsecase.CreateOAuth(&users.OAuthCreateReq{
 		UserId:   userId,
 		Social:   social,
 		SocialId: socialId,
@@ -282,32 +336,18 @@ func (h *usersHandler) ConnectCallback(
 	return response.Success(c, fiber.StatusCreated, nil)
 }
 
-// get userid, check if email is the same, then unlink the id
-func (h *usersHandler) DisconnectCallback(c *fiber.Ctx, gothUser *goth.User) error {
-	return nil
-}
+func (h *usersHandler) GenerateAdminToken(c *fiber.Ctx) error {
+	token, err := mytoken.GenerateToken(h.cfg.Jwt(), &mytoken.Admin, nil)
+	if err != nil {
+		return response.Error(
+			c,
+			fiber.StatusInternalServerError,
+			generateAdminTokenErr,
+			err.Error(),
+		)
+	}
 
-// -------------------------------------------------- //
-
-type CallbackEnum string
-
-const (
-	LoginOrRegister CallbackEnum = "LoginOrRegister"
-	Connect         CallbackEnum = "Connect"
-	Disconnect      CallbackEnum = "Disconnect"
-)
-
-func (h *usersHandler) setCallbackCookie(c *fiber.Ctx, value CallbackEnum) {
-	c.Cookie(&fiber.Cookie{
-		Name:     "callback",
-		Value:    string(value),
-		Path:     "/",
-		Expires:  time.Now().Add(5 * time.Minute), // TODO: is 5 minute OK?
-		Secure:   true,
-		HTTPOnly: true,
+	return response.Success(c, fiber.StatusCreated, &users.AdminTokenRes{
+		AdminToken: token,
 	})
-}
-
-func (h *usersHandler) getCallbackCookie(c *fiber.Ctx) CallbackEnum {
-	return CallbackEnum(c.Cookies("callback"))
 }

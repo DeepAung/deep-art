@@ -10,20 +10,52 @@ import (
 
 type TokenType struct {
 	Subject   string
+	Audience  jwt.ClaimStrings
 	ExpiresAt func(cfg config.IJwtConfig) time.Time
+	Key       func(cfg config.IJwtConfig) []byte
 }
 
 var Access = TokenType{
-	Subject: "access-token",
+	Subject:  "access-token",
+	Audience: []string{"admin", "user"},
 	ExpiresAt: func(cfg config.IJwtConfig) time.Time {
 		return time.Now().Add(cfg.AccessExpires())
+	},
+	Key: func(cfg config.IJwtConfig) []byte {
+		return cfg.SecretKey()
 	},
 }
 
 var Refresh = TokenType{
-	Subject: "refresh-token",
+	Subject:  "refresh-token",
+	Audience: []string{"admin", "user"},
 	ExpiresAt: func(cfg config.IJwtConfig) time.Time {
 		return time.Now().Add(cfg.RefreshExpires())
+	},
+	Key: func(cfg config.IJwtConfig) []byte {
+		return cfg.SecretKey()
+	},
+}
+
+var ApiKey = TokenType{
+	Subject:  "api-key",
+	Audience: []string{"admin", "user"},
+	ExpiresAt: func(cfg config.IJwtConfig) time.Time {
+		return time.Now().AddDate(2, 0, 0)
+	},
+	Key: func(cfg config.IJwtConfig) []byte {
+		return cfg.ApiKey()
+	},
+}
+
+var Admin = TokenType{
+	Subject:  "admin-token",
+	Audience: []string{"admin"},
+	ExpiresAt: func(cfg config.IJwtConfig) time.Time {
+		return time.Now().Add(5 * time.Minute)
+	},
+	Key: func(cfg config.IJwtConfig) []byte {
+		return cfg.AdminKey()
 	},
 }
 
@@ -33,22 +65,22 @@ type JwtClaims struct {
 }
 
 type Payload struct {
-	UserId int `json:"user_id"`
+	UserId  int  `json:"user_id"`
+	IsAdmin bool `json:"is_admin"`
 }
 
 func GenerateToken(
 	cfg config.IJwtConfig,
 	tokenType *TokenType,
-	userId int,
+	payload *Payload,
 ) (string, error) {
 
 	claims := &JwtClaims{
-		Payload: &Payload{
-			UserId: userId,
-		},
+		Payload: payload,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "deep-art-api",
 			Subject:   tokenType.Subject,
+			Audience:  tokenType.Audience,
 			ExpiresAt: jwt.NewNumericDate(tokenType.ExpiresAt(cfg)),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -64,8 +96,12 @@ func GenerateToken(
 	return tokenString, nil
 }
 
-func ParseToken(cfg config.IJwtConfig, tokenString string) (*JwtClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &JwtClaims{}, keyFunc(cfg))
+func ParseToken(
+	cfg config.IJwtConfig,
+	tokenType *TokenType,
+	tokenString string,
+) (*JwtClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &JwtClaims{}, keyFunc(tokenType.Key(cfg)))
 	if err != nil {
 		return nil, err
 	}
@@ -77,11 +113,16 @@ func ParseToken(cfg config.IJwtConfig, tokenString string) (*JwtClaims, error) {
 	}
 }
 
-func keyFunc(cfg config.IJwtConfig) jwt.Keyfunc {
+func VerifyToken(cfg config.IJwtConfig, tokenType *TokenType, tokenString string) error {
+	_, err := ParseToken(cfg, tokenType, tokenString)
+	return err
+}
+
+func keyFunc(key []byte) jwt.Keyfunc {
 	return func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("invalid signing method")
 		}
-		return cfg.SecretKey(), nil
+		return key, nil
 	}
 }

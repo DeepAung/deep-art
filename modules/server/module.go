@@ -15,6 +15,7 @@ import (
 
 type IModuleFactory interface {
 	MonitorModule()
+	ViewsModule()
 	UsersModule()
 }
 
@@ -48,6 +49,14 @@ func (m *moduleFactory) MonitorModule() {
 	m.r.Get("/", handler.HealthCheck)
 }
 
+func (m *moduleFactory) ViewsModule() {
+	router := m.r.Group("views")
+
+	router.Get("/index", func(c *fiber.Ctx) error {
+		return c.Render("index", nil)
+	})
+}
+
 func (m *moduleFactory) UsersModule() {
 	repo := usersRepository.NewUsersRepository(m.s.db)
 	usecase := usersUsecase.NewUsersUsecase(m.s.cfg, repo)
@@ -60,7 +69,13 @@ func (m *moduleFactory) UsersModule() {
 	router.Post("/logout", m.mid.JwtAuth(), handler.Logout)
 	router.Post("/refresh", m.mid.JwtAuth(), handler.RefreshTokens)
 
-	router.Get("/:provider/login-or-register", handler.OAuthLoginOrRegister)
+	router.Post("/admin/token", m.mid.JwtAuth(), m.mid.AdminAuth(), handler.GenerateAdminToken)
+	// router.Post("/admin/register", m.mid.AdminTokenAuth())
+
+	// router.Get("/:provider/login-or-register", handler.OAuthLoginOrRegister)
+	router.Get("/:provider", handler.OAuthLoginOrRegister)
+	router.Get("/:provider/login", handler.OAuthLoginOrRegister)
+	router.Get("/:provider/register", handler.OAuthLoginOrRegister)
 	router.Get("/:provider/connect", m.mid.JwtAuth(), handler.OAuthConnect)
 	router.Get("/:provider/disconnect", m.mid.JwtAuth(), handler.OAuthDisconnect)
 	router.Get("/:provider/callback", handler.OAuthCallback)

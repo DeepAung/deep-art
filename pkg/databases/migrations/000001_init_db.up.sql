@@ -8,7 +8,7 @@ CREATE OR REPLACE FUNCTION set_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = now();
-    RETURN NEW;   
+    RETURN NEW;
 END;
 $$ language 'plpgsql';
 
@@ -24,6 +24,7 @@ CREATE TABLE "users" (
   "email" VARCHAR UNIQUE NOT NULL,
   "password" VARCHAR NOT NULL,
   "avatar_url" VARCHAR NOT NULL DEFAULT '',
+  "is_admin" BOOLEAN NOT NULL DEFAULT FALSE,
   "created_at" TIMESTAMP DEFAULT now(),
   "updated_at" TIMESTAMP DEFAULT now()
 );
@@ -44,19 +45,21 @@ CREATE TABLE "oauths" (
   "social_id" VARCHAR NOT NULL,
   "created_at" TIMESTAMP DEFAULT now(),
   "updated_at" TIMESTAMP DEFAULT now(),
-  UNIQUE ("social", "social_id")
+  UNIQUE ("social", "social_id"),
+  UNIQUE ("user_id", "social")
 );
 
 CREATE TABLE "arts" (
   "id" SERIAL PRIMARY KEY,
+  "cover_id" INT UNIQUE NOT NULL,
   "name" VARCHAR NOT NULL,
   "description" VARCHAR NOT NULL,
-  "author_id" INT NOT NULL,
+  "creator_id" INT NOT NULL,
   "price" FLOAT NOT NULL DEFAULT 0,
   "download_count" INT NOT NULL DEFAULT 0,
   "created_at" TIMESTAMP DEFAULT now(),
   "updated_at" TIMESTAMP DEFAULT now(),
-  UNIQUE ("name", "author_id")
+  UNIQUE ("name", "creator_id")
 );
 
 CREATE TABLE "users_starred_arts" (
@@ -71,7 +74,7 @@ CREATE TABLE "users_bought_arts" (
   PRIMARY KEY ("user_id", "art_id")
 );
 
-CREATE TABLE "users_authored_arts" (
+CREATE TABLE "users_created_arts" (
   "user_id" INT NOT NULL,
   "art_id" INT NOT NULL,
   PRIMARY KEY ("user_id", "art_id")
@@ -91,10 +94,9 @@ CREATE TABLE "arts_tags" (
 CREATE TABLE "files" (
   "id" SERIAL PRIMARY KEY,
   "art_id" INT NOT NULL,
-  "is_cover" BOOLEAN NOT NULL DEFAULT false,
   "filename" VARCHAR NOT NULL,
   "filetype" VARCHAR NOT NULL,
-  "file_url" VARCHAR NOT NULL,
+  "url" VARCHAR NOT NULL,
   "created_at" TIMESTAMP DEFAULT now(),
   "updated_at" TIMESTAMP DEFAULT now()
 );
@@ -116,13 +118,13 @@ CREATE TABLE "users_used_codes" (
 
 ALTER TABLE "tokens" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "oauths" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
-ALTER TABLE "arts" ADD FOREIGN KEY ("author_id") REFERENCES "users" ("id");
+ALTER TABLE "arts" ADD FOREIGN KEY ("creator_id") REFERENCES "users" ("id");
 ALTER TABLE "users_starred_arts" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "users_starred_arts" ADD FOREIGN KEY ("art_id") REFERENCES "arts" ("id");
 ALTER TABLE "users_bought_arts" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 ALTER TABLE "users_bought_arts" ADD FOREIGN KEY ("art_id") REFERENCES "arts" ("id");
-ALTER TABLE "users_authored_arts" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
-ALTER TABLE "users_authored_arts" ADD FOREIGN KEY ("art_id") REFERENCES "arts" ("id");
+ALTER TABLE "users_created_arts" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
+ALTER TABLE "users_created_arts" ADD FOREIGN KEY ("art_id") REFERENCES "arts" ("id");
 ALTER TABLE "arts_tags" ADD FOREIGN KEY ("art_id") REFERENCES "arts" ("id");
 ALTER TABLE "arts_tags" ADD FOREIGN KEY ("tag_id") REFERENCES "tags" ("id");
 ALTER TABLE "files" ADD FOREIGN KEY ("art_id") REFERENCES "arts" ("id");
