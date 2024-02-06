@@ -42,6 +42,9 @@ func NewServer(db *sqlx.DB, cfg config.IConfig) IServer {
 }
 
 func (s *server) Start() {
+	// Static files
+	s.app.Static("/static", "./public")
+
 	// Middlewares
 	mid := InitMiddlewares(s.cfg, s.db)
 	s.app.Use(mid.Logger())

@@ -289,7 +289,7 @@ func (r *usersRepository) UpdateToken(token *users.Token) error {
 func (r *usersRepository) GetUserEmailById(userId int) (string, error) {
 	query := `
   SELECT
-    "email",
+    "email"
   FROM "users"
   WHERE "id" = $1
   LIMIT 1`

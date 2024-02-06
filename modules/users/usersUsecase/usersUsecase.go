@@ -137,7 +137,7 @@ func (u *usersUsecase) GetUserByOAuth(
 }
 
 func (u *usersUsecase) CreateOAuth(req *users.OAuthCreateReq) error {
-	if !u.usersRepository.HasOAuth(&users.OAuthReq{UserId: req.UserId, Social: req.Social}) {
+	if u.usersRepository.HasOAuth(&users.OAuthReq{UserId: req.UserId, Social: req.Social}) {
 		return fmt.Errorf("oauth already connected")
 	}
 

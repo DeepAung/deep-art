@@ -72,11 +72,13 @@ func (m *moduleFactory) UsersModule() {
 	router.Post("/admin/token", m.mid.JwtAuth(), m.mid.AdminAuth(), handler.GenerateAdminToken)
 	// router.Post("/admin/register", m.mid.AdminTokenAuth())
 
-	// router.Get("/:provider/login-or-register", handler.OAuthLoginOrRegister)
-	router.Get("/:provider", handler.OAuthLoginOrRegister)
 	router.Get("/:provider/login", handler.OAuthLoginOrRegister)
 	router.Get("/:provider/register", handler.OAuthLoginOrRegister)
-	router.Get("/:provider/connect", m.mid.JwtAuth(), handler.OAuthConnect)
+	router.Get(
+		"/:provider/connect",
+		handler.OAuthConnect,
+	) // TODO: make user login before connect to oauths
+	// router.Get("/:provider/connect", m.mid.JwtAuth(), handler.OAuthConnect)
 	router.Get("/:provider/disconnect", m.mid.JwtAuth(), handler.OAuthDisconnect)
 	router.Get("/:provider/callback", handler.OAuthCallback)
 }
