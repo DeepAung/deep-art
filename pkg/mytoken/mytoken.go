@@ -37,17 +37,6 @@ var Refresh = TokenType{
 	},
 }
 
-var ApiKey = TokenType{
-	Subject:  "api-key",
-	Audience: []string{"admin", "user"},
-	ExpiresAt: func(cfg config.IJwtConfig) time.Time {
-		return time.Now().AddDate(2, 0, 0)
-	},
-	Key: func(cfg config.IJwtConfig) []byte {
-		return cfg.ApiKey()
-	},
-}
-
 var Admin = TokenType{
 	Subject:  "admin-token",
 	Audience: []string{"admin"},

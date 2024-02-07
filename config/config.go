@@ -43,7 +43,6 @@ func LoadConfig(path string) IConfig {
 			maxConnections: loadToInt(envMap, "DB_MAX_CONNECTIONS"),
 		},
 		jwt: &jwt{
-			apiKey:         []byte(envMap["JWT_API_KEY"]),
 			adminKey:       []byte(envMap["JWT_ADMIN_KEY"]),
 			secretKey:      []byte(envMap["JWT_SECRET_KEY"]),
 			accessExpires:  loadToSecond(envMap, "JWT_ACCESS_EXPIRES"),
@@ -165,7 +164,6 @@ func (d *db) MaxOpenConns() int { return d.maxConnections }
 // ------------------------------------------------------------- //
 
 type IJwtConfig interface {
-	ApiKey() []byte
 	AdminKey() []byte
 	SecretKey() []byte
 	AccessExpires() time.Duration
@@ -173,14 +171,12 @@ type IJwtConfig interface {
 }
 
 type jwt struct {
-	apiKey         []byte
 	adminKey       []byte
 	secretKey      []byte
 	accessExpires  time.Duration
 	refreshExpires time.Duration
 }
 
-func (j *jwt) ApiKey() []byte                { return j.apiKey }
 func (j *jwt) AdminKey() []byte              { return j.adminKey }
 func (j *jwt) SecretKey() []byte             { return j.secretKey }
 func (j *jwt) AccessExpires() time.Duration  { return j.accessExpires }

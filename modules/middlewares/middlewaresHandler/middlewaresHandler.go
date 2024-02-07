@@ -19,7 +19,6 @@ const (
 	jwtAuthErr     response.TraceId = "middlwares-002"
 	onlyAdminErr   response.TraceId = "middlwares-003"
 	adminAuthErr   response.TraceId = "middlwares-004"
-	apiKeyAuthErr  response.TraceId = "middlwares-005"
 )
 
 type IMiddlewaresHandler interface {
@@ -29,7 +28,6 @@ type IMiddlewaresHandler interface {
 	JwtAuth() fiber.Handler
 	OnlyAdmin() fiber.Handler
 	AdminAuth() fiber.Handler
-	ApiKeyAuth() fiber.Handler
 }
 
 type middlewaresHandler struct {
@@ -124,22 +122,5 @@ func (h *middlewaresHandler) AdminAuth() fiber.Handler {
 
 		return c.Next()
 
-	}
-}
-
-func (h *middlewaresHandler) ApiKeyAuth() fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		tokenString := c.Get("X-Api-Key")
-		err := mytoken.VerifyToken(h.cfg.Jwt(), &mytoken.ApiKey, tokenString)
-		if err != nil {
-			return response.Error(
-				c,
-				fiber.StatusUnauthorized,
-				apiKeyAuthErr,
-				"invalid or no apikey",
-			)
-		}
-
-		return c.Next()
 	}
 }
