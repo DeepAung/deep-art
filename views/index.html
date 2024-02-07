@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title></title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+
+    <script src="/static/script.js"></script>
+  </head>
+  <body x-init="init">
+    <h1>User Info</h1>
+    <div>
+      <h2>User</h2>
+      <p>ID: <span x-text="$store.data?.passport?.user?.id"></span></p>
+      <p>
+        Username: <span x-text="$store.data?.passport?.user?.username"></span>
+      </p>
+      <p>Email: <span x-text="$store.data?.passport?.user?.email"></span></p>
+      <p>
+        Avatar Url:
+        <span x-text="$store.data?.passport?.user?.avatar_url"></span>
+      </p>
+      <p>
+        Is Admin: <span x-text="$store.data?.passport?.user?.is_admin"></span>
+      </p>
+      <h2>Token</h2>
+      <p>
+        Access Token:
+        <span x-text="$store.data?.passport?.token?.access_token"></span>
+      </p>
+      <p>
+        Refresh Token:
+        <span x-text="$store.data?.passport?.token?.refresh_token"></span>
+      </p>
+    </div>
+
+    <hr class="m-4" />
+
+    <form @submit.prevent="login">
+      <p>Login Form</p>
+      <input type="text" name="email" placeholder="email" />
+      <input type="password" name="password" placeholder="password" />
+      <input type="submit" value="Login" />
+    </form>
+
+    <hr />
+
+    <a style="display: block" href="/api/v1/users/google/login?provider=google">
+      Login With Google
+    </a>
+    <a
+      style="display: block"
+      href="/api/v1/users/google/register?provider=google"
+    >
+      Register With Google
+    </a>
+    <a
+      style="display: block"
+      href="/api/v1/users/google/connect?provider=google"
+    >
+      Connect Google
+    </a>
+    <a
+      style="display: block"
+      href="/api/v1/users/google/disconnect?provider=google"
+    >
+      Disconnect Google
+    </a>
+  </body>
+</html>

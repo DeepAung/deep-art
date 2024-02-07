@@ -17,6 +17,7 @@ type User struct {
 	Username  string `db:"username"   json:"username"   form:"username"`
 	Email     string `db:"email"      json:"email"      form:"email"`
 	AvatarUrl string `db:"avatar_url" json:"avatar_url" form:"avatar_url"`
+	IsAdmin   bool   `db:"is_admin"   json:"is_admin"   form:"is_admin"`
 }
 
 type UserWithPassword struct {
@@ -25,6 +26,7 @@ type UserWithPassword struct {
 	Email     string `db:"email"      json:"email"      form:"email"`
 	Password  string `db:"password"   json:"password"   form:"password"`
 	AvatarUrl string `db:"avatar_url" json:"avatar_url" form:"avatar_url"`
+	IsAdmin   bool   `db:"is_admin"   json:"is_admin"   form:"is_admin"`
 }
 
 type LoginReq struct {
@@ -82,25 +84,29 @@ type TokenInfo struct {
 	UserId int `db:"user_id" json:"user_id" form:"user_id"`
 }
 
+type AdminTokenRes struct {
+	AdminToken string `json:"admin_token" form:"admin_token"`
+}
+
 // type TokenReq struct {
 // 	UserId       int    `db:"user_id"       json:"user_id"`
 // 	AccessToken  string `db:"access_token"  json:"access_token"`
 // 	RefreshToken string `db:"refresh_token" json:"refresh_token"`
 // }
 
-type OAuth struct {
-	Id       int        `db:"id"        json:"id"        form:"id"`
-	UserId   int        `db:"user_id"   json:"user_id"   form:"user_id"`
-	Social   SocialEnum `db:"social"    json:"social"    form:"social"`
-	SocialId string     `db:"social_id" json:"social_id" form:"social_id"`
-	// CreatedAt time.Time  `db:"created_at" json:"created_at"`
-	// UpdatedAt time.Time  `db:"updated_at" json:"updated_at"`
+type OAuthReq struct {
+	UserId int        `db:"user_id" json:"user_id" form:"user_id"`
+	Social SocialEnum `db:"social"  json:"social"  form:"social"`
 }
 
-type OAuthReq struct {
+type OAuthCreateReq struct {
 	UserId   int        `db:"user_id"   json:"user_id"   form:"user_id"`
 	Social   SocialEnum `db:"social"    json:"social"    form:"social"`
 	SocialId string     `db:"social_id" json:"social_id" form:"social_id"`
+}
+
+type OAuthDisconnectReq struct {
+	Social SocialEnum `db:"social" json:"social" form:"social"`
 }
 
 type SocialEnum string

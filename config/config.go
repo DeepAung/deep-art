@@ -15,6 +15,11 @@ func LoadConfig(path string) IConfig {
 		log.Fatal("load dotenv failed: ", err)
 	}
 
+	err = godotenv.Load(path)
+	if err != nil {
+		log.Fatal("load dotenv failed: ", err)
+	}
+
 	return &config{
 		app: &app{
 			host:         envMap["APP_HOST"],
@@ -45,10 +50,11 @@ func LoadConfig(path string) IConfig {
 			refreshExpires: loadToSecond(envMap, "JWT_REFRESH_EXPIRES"),
 		},
 		oauth: &oauth{
-			googleKey:    envMap["OAUTH_GOOGLE_KEY"],
-			googleSecret: envMap["OAUTH_GOOGLE_SECRET"],
-			githubKey:    envMap["OAUTH_GITHUB_KEY"],
-			githubSecret: envMap["OAUTH_GITHUB_SECRET"],
+			sessionSecret: envMap["SESSION_SECRET"],
+			googleKey:     envMap["OAUTH_GOOGLE_KEY"],
+			googleSecret:  envMap["OAUTH_GOOGLE_SECRET"],
+			githubKey:     envMap["OAUTH_GITHUB_KEY"],
+			githubSecret:  envMap["OAUTH_GITHUB_SECRET"],
 		},
 	}
 }
@@ -183,6 +189,7 @@ func (j *jwt) RefreshExpires() time.Duration { return j.refreshExpires }
 // ------------------------------------------------------------- //
 
 type IOAuthConfig interface {
+	SessionSecret() string
 	GoogleKey() string
 	GoogleSecret() string
 	GithubKey() string
@@ -190,13 +197,15 @@ type IOAuthConfig interface {
 }
 
 type oauth struct {
-	googleKey    string
-	googleSecret string
-	githubKey    string
-	githubSecret string
+	sessionSecret string
+	googleKey     string
+	googleSecret  string
+	githubKey     string
+	githubSecret  string
 }
 
-func (o *oauth) GoogleKey() string    { return o.googleKey }
-func (o *oauth) GoogleSecret() string { return o.googleSecret }
-func (o *oauth) GithubKey() string    { return o.githubKey }
-func (o *oauth) GithubSecret() string { return o.githubSecret }
+func (o *oauth) SessionSecret() string { return o.sessionSecret }
+func (o *oauth) GoogleKey() string     { return o.googleKey }
+func (o *oauth) GoogleSecret() string  { return o.googleSecret }
+func (o *oauth) GithubKey() string     { return o.githubKey }
+func (o *oauth) GithubSecret() string  { return o.githubSecret }
