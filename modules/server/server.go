@@ -57,6 +57,7 @@ func (s *server) Start() {
 	modules.MonitorModule()
 	modules.ViewsModule()
 	modules.UsersModule()
+	modules.TagsModule()
 
 	s.app.Use(mid.RouterCheck())
 
