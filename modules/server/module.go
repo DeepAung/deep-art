@@ -95,7 +95,7 @@ func (m *moduleFactory) TagsModule() {
 	router := m.r.Group("/tags")
 
 	router.Get("/", handler.GetTags)
-	router.Post("/", handler.CreateTag)
-	router.Put("/:id", handler.UpdateTag)
-	router.Delete("/:id", handler.DeleteTag)
+	router.Post("/", m.mid.JwtAuth(), m.mid.OnlyAdmin(), handler.CreateTag)
+	router.Put("/:id", m.mid.JwtAuth(), m.mid.OnlyAdmin(), handler.UpdateTag)
+	router.Delete("/:id", m.mid.JwtAuth(), m.mid.OnlyAdmin(), handler.DeleteTag)
 }
