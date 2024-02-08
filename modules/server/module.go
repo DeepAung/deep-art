@@ -6,6 +6,9 @@ import (
 	"github.com/DeepAung/deep-art/modules/middlewares/middlewaresRepository"
 	"github.com/DeepAung/deep-art/modules/middlewares/middlewaresUsecase"
 	"github.com/DeepAung/deep-art/modules/monitor/monitorHandler"
+	"github.com/DeepAung/deep-art/modules/tags/tagsHandler"
+	"github.com/DeepAung/deep-art/modules/tags/tagsRepository"
+	"github.com/DeepAung/deep-art/modules/tags/tagsUsecase"
 	"github.com/DeepAung/deep-art/modules/users/usersHandler"
 	"github.com/DeepAung/deep-art/modules/users/usersRepository"
 	"github.com/DeepAung/deep-art/modules/users/usersUsecase"
@@ -17,6 +20,7 @@ type IModuleFactory interface {
 	MonitorModule()
 	ViewsModule()
 	UsersModule()
+	TagsModule()
 }
 
 type moduleFactory struct {
@@ -81,4 +85,17 @@ func (m *moduleFactory) UsersModule() {
 	// router.Get("/:provider/connect", m.mid.JwtAuth(), handler.OAuthConnect)
 	router.Get("/:provider/disconnect", m.mid.JwtAuth(), handler.OAuthDisconnect)
 	router.Get("/:provider/callback", handler.OAuthCallback)
+}
+
+func (m *moduleFactory) TagsModule() {
+	repo := tagsRepository.NewTagsRepository(m.s.db)
+	usecase := tagsUsecase.NewTagsUsecase(repo)
+	handler := tagsHandler.NewTagsHandler(usecase)
+
+	router := m.r.Group("/tags")
+
+	router.Get("/", handler.GetTags)
+	router.Post("/", handler.CreateTag)
+	router.Put("/:id", handler.UpdateTag)
+	router.Delete("/:id", handler.DeleteTag)
 }
