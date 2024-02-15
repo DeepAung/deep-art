@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/DeepAung/deep-art/config"
+	"github.com/DeepAung/deep-art/modules/files/filesHandler"
 	"github.com/DeepAung/deep-art/modules/middlewares/middlewaresHandler"
 	"github.com/DeepAung/deep-art/modules/middlewares/middlewaresRepository"
 	"github.com/DeepAung/deep-art/modules/middlewares/middlewaresUsecase"
@@ -12,6 +13,7 @@ import (
 	"github.com/DeepAung/deep-art/modules/users/usersHandler"
 	"github.com/DeepAung/deep-art/modules/users/usersRepository"
 	"github.com/DeepAung/deep-art/modules/users/usersUsecase"
+	"github.com/DeepAung/deep-art/pkg/mystorage"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jmoiron/sqlx"
 )
@@ -20,24 +22,28 @@ type IModuleFactory interface {
 	MonitorModule()
 	ViewsModule()
 	UsersModule()
+	FilesModule()
 	TagsModule()
 }
 
 type moduleFactory struct {
-	r   fiber.Router
-	s   *server
-	mid middlewaresHandler.IMiddlewaresHandler
+	r       fiber.Router
+	s       *server
+	mid     middlewaresHandler.IMiddlewaresHandler
+	storage mystorage.IStorage
 }
 
 func InitModules(
 	r fiber.Router,
 	s *server,
 	mid middlewaresHandler.IMiddlewaresHandler,
+	storage mystorage.IStorage,
 ) IModuleFactory {
 	return &moduleFactory{
-		r:   r,
-		s:   s,
-		mid: mid,
+		r:       r,
+		s:       s,
+		mid:     mid,
+		storage: storage,
 	}
 }
 
@@ -85,6 +91,15 @@ func (m *moduleFactory) UsersModule() {
 	// router.Get("/:provider/connect", m.mid.JwtAuth(), handler.OAuthConnect)
 	router.Get("/:provider/disconnect", m.mid.JwtAuth(), handler.OAuthDisconnect)
 	router.Get("/:provider/callback", handler.OAuthCallback)
+}
+
+func (m *moduleFactory) FilesModule() {
+	handler := filesHandler.NewFilesHandler(m.storage)
+
+	router := m.r.Group("/files", m.mid.JwtAuth(), m.mid.OnlyAdmin())
+
+	router.Post("/upload", handler.UploadFiles)
+	router.Post("/delete", handler.DeleteFiles)
 }
 
 func (m *moduleFactory) TagsModule() {

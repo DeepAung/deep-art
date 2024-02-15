@@ -38,3 +38,5 @@ vendor
 *.pem
 apikey.txt
 *.txt
+/tests/images
+/public/storage
