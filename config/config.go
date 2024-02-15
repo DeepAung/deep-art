@@ -30,7 +30,7 @@ func LoadConfig(path string) IConfig {
 			writeTimeout: loadToSecond(envMap, "APP_WRITE_TIMEOUT"),
 			bodyLimit:    loadToInt(envMap, "APP_BODY_LIMIT"),
 			fileLimit:    loadToInt(envMap, "APP_FILE_LIMIT"),
-			gcpBucket:    envMap["gcpBucket"],
+			gcpBucket:    envMap["APP_GCP_BUCKET"],
 		},
 		db: &db{
 			host:           envMap["DB_HOST"],

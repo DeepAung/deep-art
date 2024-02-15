@@ -7,6 +7,7 @@ import (
 	"os/signal"
 
 	"github.com/DeepAung/deep-art/config"
+	"github.com/DeepAung/deep-art/pkg/mystorage"
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html/v2"
@@ -50,13 +51,17 @@ func (s *server) Start() {
 	s.app.Use(mid.Logger())
 	s.app.Use(mid.Cors())
 
+	// Storage
+	storage := mystorage.NewGCPStorage(s.cfg.App())
+
 	// Modules
 	v1 := s.app.Group("/api/v1")
-	modules := InitModules(v1, s, mid)
+	modules := InitModules(v1, s, mid, storage)
 
 	modules.MonitorModule()
 	modules.ViewsModule()
 	modules.UsersModule()
+	modules.FilesModule()
 	modules.TagsModule()
 
 	s.app.Use(mid.RouterCheck())
