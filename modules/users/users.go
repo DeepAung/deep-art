@@ -13,22 +13,22 @@ type UserPassport struct {
 }
 
 type User struct {
-	Id        int    `db:"id"         json:"id"         form:"id"`
-	Username  string `db:"username"   json:"username"   form:"username"`
-	Email     string `db:"email"      json:"email"      form:"email"`
-	AvatarUrl string `db:"avatar_url" json:"avatar_url" form:"avatar_url"`
-	IsAdmin   bool   `db:"is_admin"   json:"is_admin"   form:"is_admin"`
-	Coin      int    `db:"coin"       json:"coin"       form:"coin"`
+	Id        int     `db:"id"         json:"id"         form:"id"`
+	Username  string  `db:"username"   json:"username"   form:"username"`
+	Email     string  `db:"email"      json:"email"      form:"email"`
+	AvatarUrl string  `db:"avatar_url" json:"avatar_url" form:"avatar_url"`
+	IsAdmin   bool    `db:"is_admin"   json:"is_admin"   form:"is_admin"`
+	Coin      float32 `db:"coin"       json:"coin"       form:"coin"`
 }
 
 type UserWithPassword struct {
-	Id        int    `db:"id"         json:"id"         form:"id"`
-	Username  string `db:"username"   json:"username"   form:"username"`
-	Email     string `db:"email"      json:"email"      form:"email"`
-	Password  string `db:"password"   json:"password"   form:"password"`
-	AvatarUrl string `db:"avatar_url" json:"avatar_url" form:"avatar_url"`
-	IsAdmin   bool   `db:"is_admin"   json:"is_admin"   form:"is_admin"`
-	Coin      int    `db:"coin"       json:"coin"       form:"coin"`
+	Id        int     `db:"id"         json:"id"         form:"id"`
+	Username  string  `db:"username"   json:"username"   form:"username"`
+	Email     string  `db:"email"      json:"email"      form:"email"`
+	Password  string  `db:"password"   json:"password"   form:"password"`
+	AvatarUrl string  `db:"avatar_url" json:"avatar_url" form:"avatar_url"`
+	IsAdmin   bool    `db:"is_admin"   json:"is_admin"   form:"is_admin"`
+	Coin      float32 `db:"coin"       json:"coin"       form:"coin"`
 }
 
 type LoginReq struct {
