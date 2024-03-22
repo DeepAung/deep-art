@@ -25,6 +25,7 @@ CREATE TABLE "users" (
   "password" VARCHAR NOT NULL,
   "avatar_url" VARCHAR NOT NULL DEFAULT '',
   "is_admin" BOOLEAN NOT NULL DEFAULT FALSE,
+  "coin" INT NOT NULL DEFAULT 0,
   "created_at" TIMESTAMP DEFAULT now(),
   "updated_at" TIMESTAMP DEFAULT now()
 );

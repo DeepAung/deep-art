@@ -73,6 +73,7 @@ func (u *usersUsecase) Login(req *users.LoginReq) (*users.UserPassport, error) {
 		Email:     user.Email,
 		AvatarUrl: user.AvatarUrl,
 		IsAdmin:   user.IsAdmin,
+		Coin:      user.Coin,
 	})
 }
 
@@ -103,13 +104,7 @@ func (u *usersUsecase) GetUserPassport(user *users.User) (*users.UserPassport, e
 	}
 
 	passport := &users.UserPassport{
-		User: &users.User{
-			Id:        user.Id,
-			Username:  user.Username,
-			Email:     user.Email,
-			AvatarUrl: user.AvatarUrl,
-			IsAdmin:   user.IsAdmin,
-		},
+		User: utils.NewCopy(user),
 		Token: &users.Token{
 			Id:           tokenId,
 			AccessToken:  accessToken,
