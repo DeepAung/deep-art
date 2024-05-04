@@ -3,7 +3,9 @@ package middlewares
 import (
 	"context"
 	"log/slog"
+	"os"
 
+	"github.com/DeepAung/deep-art/pkg/prettylog"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -14,9 +16,9 @@ func NewMiddleware() *Middleware {
 	return &Middleware{}
 }
 
-// RemoteIP string
-// Host string
 func (m *Middleware) Logger() echo.MiddlewareFunc {
+	slog.SetDefault(slog.New(prettylog.NewHandler(os.Stdout, nil)))
+
 	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogStatus:   true,
 		LogURI:      true,
@@ -30,12 +32,13 @@ func (m *Middleware) Logger() echo.MiddlewareFunc {
 				slog.Int("status", v.Status),
 			}
 
-			if v.Error == nil {
-				slog.LogAttrs(context.Background(), slog.LevelInfo, "REQUEST", attrs...)
-			} else {
+			if v.Error != nil {
 				attrs = append(attrs, slog.String("err", v.Error.Error()))
 				slog.LogAttrs(context.Background(), slog.LevelError, "REQUEST_ERROR", attrs...)
+			} else {
+				slog.LogAttrs(context.Background(), slog.LevelInfo, "REQUEST", attrs...)
 			}
+
 			return nil
 		},
 	})
