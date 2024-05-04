@@ -36,3 +36,4 @@ vendor
 .air*
 /tmp
 /public/storage
+setup.lua

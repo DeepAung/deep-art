@@ -1,3 +1,6 @@
+air:
+	air
+
 # DATABASE_URL = postgres://myuser:mypassword@0.0.0.0:5432/mydb?sslmode=disable
 # MIGRATION_FOLDER = file://$(abspath ./pkg/databases/migrations)
 #
