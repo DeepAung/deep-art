@@ -35,8 +35,4 @@ vendor
 *.env*
 .air*
 /tmp
-*.pem
-apikey.txt
-*.txt
-/tests/images
 /public/storage
