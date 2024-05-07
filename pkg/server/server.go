@@ -1,9 +1,12 @@
 package server
 
 import (
+	"context"
+
 	"github.com/DeepAung/deep-art/pkg/config"
 	"github.com/DeepAung/deep-art/pkg/middlewares"
 	"github.com/DeepAung/deep-art/pkg/router"
+	"github.com/DeepAung/deep-art/views/pages"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -42,10 +45,14 @@ func (s *Server) Start() {
 		AllowOrigins: s.cfg.App.CorsOrigins,
 	}))
 
-	public := s.app.Group("/public")
-	public.Use(middleware.Static("/public"))
+	s.app.Static("/static", "static")
 
 	s.r.TestRouter()
+	s.r.PagesRouter()
+
+	s.app.GET("*", func(c echo.Context) error {
+		return pages.NotFound().Render(context.Background(), c.Response())
+	})
 
 	s.app.Start(":3000")
 }

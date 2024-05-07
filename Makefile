@@ -1,5 +1,15 @@
 air:
-	air
+	air -c .air.toml
+tailwind:
+	npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --watch
+templ:
+	templ generate --watch --proxy="http://localhost:3000"
+
+tidy:
+	npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --minify
+	templ generate
+	go mod tidy
+
 
 # DATABASE_URL = postgres://myuser:mypassword@0.0.0.0:5432/mydb?sslmode=disable
 # MIGRATION_FOLDER = file://$(abspath ./pkg/databases/migrations)

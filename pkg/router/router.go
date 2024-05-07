@@ -3,6 +3,7 @@ package router
 import (
 	"net/http"
 
+	"github.com/DeepAung/deep-art/handlers"
 	"github.com/labstack/echo/v4"
 )
 
@@ -14,6 +15,12 @@ func NewRouter(e *echo.Echo) *Router {
 	return &Router{
 		e: e,
 	}
+}
+
+func (r *Router) PagesRouter() {
+	handler := handlers.NewPagesHandler()
+
+	r.e.GET("/", handler.Welcome)
 }
 
 func (r *Router) TestRouter() {
