@@ -1,0 +1,130 @@
+BEGIN;
+
+-- set timezone
+-- SET TIME ZONE 'Asia/Bangkok';
+
+CREATE TABLE "users" (
+  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "username" VARCHAR UNIQUE NOT NULL,
+  "email" VARCHAR UNIQUE NOT NULL,
+  "password" VARCHAR NOT NULL,
+  "avatar_url" VARCHAR NOT NULL DEFAULT '',
+  "is_admin" BOOLEAN NOT NULL DEFAULT false,
+  "coin" INT NOT NULL DEFAULT 0,
+  "created_at" TIMESTAMP DEFAULT (now()),
+  "updated_at" TIMESTAMP DEFAULT (now())
+);
+
+CREATE TABLE "tokens" (
+  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "user_id" INT NOT NULL,
+  "access_token" VARCHAR NOT NULL,
+  "refresh_token" VARCHAR NOT NULL,
+  "created_at" TIMESTAMP DEFAULT (now()),
+  "updated_at" TIMESTAMP DEFAULT (now()),
+  FOREIGN KEY ("user_id") REFERENCES "users" ("id")
+);
+
+CREATE TABLE "oauths" (
+  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "user_id" INT NOT NULL,
+  "social" VARCHAR NOT NULL,
+  "social_id" VARCHAR NOT NULL,
+  "created_at" TIMESTAMP DEFAULT (now()),
+  "updated_at" TIMESTAMP DEFAULT (now()),
+  UNIQUE ("social", "social_id"),
+  FOREIGN KEY ("user_id") REFERENCES "users" ("id")
+);
+
+CREATE TABLE "arts" (
+  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "cover_id" INT UNIQUE NOT NULL,
+  "name" VARCHAR NOT NULL,
+  "description" VARCHAR NOT NULL,
+  "creator_id" INT NOT NULL,
+  "price" INT NOT NULL DEFAULT 0,
+  "created_at" TIMESTAMP DEFAULT (now()),
+  "updated_at" TIMESTAMP DEFAULT (now()),
+  UNIQUE ("name", "creator_id"),
+  FOREIGN KEY ("cover_id") REFERENCES "files" ("id"),
+  FOREIGN KEY ("creator_id") REFERENCES "users" ("id")
+);
+
+CREATE TABLE "downloaded_arts" (
+  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "art_id" INT NOT NULL,
+  "created_at" TIMESTAMP DEFAULT (now()),
+  FOREIGN KEY ("art_id") REFERENCES "arts" ("id")
+);
+
+CREATE TABLE "users_starred_arts" (
+  "user_id" INT NOT NULL,
+  "art_id" INT NOT NULL,
+  PRIMARY KEY ("user_id", "art_id"),
+  FOREIGN KEY ("user_id") REFERENCES "users" ("id"),
+  FOREIGN KEY ("art_id") REFERENCES "arts" ("id")
+);
+
+CREATE TABLE "users_bought_arts" (
+  "user_id" INT NOT NULL,
+  "art_id" INT NOT NULL,
+  PRIMARY KEY ("user_id", "art_id"),
+  FOREIGN KEY ("user_id") REFERENCES "users" ("id"),
+  FOREIGN KEY ("art_id") REFERENCES "arts" ("id")
+);
+
+CREATE TABLE "tags" (
+  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "name" VARCHAR UNIQUE NOT NULL
+);
+
+CREATE TABLE "arts_tags" (
+  "art_id" INT NOT NULL,
+  "tag_id" INT NOT NULL,
+  PRIMARY KEY ("art_id", "tag_id"),
+  FOREIGN KEY ("art_id") REFERENCES "arts" ("id"),
+  FOREIGN KEY ("tag_id") REFERENCES "tags" ("id")
+);
+
+CREATE TABLE "files" (
+  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "art_id" INT NOT NULL,
+  "filename" VARCHAR NOT NULL,
+  "filetype" VARCHAR NOT NULL,
+  "url" VARCHAR NOT NULL,
+  "created_at" TIMESTAMP DEFAULT (now()),
+  "updated_at" TIMESTAMP DEFAULT (now()),
+  FOREIGN KEY ("art_id") REFERENCES "arts" ("id")
+);
+
+CREATE TABLE "codes" (
+  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
+  "name" VARCHAR UNIQUE NOT NULL,
+  "value" INT NOT NULL,
+  "exp_time" TIMESTAMP NOT NULL
+);
+
+CREATE TABLE "users_used_codes" (
+  "user_id" INT NOT NULL,
+  "code_id" INT NOT NULL,
+  PRIMARY KEY ("user_id", "code_id"),
+  FOREIGN KEY ("user_id") REFERENCES "users" ("id"),
+  FOREIGN KEY ("code_id") REFERENCES "codes" ("id")
+);
+
+CREATE TRIGGER [update_timestamp_users] AFTER UPDATE ON "users" FOR EACH ROW WHEN NEW."updated_at" < OLD."updated_at"
+BEGIN UPDATE Package SET "updated_at"=CURRENT_TIMESTAMP WHERE ActionId=OLD.ActionId; END;
+
+CREATE TRIGGER [update_timestamp_tokens] AFTER UPDATE ON "tokens" FOR EACH ROW WHEN NEW."updated_at" < OLD."updated_at"
+BEGIN UPDATE Package SET "updated_at"=CURRENT_TIMESTAMP WHERE ActionId=OLD.ActionId; END;
+
+CREATE TRIGGER [update_timestamp_oauths] AFTER UPDATE ON "oauths" FOR EACH ROW WHEN NEW."updated_at" < OLD."updated_at"
+BEGIN UPDATE Package SET "updated_at"=CURRENT_TIMESTAMP WHERE ActionId=OLD.ActionId; END;
+
+CREATE TRIGGER [update_timestamp_arts] AFTER UPDATE ON "arts" FOR EACH ROW WHEN NEW."updated_at" < OLD."updated_at"
+BEGIN UPDATE Package SET "updated_at"=CURRENT_TIMESTAMP WHERE ActionId=OLD.ActionId; END;
+
+CREATE TRIGGER [update_timestamp_files] AFTER UPDATE ON "files" FOR EACH ROW WHEN NEW."updated_at" < OLD."updated_at"
+BEGIN UPDATE Package SET "updated_at"=CURRENT_TIMESTAMP WHERE ActionId=OLD.ActionId; END;
+
+COMMIT;

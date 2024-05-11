@@ -10,7 +10,7 @@ import (
 
 func main() {
 	cfg := config.NewConfig()
-	cfg.Print()
+	// cfg.Print()
 
 	app := echo.New()
 	mid := middlewares.NewMiddleware()

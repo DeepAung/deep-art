@@ -38,3 +38,5 @@ vendor
 /public/storage
 setup.lua
 node_modules/
+db.db
+.gen/
