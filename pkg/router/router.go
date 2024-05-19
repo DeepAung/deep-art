@@ -3,7 +3,7 @@ package router
 import (
 	"net/http"
 
-	"github.com/DeepAung/deep-art/handlers"
+	"github.com/DeepAung/deep-art/api/handlers"
 	"github.com/labstack/echo/v4"
 )
 
