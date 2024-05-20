@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	ErrInvalidPassword     = httperror.New("invalid password", http.StatusBadGateway)
-	ErrInvalidRefreshToken = httperror.New("invalid refresh token", http.StatusBadGateway)
+	ErrInvalidEmailOrPassword = httperror.New("invalid email or password", http.StatusBadRequest)
+	ErrInvalidRefreshToken    = httperror.New("invalid refresh token", http.StatusBadRequest)
 )
 
 type UsersSvc struct {
@@ -31,24 +31,27 @@ func NewUsersSvc(usersRepo *repositories.UsersRepo, cfg *config.Config) *UsersSv
 func (s *UsersSvc) SignIn(email string, password string) (types.Passport, error) {
 	user, err := s.usersRepo.FindOneUserWithPasswordByEmail(email)
 	if err != nil {
+		if err == repositories.ErrUserNotFound {
+			return types.Passport{}, ErrInvalidEmailOrPassword
+		}
 		return types.Passport{}, err
 	}
 
 	if !utils.Compare(password, user.Password) {
-		return types.Passport{}, ErrInvalidPassword
+		return types.Passport{}, ErrInvalidEmailOrPassword
 	}
 
 	payload := mytoken.Payload{
-		UserId:  user.Id,
-		IsAdmin: user.IsAdmin,
+		UserId:   user.Id,
+		Username: user.Username,
 	}
 
-	accessToken, err := mytoken.GenerateToken(s.cfg.Jwt, mytoken.Access, payload)
+	accessToken, err := mytoken.GenerateToken(mytoken.Access, s.cfg.Jwt.AccessExpires, s.cfg.Jwt.SecretKey, payload)
 	if err != nil {
 		return types.Passport{}, err
 	}
 
-	refreshToken, err := mytoken.GenerateToken(s.cfg.Jwt, mytoken.Refresh, payload)
+	refreshToken, err := mytoken.GenerateToken(mytoken.Refresh, s.cfg.Jwt.RefreshExpires, s.cfg.Jwt.SecretKey, payload)
 	if err != nil {
 		return types.Passport{}, err
 	}
@@ -100,17 +103,17 @@ func (s *UsersSvc) UpdateTokens(userId int, refreshToken string) (types.Token, e
 		}
 	}
 
-	claims, err := mytoken.ParseToken(s.cfg.Jwt, mytoken.Refresh, refreshToken)
+	claims, err := mytoken.ParseToken(mytoken.Refresh, s.cfg.Jwt.SecretKey, refreshToken)
 	if err != nil {
 		return types.Token{}, err
 	}
 
-	newAccessToken, err := mytoken.GenerateToken(s.cfg.Jwt, mytoken.Access, claims.Payload)
+	newAccessToken, err := mytoken.GenerateToken(mytoken.Access, s.cfg.Jwt.AccessExpires, s.cfg.Jwt.SecretKey, claims.Payload)
 	if err != nil {
 		return types.Token{}, err
 	}
 
-	newRefreshToken, err := mytoken.GenerateToken(s.cfg.Jwt, mytoken.Refresh, claims.Payload)
+	newRefreshToken, err := mytoken.GenerateToken(mytoken.Refresh, s.cfg.Jwt.RefreshExpires, s.cfg.Jwt.SecretKey, claims.Payload)
 	if err != nil {
 		return types.Token{}, err
 	}
@@ -120,6 +123,10 @@ func (s *UsersSvc) UpdateTokens(userId int, refreshToken string) (types.Token, e
 		AccessToken:  newAccessToken,
 		RefreshToken: newRefreshToken,
 	}, nil
+}
+
+func (s *UsersSvc) HasAccessToken(userId int, accessToken string) (bool, error) {
+	return s.usersRepo.HasAccessToken(userId, accessToken)
 }
 
 func (s *UsersSvc) GetUser(id int) (types.User, error) {

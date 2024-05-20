@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/DeepAung/deep-art/api/middlewares"
+	"github.com/DeepAung/deep-art/api/repositories"
+	"github.com/DeepAung/deep-art/api/services"
 	"github.com/DeepAung/deep-art/pkg/config"
-	"github.com/DeepAung/deep-art/pkg/middlewares"
-	"github.com/DeepAung/deep-art/pkg/router"
 	"github.com/DeepAung/deep-art/views/pages"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -14,25 +15,25 @@ import (
 
 type Server struct {
 	app *echo.Echo
-	cfg *config.Config
 	mid *middlewares.Middleware
+	cfg *config.Config
 	db  *sql.DB
-	r   *router.Router
 }
 
 func NewServer(
 	app *echo.Echo,
 	cfg *config.Config,
-	mid *middlewares.Middleware,
 	db *sql.DB,
-	r *router.Router,
 ) *Server {
+	usersRepo := repositories.NewUsersRepo(db, cfg.App.Timeout)
+	usersSvc := services.NewUsersSvc(usersRepo, cfg)
+	mid := middlewares.NewMiddleware(usersSvc, cfg)
+
 	return &Server{
 		app: app,
-		cfg: cfg,
 		mid: mid,
+		cfg: cfg,
 		db:  db,
-		r:   r,
 	}
 }
 
@@ -51,11 +52,12 @@ func (s *Server) Start() {
 
 	s.app.Static("/static", "static")
 
-	s.r.TestRouter()
-	s.r.PagesRouter()
+	s.UsersRouter()
+	s.TestRouter()
+	s.PagesRouter()
 
 	s.app.GET("*", func(c echo.Context) error {
-		return pages.NotFound().Render(context.Background(), c.Response())
+		return pages.Error("Page Not Found").Render(context.Background(), c.Response())
 	})
 
 	s.app.Start(":3000")

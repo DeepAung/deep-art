@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"net/http"
 	"time"
 
@@ -15,10 +16,10 @@ import (
 )
 
 var (
-	ErrUserNotFound       = httperror.New("user not found", http.StatusBadGateway)
+	ErrUserNotFound       = httperror.New("user not found", http.StatusBadRequest)
 	ErrUserNoRowsAffected = httperror.New("user no rows affected", http.StatusInternalServerError)
 	ErrCreateUserFailed   = httperror.New("create user failed", http.StatusInternalServerError)
-	ErrTokenNotFound      = httperror.New("token not found", http.StatusBadGateway)
+	ErrTokenNotFound      = httperror.New("token not found", http.StatusBadRequest)
 )
 
 type UsersRepo struct {
@@ -43,7 +44,7 @@ func (r *UsersRepo) FindOneUserById(id int) (types.User, error) {
 
 	var dest model.Users
 	if err := stmt.QueryContext(ctx, r.db, &dest); err != nil {
-		if err == qrm.ErrNoRows {
+		if errors.Is(err, qrm.ErrNoRows) {
 			return types.User{}, ErrUserNotFound
 		}
 		return types.User{}, err
@@ -69,7 +70,7 @@ func (r *UsersRepo) FindOneUserWithPasswordByEmail(email string) (types.UserWith
 
 	var dest model.Users
 	if err := stmt.QueryContext(ctx, r.db, &dest); err != nil {
-		if err == qrm.ErrNoRows {
+		if errors.Is(err, qrm.ErrNoRows) {
 			return types.UserWithPassword{}, ErrUserNotFound
 		}
 		return types.UserWithPassword{}, err
@@ -148,6 +149,27 @@ func (r *UsersRepo) DeleteUser(id int) error {
 	return nil
 }
 
+func (r *UsersRepo) HasAccessToken(userId int, accessToken string) (bool, error) {
+	stmt := SELECT(Int(1)).
+		FROM(Tokens).
+		WHERE(
+			Tokens.UserID.EQ(Int(int64(userId))).
+				AND(Tokens.AccessToken.EQ(String(accessToken))))
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	var tmp struct{ int }
+	if err := stmt.QueryContext(ctx, r.db, &tmp); err != nil {
+		if errors.Is(err, qrm.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
 func (r *UsersRepo) FindOneTokenId(userId int, refreshToken string) (int, error) {
 	stmt := SELECT(Tokens.ID).
 		FROM(Tokens).
@@ -158,15 +180,15 @@ func (r *UsersRepo) FindOneTokenId(userId int, refreshToken string) (int, error)
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	var id int
-	if err := stmt.QueryContext(ctx, r.db, &id); err != nil {
-		if err == qrm.ErrNoRows {
+	var res model.Tokens
+	if err := stmt.QueryContext(ctx, r.db, &res); err != nil {
+		if errors.Is(err, qrm.ErrNoRows) {
 			return 0, ErrTokenNotFound
 		}
 		return 0, err
 	}
 
-	return id, nil
+	return int(*res.ID), nil
 }
 
 func (r *UsersRepo) CreateToken(userId int, accessToken, refreshToken string) (id int, err error) {
@@ -177,11 +199,12 @@ func (r *UsersRepo) CreateToken(userId int, accessToken, refreshToken string) (i
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	if err = stmt.QueryContext(ctx, r.db, &id); err != nil {
+	var res model.Tokens
+	if err = stmt.QueryContext(ctx, r.db, &res); err != nil {
 		return 0, err
 	}
 
-	return id, nil
+	return int(*res.ID), nil
 }
 
 func (r *UsersRepo) DeleteToken(userId int, tokenId int) error {

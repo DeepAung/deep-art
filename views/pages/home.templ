@@ -1,0 +1,13 @@
+package pages
+
+import "github.com/DeepAung/deep-art/views/layouts"
+import "github.com/DeepAung/deep-art/pkg/mytoken"
+import "strconv"
+
+templ Home(payload mytoken.Payload) {
+	@layouts.Simple() {
+		<h1>Home page</h1>
+		<p>{ strconv.Itoa(payload.UserId) }</p>
+		<p>{ payload.Username }</p>
+	}
+}

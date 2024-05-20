@@ -1,8 +1,17 @@
+const defaultTheme = require("tailwindcss/defaultTheme");
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: ["./views/**/*.{html,js,templ,go}"],
+  content: [
+    "./views/**/*.{html,js,templ,go}",
+    "node_modules/preline/dist/*.js",
+  ],
   theme: {
-    extend: {},
+    fontFamily: {
+      sans: ["Inter"],
+      display: ["Inter"],
+      body: ["Oswald"],
+    },
   },
-  plugins: [],
+  plugins: [require("preline/plugin")],
 };

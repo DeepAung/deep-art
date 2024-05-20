@@ -60,7 +60,7 @@ type DbConfig struct {
 }
 
 type JwtConfig struct {
-	SecretKey      string
+	SecretKey      []byte
 	AccessExpires  time.Duration
 	RefreshExpires time.Duration
 }
@@ -101,7 +101,7 @@ func NewConfig() *Config {
 			Url: os.Getenv("DB_URL"),
 		},
 		Jwt: &JwtConfig{
-			SecretKey:      os.Getenv("JWT_SECRET_KEY"),
+			SecretKey:      []byte(os.Getenv("JWT_SECRET_KEY")),
 			AccessExpires:  getAsDuration("JWT_ACCESS_EXPIRES"),
 			RefreshExpires: getAsDuration("JWT_REFRESH_EXPIRES"),
 		},

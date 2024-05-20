@@ -25,15 +25,16 @@ type UserWithPassword struct {
 }
 
 type SignInReq struct {
-	Email    string `form:"email" validate:"required, email"`
+	Email    string `form:"email" validate:"required,email"`
 	Password string `form:"password" validate:"required"`
 }
 
 type SignUpReq struct {
-	Username  string `form:"username" validate:"required"`
-	Email     string `form:"email" validate:"required, email"`
-	Password  string `form:"password" validate:"required"`
-	AvatarUrl string `form:"avatar_url"`
+	Username        string `form:"username" validate:"required"`
+	Email           string `form:"email" validate:"required,email"`
+	Password        string `form:"password" validate:"required,eqfield=ConfirmPassword"`
+	ConfirmPassword string `form:"confirm_password" validate:"required"`
+	AvatarUrl       string `form:"avatar_url"`
 }
 
 type SignOutReq struct {
@@ -43,7 +44,7 @@ type SignOutReq struct {
 
 type UpdateReq struct {
 	Username  string `form:"username" validate:"required"`
-	Email     string `form:"email" validate:"required, email"`
+	Email     string `form:"email" validate:"required,email"`
 	AvatarUrl string `form:"avatar_url" validate:"required"`
 }
 

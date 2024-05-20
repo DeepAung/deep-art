@@ -1,16 +1,22 @@
 package layouts
 
 templ Simple() {
-	<!DOCTYPE html>
-	<html lang="en">
-		<head>
-			<title></title>
-			<meta charset="UTF-8"/>
-			<meta name="viewport" content="width=device-width, initial-scale=1"/>
-			<link href="/static/css/output.css" rel="stylesheet"/>
-		</head>
-		<body>
-			{ children... }
-		</body>
-	</html>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title></title>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+	<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/response-targets.js"></script>
+	<link href="/static/css/output.css" rel="stylesheet" />
+	<script src="./node_modules/preline/dist/preline.js"></script>
+</head>
+
+<body class="flex flex-col h-screen" hx-ext="response-targets">
+	{ children... }
+</body>
+
+</html>
 }

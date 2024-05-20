@@ -11,8 +11,8 @@ CREATE TABLE "users" (
   "avatar_url" VARCHAR NOT NULL DEFAULT '',
   "is_admin" BOOLEAN NOT NULL DEFAULT false,
   "coin" INT NOT NULL DEFAULT 0,
-  "created_at" TIMESTAMP DEFAULT (now()),
-  "updated_at" TIMESTAMP DEFAULT (now())
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE "tokens" (
@@ -20,8 +20,8 @@ CREATE TABLE "tokens" (
   "user_id" INT NOT NULL,
   "access_token" VARCHAR NOT NULL,
   "refresh_token" VARCHAR NOT NULL,
-  "created_at" TIMESTAMP DEFAULT (now()),
-  "updated_at" TIMESTAMP DEFAULT (now()),
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY ("user_id") REFERENCES "users" ("id")
 );
 
@@ -30,8 +30,8 @@ CREATE TABLE "oauths" (
   "user_id" INT NOT NULL,
   "social" VARCHAR NOT NULL,
   "social_id" VARCHAR NOT NULL,
-  "created_at" TIMESTAMP DEFAULT (now()),
-  "updated_at" TIMESTAMP DEFAULT (now()),
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE ("social", "social_id"),
   FOREIGN KEY ("user_id") REFERENCES "users" ("id")
 );
@@ -43,8 +43,8 @@ CREATE TABLE "arts" (
   "description" VARCHAR NOT NULL,
   "creator_id" INT NOT NULL,
   "price" INT NOT NULL DEFAULT 0,
-  "created_at" TIMESTAMP DEFAULT (now()),
-  "updated_at" TIMESTAMP DEFAULT (now()),
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE ("name", "creator_id"),
   FOREIGN KEY ("cover_id") REFERENCES "files" ("id"),
   FOREIGN KEY ("creator_id") REFERENCES "users" ("id")
@@ -53,7 +53,7 @@ CREATE TABLE "arts" (
 CREATE TABLE "downloaded_arts" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "art_id" INT NOT NULL,
-  "created_at" TIMESTAMP DEFAULT (now()),
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY ("art_id") REFERENCES "arts" ("id")
 );
 
@@ -92,8 +92,8 @@ CREATE TABLE "files" (
   "filename" VARCHAR NOT NULL,
   "filetype" VARCHAR NOT NULL,
   "url" VARCHAR NOT NULL,
-  "created_at" TIMESTAMP DEFAULT (now()),
-  "updated_at" TIMESTAMP DEFAULT (now()),
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY ("art_id") REFERENCES "arts" ("id")
 );
 

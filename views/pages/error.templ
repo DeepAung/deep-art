@@ -2,8 +2,8 @@ package pages
 
 import "github.com/DeepAung/deep-art/views/layouts"
 
-templ NotFound() {
+templ Error(msg string) {
 	@layouts.Simple() {
-		<h1 class="text-red-600 text-center">Error | Page not found</h1>
+		<h1 class="text-red-600 text-center">Error | { msg }</h1>
 	}
 }

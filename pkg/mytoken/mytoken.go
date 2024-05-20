@@ -5,29 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/DeepAung/deep-art/pkg/config"
 	jwt "github.com/golang-jwt/jwt/v5"
 )
 
-type TokenType struct {
-	Subject   string
-	ExpiresAt func(cfg *config.JwtConfig) time.Time
-}
+type TokenType string
 
-var (
-	Access = TokenType{
-		Subject: "access-token",
-		ExpiresAt: func(cfg *config.JwtConfig) time.Time {
-			return time.Now().Add(cfg.AccessExpires)
-		},
-	}
-
-	Refresh = TokenType{
-		Subject: "refresh-token",
-		ExpiresAt: func(cfg *config.JwtConfig) time.Time {
-			return time.Now().Add(cfg.RefreshExpires)
-		},
-	}
+const (
+	Access  = "access-token"
+	Refresh = "refresh-token"
 )
 
 type JwtClaims struct {
@@ -36,13 +21,14 @@ type JwtClaims struct {
 }
 
 type Payload struct {
-	UserId  int  `json:"user_id"`
-	IsAdmin bool `json:"is_admin"`
+	UserId   int
+	Username string
 }
 
 func GenerateToken(
-	cfg *config.JwtConfig,
 	tokenType TokenType,
+	duration time.Duration,
+	secretKey []byte,
 	payload Payload,
 ) (string, error) {
 
@@ -50,16 +36,16 @@ func GenerateToken(
 		Payload: payload,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "deep-art-api",
-			Subject:   tokenType.Subject,
+			Subject:   string(tokenType),
 			Audience:  []string{"users", "admin"},
-			ExpiresAt: jwt.NewNumericDate(tokenType.ExpiresAt(cfg)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duration)),
 			NotBefore: jwt.NewNumericDate(time.Now()),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(cfg.SecretKey)
+	tokenString, err := token.SignedString(secretKey)
 	if err != nil {
 		return "", fmt.Errorf("generate token failed: %v", err)
 	}
@@ -68,11 +54,11 @@ func GenerateToken(
 }
 
 func ParseToken(
-	cfg *config.JwtConfig,
 	tokenType TokenType,
+	secretKey []byte,
 	tokenString string,
 ) (*JwtClaims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &JwtClaims{}, keyFunc([]byte(cfg.SecretKey)))
+	token, err := jwt.ParseWithClaims(tokenString, &JwtClaims{}, keyFunc(secretKey))
 	if err != nil {
 		return nil, err
 	}
@@ -84,8 +70,8 @@ func ParseToken(
 	}
 }
 
-func VerifyToken(cfg *config.JwtConfig, tokenType TokenType, tokenString string) error {
-	_, err := ParseToken(cfg, tokenType, tokenString)
+func VerifyToken(tokenType TokenType, secretKey []byte, tokenString string) error {
+	_, err := ParseToken(tokenType, secretKey, tokenString)
 	return err
 }
 
