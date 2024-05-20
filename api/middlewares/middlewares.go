@@ -2,7 +2,6 @@ package middlewares
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -60,34 +59,28 @@ func (m *Middleware) OnlyAuthorized(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		cookie, err := c.Cookie("accessToken")
 		if err != nil {
-			utils.DeleteCookie(c, "accessToken")
-			utils.DeleteCookie(c, "refreshToken")
+			utils.ClearCookies(c)
 			c.Redirect(http.StatusMovedPermanently, "/signin")
 			return nil
 		}
 
 		tokenString := cookie.Value
 		if tokenString == "" {
-			utils.DeleteCookie(c, "accessToken")
-			utils.DeleteCookie(c, "refreshToken")
+			utils.ClearCookies(c)
 			c.Redirect(http.StatusMovedPermanently, "/signin")
 			return nil
 		}
 
 		claims, err := mytoken.ParseToken(mytoken.Access, m.cfg.Jwt.SecretKey, tokenString)
 		if err != nil {
-			fmt.Println("err03: ", err)
-			utils.DeleteCookie(c, "accessToken")
-			utils.DeleteCookie(c, "refreshToken")
+			utils.ClearCookies(c)
 			c.Redirect(http.StatusMovedPermanently, "/signin")
 			return nil
 		}
 
 		has, err := m.usersSvc.HasAccessToken(claims.Payload.UserId, tokenString)
 		if err != nil || !has {
-			fmt.Println("has: ", has, "err04: ", err)
-			utils.DeleteCookie(c, "accessToken")
-			utils.DeleteCookie(c, "refreshToken")
+			utils.ClearCookies(c)
 			c.Redirect(http.StatusMovedPermanently, "/signin")
 			return nil
 		}

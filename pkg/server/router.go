@@ -31,4 +31,5 @@ func (s *Server) UsersRouter() {
 
 	s.app.POST("/api/signin", handler.SignIn)
 	s.app.POST("/api/signup", handler.SignUp)
+	s.app.POST("/api/signout", handler.SignOut, s.mid.OnlyAuthorized)
 }

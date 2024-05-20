@@ -3,11 +3,13 @@ package handlers
 import (
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/DeepAung/deep-art/api/services"
 	"github.com/DeepAung/deep-art/api/types"
 	"github.com/DeepAung/deep-art/pkg/config"
 	"github.com/DeepAung/deep-art/pkg/httperror"
+	"github.com/DeepAung/deep-art/pkg/mytoken"
 	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/DeepAung/deep-art/views/components"
 	"github.com/labstack/echo/v4"
@@ -44,6 +46,7 @@ func (h *UsersHandler) SignIn(c echo.Context) error {
 
 	utils.SetCookie(c, "accessToken", passport.Token.AccessToken, h.cfg.Jwt.AccessExpires)
 	utils.SetCookie(c, "refreshToken", passport.Token.RefreshToken, h.cfg.Jwt.RefreshExpires)
+	utils.SetCookie(c, "tokenId", strconv.Itoa(passport.Token.Id), 0)
 
 	c.Response().Header().Add("HX-Redirect", "/home")
 	return nil
@@ -71,5 +74,30 @@ func (h *UsersHandler) SignUp(c echo.Context) error {
 }
 
 func (h *UsersHandler) SignOut(c echo.Context) error {
-	h.usersSvc.SignOut(userId int, tokenId int)
+	errStatus := http.StatusInternalServerError
+	errMsg := http.StatusText(errStatus)
+
+	payload, ok := c.Get("payload").(mytoken.Payload)
+	if !ok {
+		return utils.Render(c, components.Error(errMsg), errStatus)
+	}
+
+	cookie, err := c.Cookie("tokenId")
+	if err != nil {
+		return utils.Render(c, components.Error(errMsg), errStatus)
+	}
+	tokenId, err := strconv.Atoi(cookie.Value)
+	if err != nil {
+		return utils.Render(c, components.Error(errMsg), errStatus)
+	}
+
+	err = h.usersSvc.SignOut(payload.UserId, tokenId)
+	if err != nil {
+		msg, status := httperror.Extract(err)
+		return utils.Render(c, components.Error(msg), status)
+	}
+
+	utils.ClearCookies(c)
+	c.Response().Header().Add("HX-Redirect", "/signin")
+	return nil
 }

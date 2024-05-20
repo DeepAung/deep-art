@@ -8,11 +8,16 @@ import (
 )
 
 func SetCookie(c echo.Context, name, value string, maxAge time.Duration) {
+	var expires time.Time
+	if maxAge != 0 {
+		expires = time.Now().Add(maxAge)
+	}
+
 	c.SetCookie(&http.Cookie{
 		Name:     name,
 		Value:    value,
 		Path:     "/",
-		Expires:  time.Now().Add(maxAge),
+		Expires:  expires,
 		MaxAge:   int(maxAge.Seconds()),
 		Secure:   true,
 		HttpOnly: true,
@@ -31,4 +36,10 @@ func DeleteCookie(c echo.Context, name string) {
 		HttpOnly: true,
 		SameSite: http.SameSiteStrictMode,
 	})
+}
+
+func ClearCookies(c echo.Context) {
+	DeleteCookie(c, "accessToken")
+	DeleteCookie(c, "refreshToken")
+	DeleteCookie(c, "tokenId")
 }

@@ -9,5 +9,7 @@ templ Home(payload mytoken.Payload) {
 		<h1>Home page</h1>
 		<p>{ strconv.Itoa(payload.UserId) }</p>
 		<p>{ payload.Username }</p>
+		<p class="cursor-pointer" hx-post="/api/signout" hx-target-error="#error-text">Sign out</p>
+		<p id="#error-text"></p>
 	}
 }
