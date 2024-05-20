@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/DeepAung/deep-art/pkg/config"
 	"github.com/DeepAung/deep-art/pkg/middlewares"
@@ -15,6 +16,7 @@ type Server struct {
 	app *echo.Echo
 	cfg *config.Config
 	mid *middlewares.Middleware
+	db  *sql.DB
 	r   *router.Router
 }
 
@@ -22,12 +24,14 @@ func NewServer(
 	app *echo.Echo,
 	cfg *config.Config,
 	mid *middlewares.Middleware,
+	db *sql.DB,
 	r *router.Router,
 ) *Server {
 	return &Server{
 		app: app,
 		cfg: cfg,
 		mid: mid,
+		db:  db,
 		r:   r,
 	}
 }

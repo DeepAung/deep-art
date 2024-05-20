@@ -1,90 +1,84 @@
 package types
 
-import (
-	"fmt"
-	"regexp"
-
-	"golang.org/x/crypto/bcrypt"
-)
-
 type Passport struct {
-	User  User  `json:"user"  form:"user"`
-	Token Token `json:"token" form:"token"`
+	User  User  `form:"user"`
+	Token Token `form:"token"`
 }
 
 type User struct {
-	Id        int     `db:"id"         json:"id"         form:"id"`
-	Username  string  `db:"username"   json:"username"   form:"username"`
-	Email     string  `db:"email"      json:"email"      form:"email"`
-	AvatarUrl string  `db:"avatar_url" json:"avatar_url" form:"avatar_url"`
-	IsAdmin   bool    `db:"is_admin"   json:"is_admin"   form:"is_admin"`
-	Coin      float32 `db:"coin"       json:"coin"       form:"coin"`
+	Id        int    `form:"id"`
+	Username  string `form:"username"`
+	Email     string `form:"email"`
+	AvatarUrl string `form:"avatar_url"`
+	IsAdmin   bool   `form:"is_admin"`
+	Coin      int    `form:"coin"`
 }
 
 type UserWithPassword struct {
-	Id        int     `db:"id"         json:"id"         form:"id"`
-	Username  string  `db:"username"   json:"username"   form:"username"`
-	Email     string  `db:"email"      json:"email"      form:"email"`
-	Password  string  `db:"password"   json:"password"   form:"password"`
-	AvatarUrl string  `db:"avatar_url" json:"avatar_url" form:"avatar_url"`
-	IsAdmin   bool    `db:"is_admin"   json:"is_admin"   form:"is_admin"`
-	Coin      float32 `db:"coin"       json:"coin"       form:"coin"`
+	Id        int    `form:"id"`
+	Username  string `form:"username"`
+	Email     string `form:"email"`
+	Password  string `form:"password"`
+	AvatarUrl string `form:"avatar_url"`
+	IsAdmin   bool   `form:"is_admin"`
+	Coin      int    `form:"coin"`
 }
 
 type SignInReq struct {
-	Email    string `db:"email"    json:"email"    form:"email"`
-	Password string `db:"password" json:"password" form:"password"`
+	Email    string `form:"email" validate:"required, email"`
+	Password string `form:"password" validate:"required"`
 }
 
 type SignUpReq struct {
-	Username  string `db:"username"   json:"username"   form:"username"`
-	Email     string `db:"email"      json:"email"      form:"email"`
-	Password  string `db:"password"   json:"password"   form:"password"`
-	AvatarUrl string `db:"avatar_url" json:"avatar_url" form:"avatar_url"`
+	Username  string `form:"username" validate:"required"`
+	Email     string `form:"email" validate:"required, email"`
+	Password  string `form:"password" validate:"required"`
+	AvatarUrl string `form:"avatar_url"`
 }
 
 type SignOutReq struct {
-	TokenId int `db:"id" json:"token_id" form:"token_id"`
+	UserId  int `form:"user_id"`
+	TokenId int `form:"token_id"`
 }
 
 type UpdateReq struct {
-	Username  string `db:"username"   json:"username"   form:"username"`
-	Email     string `db:"email"      json:"email"      form:"email"`
-	AvatarUrl string `db:"avatar_url" json:"avatar_url" form:"avatar_url"`
+	Username  string `form:"username" validate:"required"`
+	Email     string `form:"email" validate:"required, email"`
+	AvatarUrl string `form:"avatar_url" validate:"required"`
 }
 
 type Token struct {
-	Id           int    `db:"id"            json:"id"            form:"id"`
-	AccessToken  string `db:"access_token"  json:"access_token"  form:"access_token"`
-	RefreshToken string `db:"refresh_token" json:"refresh_token" form:"refresh_token"`
+	Id           int    `form:"id"`
+	AccessToken  string `form:"access_token"`
+	RefreshToken string `form:"refresh_token"`
 }
 
 type RefreshTokensReq struct {
-	RefreshToken string `db:"refresh_token" json:"refresh_token" form:"refresh_token"`
+	RefreshToken string `form:"refresh_token" validate:"required"`
 }
 
 type TokenInfo struct {
-	Id     int `db:"id"      json:"id"      form:"id"`
-	UserId int `db:"user_id" json:"user_id" form:"user_id"`
+	Id     int `form:"id"`
+	UserId int `form:"user_id"`
 }
 
 type AdminTokenRes struct {
-	AdminToken string `json:"admin_token" form:"admin_token"`
+	AdminToken string `form:"admin_token"`
 }
 
 type OAuthReq struct {
-	UserId int        `db:"user_id" json:"user_id" form:"user_id"`
-	Social SocialEnum `db:"social"  json:"social"  form:"social"`
+	UserId int        `form:"user_id"`
+	Social SocialEnum `form:"social"`
 }
 
 type OAuthCreateReq struct {
-	UserId   int        `db:"user_id"   json:"user_id"   form:"user_id"`
-	Social   SocialEnum `db:"social"    json:"social"    form:"social"`
-	SocialId string     `db:"social_id" json:"social_id" form:"social_id"`
+	UserId   int        `form:"user_id"`
+	Social   SocialEnum `form:"social"`
+	SocialId string     `form:"social_id"`
 }
 
 type OAuthDisconnectReq struct {
-	Social SocialEnum `db:"social" json:"social" form:"social"`
+	Social SocialEnum `form:"social"`
 }
 
 type SocialEnum string
