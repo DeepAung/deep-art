@@ -37,7 +37,8 @@ func NewUsersRepo(db *sql.DB, timeout time.Duration) *UsersRepo {
 func (r *UsersRepo) FindOneUserById(id int) (types.User, error) {
 	stmt := SELECT(Users.AllColumns).
 		FROM(Users).
-		WHERE(Users.ID.EQ(Int(int64(id))))
+		WHERE(Users.ID.EQ(Int(int64(id)))).
+		LIMIT(1)
 
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
@@ -63,7 +64,8 @@ func (r *UsersRepo) FindOneUserById(id int) (types.User, error) {
 func (r *UsersRepo) FindOneUserWithPasswordByEmail(email string) (types.UserWithPassword, error) {
 	stmt := SELECT(Users.AllColumns).
 		FROM(Users).
-		WHERE(Users.Email.EQ(String(email)))
+		WHERE(Users.Email.EQ(String(email))).
+		LIMIT(1)
 
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
@@ -119,11 +121,14 @@ func (r *UsersRepo) UpdateUser(id int, req types.UpdateReq) error {
 	defer cancel()
 
 	result, err := stmt.ExecContext(ctx, r.db)
-	n, rowerr := result.RowsAffected()
 	if err != nil {
 		return err
 	}
-	if n == 0 || rowerr != nil {
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
 		return ErrUserNoRowsAffected
 	}
 
@@ -138,11 +143,14 @@ func (r *UsersRepo) DeleteUser(id int) error {
 	defer cancel()
 
 	result, err := stmt.ExecContext(ctx, r.db)
-	n, rowerr := result.RowsAffected()
 	if err != nil {
 		return err
 	}
-	if n == 0 || rowerr != nil {
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
 		return ErrUserNoRowsAffected
 	}
 
@@ -175,7 +183,8 @@ func (r *UsersRepo) FindOneTokenId(userId int, refreshToken string) (int, error)
 		FROM(Tokens).
 		WHERE(
 			Tokens.UserID.EQ(Int(int64(userId))).
-				AND(Tokens.RefreshToken.EQ(String(refreshToken))))
+				AND(Tokens.RefreshToken.EQ(String(refreshToken)))).
+		LIMIT(1)
 
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
@@ -217,11 +226,14 @@ func (r *UsersRepo) DeleteToken(userId int, tokenId int) error {
 	defer cancel()
 
 	result, err := stmt.ExecContext(ctx, r.db)
-	n, rowerr := result.RowsAffected()
 	if err != nil {
 		return err
 	}
-	if n == 0 || rowerr != nil {
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
 		return ErrTokenNotFound
 	}
 

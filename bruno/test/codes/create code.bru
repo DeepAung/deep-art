@@ -1,0 +1,17 @@
+meta {
+  name: create code
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{url}}/test/codes
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  name: test-code
+  value: 100
+  expTime: 2006-01-02T15:04:05Z
+}

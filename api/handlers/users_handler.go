@@ -33,7 +33,7 @@ func (h *UsersHandler) SignIn(c echo.Context) error {
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
 	}
 
-	if err := utils.Validate(req); err != nil {
+	if err := utils.Validate(&req); err != nil {
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
 	}
 
@@ -58,7 +58,7 @@ func (h *UsersHandler) SignUp(c echo.Context) error {
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
 	}
 
-	if err := utils.Validate(req); err != nil {
+	if err := utils.Validate(&req); err != nil {
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
 	}
 

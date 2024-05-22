@@ -1,0 +1,17 @@
+meta {
+  name: update code
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{url}}/test/codes/1
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  name: test-code-update
+  value: 1000
+  expTime: 2006-01-02T15:04:05Z
+}

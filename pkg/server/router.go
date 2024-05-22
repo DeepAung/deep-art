@@ -19,9 +19,22 @@ func (s *Server) PagesRouter() {
 }
 
 func (s *Server) TestRouter() {
-	s.app.GET("/test", func(c echo.Context) error {
+	tagsRepo := repositories.NewTagsRepo(s.db, s.cfg.App.Timeout)
+	codesRepo := repositories.NewCodesRepo(s.db, s.cfg.App.Timeout)
+	handler := handlers.NewTestHandler(tagsRepo, codesRepo)
+
+	test := s.app.Group("/test")
+	test.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "test route")
 	})
+
+	test.GET("/tags", handler.FindAllTags)
+
+	test.GET("/codes/:id", handler.FindOneCodeById)
+	test.PUT("/codes/:id", handler.UpdateCode)
+	test.DELETE("/codes/:id", handler.DeleteCode)
+	test.GET("/codes", handler.FindAllCodes)
+	test.POST("/codes", handler.CreateCode)
 }
 
 func (s *Server) UsersRouter() {

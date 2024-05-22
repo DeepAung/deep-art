@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "deep-art",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
