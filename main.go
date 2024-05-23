@@ -14,5 +14,5 @@ func main() {
 	db := db.InitDB("db.db")
 	app := echo.New()
 
-	server.NewServer(app, cfg, db).Start()
+	server.NewServer(app, db, cfg).Start()
 }

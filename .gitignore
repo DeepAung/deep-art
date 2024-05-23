@@ -35,7 +35,7 @@ vendor
 *.env*
 !.env.dev
 /tmp
-/public/storage
+/static/storage
 setup.lua
 node_modules/
 db.db

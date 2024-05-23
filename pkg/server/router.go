@@ -4,26 +4,46 @@ import (
 	"net/http"
 
 	"github.com/DeepAung/deep-art/api/handlers"
+	"github.com/DeepAung/deep-art/api/middlewares"
 	"github.com/DeepAung/deep-art/api/repositories"
 	"github.com/DeepAung/deep-art/api/services"
+	"github.com/DeepAung/deep-art/pkg/storer"
 	"github.com/labstack/echo/v4"
 )
 
-func (s *Server) PagesRouter() {
-	handler := handlers.NewPagesHandler()
-
-	s.app.GET("/", handler.Welcome)
-	s.app.GET("/home", handler.Home, s.mid.OnlyAuthorized)
-	s.app.GET("/signin", handler.SignIn)
-	s.app.GET("/signup", handler.SignUp)
+type Router struct {
+	s      *Server
+	mid    *middlewares.Middleware
+	storer storer.Storer
 }
 
-func (s *Server) TestRouter() {
-	tagsRepo := repositories.NewTagsRepo(s.db, s.cfg.App.Timeout)
-	codesRepo := repositories.NewCodesRepo(s.db, s.cfg.App.Timeout)
+func NewRouter(
+	s *Server,
+	mid *middlewares.Middleware,
+	storer storer.Storer,
+) *Router {
+	return &Router{
+		s:      s,
+		mid:    mid,
+		storer: storer,
+	}
+}
+
+func (r *Router) PagesRouter() {
+	handler := handlers.NewPagesHandler()
+
+	r.s.app.GET("/", handler.Welcome)
+	r.s.app.GET("/home", handler.Home, r.mid.OnlyAuthorized)
+	r.s.app.GET("/signin", handler.SignIn)
+	r.s.app.GET("/signup", handler.SignUp)
+}
+
+func (r *Router) TestRouter() {
+	tagsRepo := repositories.NewTagsRepo(r.s.db, r.s.cfg.App.Timeout)
+	codesRepo := repositories.NewCodesRepo(r.s.db, r.s.cfg.App.Timeout)
 	handler := handlers.NewTestHandler(tagsRepo, codesRepo)
 
-	test := s.app.Group("/test")
+	test := r.s.app.Group("/test")
 	test.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "test route")
 	})
@@ -37,12 +57,12 @@ func (s *Server) TestRouter() {
 	test.POST("/codes", handler.CreateCode)
 }
 
-func (s *Server) UsersRouter() {
-	repo := repositories.NewUsersRepo(s.db, s.cfg.App.Timeout)
-	svc := services.NewUsersSvc(repo, s.cfg)
-	handler := handlers.NewUsersHandler(svc, s.cfg)
+func (r *Router) UsersRouter() {
+	repo := repositories.NewUsersRepo(r.s.db, r.s.cfg.App.Timeout)
+	svc := services.NewUsersSvc(repo, r.s.cfg)
+	handler := handlers.NewUsersHandler(svc, r.s.cfg)
 
-	s.app.POST("/api/signin", handler.SignIn)
-	s.app.POST("/api/signup", handler.SignUp)
-	s.app.POST("/api/signout", handler.SignOut, s.mid.OnlyAuthorized)
+	r.s.app.POST("/api/signin", handler.SignIn)
+	r.s.app.POST("/api/signup", handler.SignUp)
+	r.s.app.POST("/api/signout", handler.SignOut, r.mid.OnlyAuthorized)
 }

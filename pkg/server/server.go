@@ -8,6 +8,7 @@ import (
 	"github.com/DeepAung/deep-art/api/repositories"
 	"github.com/DeepAung/deep-art/api/services"
 	"github.com/DeepAung/deep-art/pkg/config"
+	"github.com/DeepAung/deep-art/pkg/storer"
 	"github.com/DeepAung/deep-art/views/pages"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -15,31 +16,39 @@ import (
 
 type Server struct {
 	app *echo.Echo
-	mid *middlewares.Middleware
-	cfg *config.Config
 	db  *sql.DB
+	cfg *config.Config
 }
 
 func NewServer(
 	app *echo.Echo,
-	cfg *config.Config,
 	db *sql.DB,
+	cfg *config.Config,
 ) *Server {
-	usersRepo := repositories.NewUsersRepo(db, cfg.App.Timeout)
-	usersSvc := services.NewUsersSvc(usersRepo, cfg)
-	mid := middlewares.NewMiddleware(usersSvc, cfg)
-
 	return &Server{
 		app: app,
-		mid: mid,
-		cfg: cfg,
 		db:  db,
+		cfg: cfg,
 	}
 }
 
 func (s *Server) Start() {
-	s.app.Use(s.mid.Logger())
+	storer := storer.NewLocalStorer(s.cfg)
+	mid := s.InitMiddleware()
 
+	s.app.Static("/static", "static")
+
+	s.InitRouter(mid, storer)
+
+	s.app.Start(":3000")
+}
+
+func (s *Server) InitMiddleware() *middlewares.Middleware {
+	usersRepo := repositories.NewUsersRepo(s.db, s.cfg.App.Timeout)
+	usersSvc := services.NewUsersSvc(usersRepo, s.cfg)
+	mid := middlewares.NewMiddleware(usersSvc, s.cfg)
+
+	s.app.Use(mid.Logger())
 	s.app.Use(middleware.Recover())
 	s.app.Use(middleware.BodyLimit(s.cfg.App.BodyLimit))
 	s.app.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
@@ -50,15 +59,17 @@ func (s *Server) Start() {
 		AllowOrigins: s.cfg.App.CorsOrigins,
 	}))
 
-	s.app.Static("/static", "static")
+	return mid
+}
 
-	s.UsersRouter()
-	s.TestRouter()
-	s.PagesRouter()
+func (s *Server) InitRouter(mid *middlewares.Middleware, storer storer.Storer) {
+	r := NewRouter(s, mid, storer)
 
-	s.app.GET("*", func(c echo.Context) error {
+	r.UsersRouter()
+	r.TestRouter()
+	r.PagesRouter()
+
+	r.s.app.GET("*", func(c echo.Context) error {
 		return pages.Error("Page Not Found").Render(context.Background(), c.Response())
 	})
-
-	s.app.Start(":3000")
 }
