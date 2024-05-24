@@ -12,32 +12,17 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type TestHandler struct {
-	tagsRepo  *repositories.TagsRepo
+type testCodesHandler struct {
 	codesRepo *repositories.CodesRepo
 }
 
-func NewTestHandler(
-	tagsRepo *repositories.TagsRepo,
-	codesRepo *repositories.CodesRepo,
-) *TestHandler {
-	return &TestHandler{
-		tagsRepo:  tagsRepo,
+func NewTestCodesHandler(codesRepo *repositories.CodesRepo) *testCodesHandler {
+	return &testCodesHandler{
 		codesRepo: codesRepo,
 	}
 }
 
-func (h *TestHandler) FindAllTags(c echo.Context) error {
-	tags, err := h.tagsRepo.FindAllTags()
-	if err != nil {
-		msg, status := httperror.Extract(err)
-		return c.JSON(status, msg)
-	}
-
-	return c.JSON(http.StatusOK, tags)
-}
-
-func (h *TestHandler) FindAllCodes(c echo.Context) error {
+func (h *testCodesHandler) FindAllCodes(c echo.Context) error {
 	codes, err := h.codesRepo.FindAllCodes()
 	if err != nil {
 		msg, status := httperror.Extract(err)
@@ -47,7 +32,7 @@ func (h *TestHandler) FindAllCodes(c echo.Context) error {
 	return c.JSON(http.StatusOK, codes)
 }
 
-func (h *TestHandler) FindOneCodeById(c echo.Context) error {
+func (h *testCodesHandler) FindOneCodeById(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return c.NoContent(http.StatusInternalServerError)
@@ -62,7 +47,7 @@ func (h *TestHandler) FindOneCodeById(c echo.Context) error {
 	return c.JSON(http.StatusOK, code)
 }
 
-func (h *TestHandler) CreateCode(c echo.Context) error {
+func (h *testCodesHandler) CreateCode(c echo.Context) error {
 	var req types.CodeReq
 	if err := c.Bind(&req); err != nil {
 		return c.String(http.StatusBadGateway, err.Error())
@@ -82,7 +67,7 @@ func (h *TestHandler) CreateCode(c echo.Context) error {
 	return c.NoContent(http.StatusCreated)
 }
 
-func (h *TestHandler) UpdateCode(c echo.Context) error {
+func (h *testCodesHandler) UpdateCode(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return c.NoContent(http.StatusInternalServerError)
@@ -105,7 +90,7 @@ func (h *TestHandler) UpdateCode(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
-func (h *TestHandler) DeleteCode(c echo.Context) error {
+func (h *testCodesHandler) DeleteCode(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return c.NoContent(http.StatusInternalServerError)

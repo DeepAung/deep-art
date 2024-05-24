@@ -1,0 +1,15 @@
+meta {
+  name: delete files
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{url}}/test/files/delete
+  body: json
+  auth: none
+}
+
+body:multipart-form {
+  : 
+}

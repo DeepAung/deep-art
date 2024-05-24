@@ -1,0 +1,15 @@
+meta {
+  name: upload files
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{url}}/test/files/upload
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  files: @file(D:\DeepAung\PIC\44a26a40296cc7d3a4dc5b7f8fc527cd.png|D:\DeepAung\PIC\IMG_0822.png|D:\DeepAung\PIC\kadoru.jpg|D:\DeepAung\PIC\made_in_abyss.jpg)
+}
