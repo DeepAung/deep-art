@@ -1,4 +1,4 @@
-DATABASE_URL = sqlite://$(abspath ./db.db)
+DATABASE_URL = sqlite3://$(abspath ./db.db)
 MIGRATION_URL = file://$(abspath ./pkg/db/migrations)
 
 air:
@@ -12,12 +12,16 @@ tidy:
 	templ generate
 	go mod tidy
 
+migrate.goto:
+	migrate -database $(DATABASE_URL) -source $(MIGRATION_URL) -verbose goto $(VERSION)
 migrate.up:
 	migrate -database $(DATABASE_URL) -source $(MIGRATION_URL) -verbose up
 migrate.down:
 	migrate -database $(DATABASE_URL) -source $(MIGRATION_URL) -verbose down
-migrate.goto:
-	migrate -database $(DATABASE_URL) -source $(MIGRATION_URL) -verbose goto $(VERSION)
+migrate.force:
+	migrate -database $(DATABASE_URL) -source $(MIGRATION_URL) -verbose force $(VERSION)
+migrate.version:
+	migrate -database $(DATABASE_URL) -source $(MIGRATION_URL) version
 
 jet:
 	jet -source=sqlite -dsn="./db.db" -schema=dvds -path=./.gen

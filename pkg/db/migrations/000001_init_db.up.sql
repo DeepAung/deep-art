@@ -1,8 +1,3 @@
-BEGIN;
-
--- set timezone
--- SET TIME ZONE 'Asia/Bangkok';
-
 CREATE TABLE "users" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "username" VARCHAR UNIQUE NOT NULL,
@@ -113,18 +108,16 @@ CREATE TABLE "users_used_codes" (
 );
 
 CREATE TRIGGER [update_timestamp_users] AFTER UPDATE ON "users" FOR EACH ROW WHEN NEW."updated_at" < OLD."updated_at"
-BEGIN UPDATE Package SET "updated_at"=CURRENT_TIMESTAMP WHERE ActionId=OLD.ActionId; END;
+BEGIN UPDATE "users" SET "updated_at"=CURRENT_TIMESTAMP WHERE id=OLD.id; END;
 
 CREATE TRIGGER [update_timestamp_tokens] AFTER UPDATE ON "tokens" FOR EACH ROW WHEN NEW."updated_at" < OLD."updated_at"
-BEGIN UPDATE Package SET "updated_at"=CURRENT_TIMESTAMP WHERE ActionId=OLD.ActionId; END;
+BEGIN UPDATE "tokens" SET "updated_at"=CURRENT_TIMESTAMP WHERE id=OLD.id; END;
 
 CREATE TRIGGER [update_timestamp_oauths] AFTER UPDATE ON "oauths" FOR EACH ROW WHEN NEW."updated_at" < OLD."updated_at"
-BEGIN UPDATE Package SET "updated_at"=CURRENT_TIMESTAMP WHERE ActionId=OLD.ActionId; END;
+BEGIN UPDATE "oauths" SET "updated_at"=CURRENT_TIMESTAMP WHERE id=OLD.id; END;
 
 CREATE TRIGGER [update_timestamp_arts] AFTER UPDATE ON "arts" FOR EACH ROW WHEN NEW."updated_at" < OLD."updated_at"
-BEGIN UPDATE Package SET "updated_at"=CURRENT_TIMESTAMP WHERE ActionId=OLD.ActionId; END;
+BEGIN UPDATE "arts" SET "updated_at"=CURRENT_TIMESTAMP WHERE id=OLD.id; END;
 
 CREATE TRIGGER [update_timestamp_files] AFTER UPDATE ON "files" FOR EACH ROW WHEN NEW."updated_at" < OLD."updated_at"
-BEGIN UPDATE Package SET "updated_at"=CURRENT_TIMESTAMP WHERE ActionId=OLD.ActionId; END;
-
-COMMIT;
+BEGIN UPDATE "files" SET "updated_at"=CURRENT_TIMESTAMP WHERE id=OLD.id; END;

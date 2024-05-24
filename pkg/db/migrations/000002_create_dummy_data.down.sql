@@ -1,0 +1,12 @@
+DELETE FROM "users";
+DELETE FROM "tokens";
+DELETE FROM "oauths";
+DELETE FROM "arts";
+DELETE FROM "downloaded_arts";
+DELETE FROM "users_starred_arts";
+DELETE FROM "users_bought_arts";
+DELETE FROM "tags";
+DELETE FROM "arts_tags";
+DELETE FROM "files";
+DELETE FROM "codes";
+DELETE FROM "users_used_codes";

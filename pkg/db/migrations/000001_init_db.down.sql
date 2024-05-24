@@ -1,5 +1,3 @@
-BEGIN;
-
 DROP TRIGGER IF EXISTS update_timestamp_users;
 DROP TRIGGER IF EXISTS update_timestamp_tokens;
 DROP TRIGGER IF EXISTS update_timestamp_oauths;
@@ -18,5 +16,3 @@ DROP TABLE IF EXISTS "arts_tags"; -- CASCADE;
 DROP TABLE IF EXISTS "files"; -- CASCADE;
 DROP TABLE IF EXISTS "codes"; -- CASCADE;
 DROP TABLE IF EXISTS "users_used_codes"; -- CASCADE;
-
-COMMIT;
