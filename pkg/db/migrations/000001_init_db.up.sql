@@ -55,6 +55,7 @@ CREATE TABLE "downloaded_arts" (
 CREATE TABLE "users_starred_arts" (
   "user_id" INT NOT NULL,
   "art_id" INT NOT NULL,
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY ("user_id", "art_id"),
   FOREIGN KEY ("user_id") REFERENCES "users" ("id"),
   FOREIGN KEY ("art_id") REFERENCES "arts" ("id")

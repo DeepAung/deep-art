@@ -60,6 +60,7 @@ func (r *Router) TestRouter() {
 	r.testTagsRouter(test)
 	r.testCodesRouter(test)
 	r.testFilesRouter(test)
+	r.testArtsRouter(test)
 }
 
 func (r *Router) testTagsRouter(testGroup *echo.Group) {
@@ -70,7 +71,7 @@ func (r *Router) testTagsRouter(testGroup *echo.Group) {
 		tags, err := tagsRepo.FindAllTags()
 		if err != nil {
 			_, status := httperror.Extract(err)
-			return c.JSON(status, err)
+			return c.JSON(status, err.Error())
 		}
 
 		return c.JSON(http.StatusOK, tags)
@@ -95,4 +96,13 @@ func (r *Router) testFilesRouter(testGroup *echo.Group) {
 	filesGroup := testGroup.Group("/files")
 	filesGroup.POST("/upload", handler.UploadFiles)
 	filesGroup.POST("/delete", handler.DeleteFiles)
+}
+
+func (r *Router) testArtsRouter(testGroup *echo.Group) {
+	repo := repositories.NewArtsRepo(r.storer, r.s.db, r.s.cfg.App.Timeout)
+	handler := handlers.NewTestArtsHandler(repo)
+
+	artsGroup := testGroup.Group("/arts")
+	artsGroup.GET("", handler.FindManyArts)
+	artsGroup.GET("/:id", handler.FindOneArt)
 }
