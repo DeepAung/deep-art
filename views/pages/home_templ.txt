@@ -1,3 +1,1 @@
-<h1>Home page</h1><p>
-</p><p>
-</p><p class=\"cursor-pointer\" hx-post=\"/api/signout\" hx-target-error=\"#error-text\">Sign out</p><p id=\"#error-text\"></p>
+<!--<h1>Home page</h1>\n\t\t<p>{ strconv.Itoa(payload.UserId) }</p>\n\t\t<p>{ payload.Username }</p>\n\t\t<p class=\"cursor-pointer\" hx-post=\"/api/signout\" hx-target-error=\"#error-text\">Sign out</p>\n\t\t<p id=\"#error-text\"></p>--> <div hx-get=\"/api/arts\" hx-swap=\"outerHTML\" hx-trigger=\"load\" class=\"flex items-center justify-center h-full\"><div id=\"arts-spinner\" class=\"animate-spin inline-block size-6 border-[3px] border-current border-t-transparent text-blue-600 rounded-full dark:text-blue-500\" role=\"status\" aria-label=\"loading\"><span class=\"sr-only\">Loading...</span></div></div>

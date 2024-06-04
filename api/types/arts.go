@@ -32,3 +32,7 @@ type Art struct {
 	MonthlyStars int `alias:"Info.MonthlyStars"`
 	YearlyStars  int `alias:"Info.YearlyStars"`
 }
+
+type ManyArtsReq struct {
+	Page int `form:"page"`
+}

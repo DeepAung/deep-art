@@ -31,12 +31,15 @@ func NewRouter(
 }
 
 func (r *Router) PagesRouter() {
-	handler := handlers.NewPagesHandler()
+	artsRepo := repositories.NewArtsRepo(r.storer, r.s.db, r.s.cfg.App.Timeout)
+	artsSvc := services.NewArtsSvc(artsRepo, r.s.cfg)
+	handler := handlers.NewPagesHandler(artsSvc)
 
 	r.s.app.GET("/", handler.Welcome)
-	r.s.app.GET("/home", handler.Home, r.mid.OnlyAuthorized)
 	r.s.app.GET("/signin", handler.SignIn)
 	r.s.app.GET("/signup", handler.SignUp)
+	r.s.app.GET("/home", handler.Home, r.mid.OnlyAuthorized)
+	r.s.app.GET("/arts/:id", handler.ArtDetail, r.mid.OnlyAuthorized)
 }
 
 func (r *Router) UsersRouter() {
@@ -47,6 +50,14 @@ func (r *Router) UsersRouter() {
 	r.s.app.POST("/api/signin", handler.SignIn)
 	r.s.app.POST("/api/signup", handler.SignUp)
 	r.s.app.POST("/api/signout", handler.SignOut, r.mid.OnlyAuthorized)
+}
+
+func (r *Router) ArtsRouter() {
+	repo := repositories.NewArtsRepo(r.storer, r.s.db, r.s.cfg.App.Timeout)
+	svc := services.NewArtsSvc(repo, r.s.cfg)
+	handler := handlers.NewArtsHandler(svc, r.s.cfg)
+
+	r.s.app.GET("/api/arts", handler.FindManyArts)
 }
 
 // ------------------------------------------------------------------------- //

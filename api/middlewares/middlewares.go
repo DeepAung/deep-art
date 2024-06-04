@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"context"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -60,28 +61,32 @@ func (m *Middleware) OnlyAuthorized(next echo.HandlerFunc) echo.HandlerFunc {
 		cookie, err := c.Cookie("accessToken")
 		if err != nil {
 			utils.ClearCookies(c)
-			c.Redirect(http.StatusMovedPermanently, "/signin")
+			log.Println("move to signin")
+			c.Redirect(http.StatusFound, "/signin")
 			return nil
 		}
 
 		tokenString := cookie.Value
 		if tokenString == "" {
 			utils.ClearCookies(c)
-			c.Redirect(http.StatusMovedPermanently, "/signin")
+			log.Println("move to signin")
+			c.Redirect(http.StatusFound, "/signin")
 			return nil
 		}
 
 		claims, err := mytoken.ParseToken(mytoken.Access, m.cfg.Jwt.SecretKey, tokenString)
 		if err != nil {
 			utils.ClearCookies(c)
-			c.Redirect(http.StatusMovedPermanently, "/signin")
+			log.Println("move to signin")
+			c.Redirect(http.StatusFound, "/signin")
 			return nil
 		}
 
 		has, err := m.usersSvc.HasAccessToken(claims.Payload.UserId, tokenString)
 		if err != nil || !has {
 			utils.ClearCookies(c)
-			c.Redirect(http.StatusMovedPermanently, "/signin")
+			log.Println("move to signin")
+			c.Redirect(http.StatusFound, "/signin")
 			return nil
 		}
 

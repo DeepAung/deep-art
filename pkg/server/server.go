@@ -1,14 +1,15 @@
 package server
 
 import (
-	"context"
 	"database/sql"
+	"net/http"
 
 	"github.com/DeepAung/deep-art/api/middlewares"
 	"github.com/DeepAung/deep-art/api/repositories"
 	"github.com/DeepAung/deep-art/api/services"
 	"github.com/DeepAung/deep-art/pkg/config"
 	"github.com/DeepAung/deep-art/pkg/storer"
+	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/DeepAung/deep-art/views/pages"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -66,10 +67,11 @@ func (s *Server) InitRouter(mid *middlewares.Middleware, storer storer.Storer) {
 	r := NewRouter(s, mid, storer)
 
 	r.UsersRouter()
+	r.ArtsRouter()
 	r.TestRouter()
 	r.PagesRouter()
 
 	r.s.app.GET("*", func(c echo.Context) error {
-		return pages.Error("Page Not Found").Render(context.Background(), c.Response())
+		return utils.Render(c, pages.Error("Page Not Found"), http.StatusNotFound)
 	})
 }
