@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -57,8 +56,6 @@ func (h *testCodesHandler) CreateCode(c echo.Context) error {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	fmt.Println("req: ", req)
-
 	if err := h.codesRepo.CreateCode(req); err != nil {
 		msg, status := httperror.Extract(err)
 		return c.JSON(status, msg)
@@ -102,4 +99,11 @@ func (h *testCodesHandler) DeleteCode(c echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusOK)
+}
+
+func (h *testCodesHandler) UseCode(c echo.Context) error {
+	userId, _ := strconv.Atoi(c.FormValue("userId"))
+	codeId, _ := strconv.Atoi(c.FormValue("codeId"))
+
+	return h.codesRepo.UseCode(userId, codeId)
 }

@@ -25,26 +25,21 @@ type UserWithPassword struct {
 }
 
 type SignInReq struct {
-	Email    string `form:"email" validate:"required,email"`
+	Email    string `form:"email"    validate:"required,email"`
 	Password string `form:"password" validate:"required"`
 }
 
 type SignUpReq struct {
-	Username        string `form:"username" validate:"required"`
-	Email           string `form:"email" validate:"required,email"`
-	Password        string `form:"password" validate:"required,eqfield=ConfirmPassword"`
+	Username        string `form:"username"         validate:"required"`
+	Email           string `form:"email"            validate:"required,email"`
+	Password        string `form:"password"         validate:"required,eqfield=ConfirmPassword"`
 	ConfirmPassword string `form:"confirm_password" validate:"required"`
 	AvatarUrl       string `form:"avatar_url"`
 }
 
-type SignOutReq struct {
-	UserId  int `form:"user_id"`
-	TokenId int `form:"token_id"`
-}
-
 type UpdateReq struct {
-	Username  string `form:"username" validate:"required"`
-	Email     string `form:"email" validate:"required,email"`
+	Username  string `form:"username"   validate:"required"`
+	Email     string `form:"email"      validate:"required,email"`
 	AvatarUrl string `form:"avatar_url" validate:"required"`
 }
 
@@ -53,6 +48,8 @@ type Token struct {
 	AccessToken  string `form:"access_token"`
 	RefreshToken string `form:"refresh_token"`
 }
+
+// Not used yet........
 
 type RefreshTokensReq struct {
 	RefreshToken string `form:"refresh_token" validate:"required"`

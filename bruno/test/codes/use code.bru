@@ -1,0 +1,16 @@
+meta {
+  name: use code
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{url}}/test/codes/use
+  body: formUrlEncoded
+  auth: none
+}
+
+body:form-urlencoded {
+  userId: 1
+  codeId: 2
+}

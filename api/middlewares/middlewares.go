@@ -2,7 +2,7 @@ package middlewares
 
 import (
 	"context"
-	"log"
+	"errors"
 	"log/slog"
 	"net/http"
 	"os"
@@ -56,42 +56,76 @@ func (m *Middleware) Logger() echo.MiddlewareFunc {
 	})
 }
 
-func (m *Middleware) OnlyAuthorized(next echo.HandlerFunc) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		cookie, err := c.Cookie("accessToken")
-		if err != nil {
-			utils.ClearCookies(c)
-			log.Println("move to signin")
-			c.Redirect(http.StatusFound, "/signin")
-			return nil
+type AuthorizedOpts struct {
+	SetPayload  bool
+	SetUserData bool
+}
+
+func (m *Middleware) OnlyAuthorized(opts AuthorizedOpts) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			payload, err := m.authorized(c)
+			if err != nil {
+				utils.ClearCookies(c)
+				c.Redirect(http.StatusFound, "/signin")
+				return nil
+			}
+
+			if opts.SetPayload {
+				m.setPayload(c, payload)
+			}
+
+			if opts.SetUserData {
+				err := m.setUserData(c, payload)
+				if err != nil {
+					utils.ClearCookies(c)
+					c.Redirect(http.StatusFound, "/signin")
+					return nil
+				}
+			}
+
+			return next(c)
 		}
-
-		tokenString := cookie.Value
-		if tokenString == "" {
-			utils.ClearCookies(c)
-			log.Println("move to signin")
-			c.Redirect(http.StatusFound, "/signin")
-			return nil
-		}
-
-		claims, err := mytoken.ParseToken(mytoken.Access, m.cfg.Jwt.SecretKey, tokenString)
-		if err != nil {
-			utils.ClearCookies(c)
-			log.Println("move to signin")
-			c.Redirect(http.StatusFound, "/signin")
-			return nil
-		}
-
-		has, err := m.usersSvc.HasAccessToken(claims.Payload.UserId, tokenString)
-		if err != nil || !has {
-			utils.ClearCookies(c)
-			log.Println("move to signin")
-			c.Redirect(http.StatusFound, "/signin")
-			return nil
-		}
-
-		c.Set("payload", claims.Payload)
-
-		return next(c)
 	}
+}
+
+func (m *Middleware) authorized(c echo.Context) (mytoken.Payload, error) {
+	cookie, err := c.Cookie("accessToken")
+	if err != nil {
+		return mytoken.Payload{}, err
+	}
+
+	tokenString := cookie.Value
+	if tokenString == "" {
+		return mytoken.Payload{}, errors.New("invalid or empty token string")
+	}
+
+	claims, err := mytoken.ParseToken(mytoken.Access, m.cfg.Jwt.SecretKey, tokenString)
+	if err != nil {
+		return mytoken.Payload{}, err
+	}
+
+	has, err := m.usersSvc.HasAccessToken(claims.Payload.UserId, tokenString)
+	if err != nil {
+		return mytoken.Payload{}, err
+	}
+	if !has {
+		return mytoken.Payload{}, errors.New("invalid or empty token string")
+	}
+
+	return claims.Payload, nil
+}
+
+func (m *Middleware) setPayload(c echo.Context, payload mytoken.Payload) {
+	c.Set("payload", payload)
+}
+
+func (m *Middleware) setUserData(c echo.Context, payload mytoken.Payload) error {
+	user, err := m.usersSvc.GetUser(payload.UserId)
+	if err != nil {
+		return err
+	}
+
+	c.Set("user", user)
+	return nil
 }

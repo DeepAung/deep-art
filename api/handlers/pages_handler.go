@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"github.com/DeepAung/deep-art/api/services"
+	"github.com/DeepAung/deep-art/api/types"
 	"github.com/DeepAung/deep-art/pkg/httperror"
-	"github.com/DeepAung/deep-art/pkg/mytoken"
 	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/DeepAung/deep-art/views/pages"
 	"github.com/labstack/echo/v4"
@@ -35,18 +35,18 @@ func (h *PagesHandler) SignUp(c echo.Context) error {
 }
 
 func (h *PagesHandler) Home(c echo.Context) error {
-	payload, ok := c.Get("payload").(mytoken.Payload)
+	user, ok := c.Get("user").(types.User)
 	if !ok {
 		status := http.StatusInternalServerError
 		msg := http.StatusText(status)
 		return utils.Render(c, pages.Error(msg), status)
 	}
 
-	return utils.Render(c, pages.Home(payload), http.StatusOK)
+	return utils.Render(c, pages.Home(user), http.StatusOK)
 }
 
 func (h *PagesHandler) ArtDetail(c echo.Context) error {
-	payload, ok := c.Get("payload").(mytoken.Payload)
+	user, ok := c.Get("user").(types.User)
 	if !ok {
 		status := http.StatusInternalServerError
 		msg := http.StatusText(status)
@@ -64,5 +64,5 @@ func (h *PagesHandler) ArtDetail(c echo.Context) error {
 		return utils.Render(c, pages.Error(msg), status)
 	}
 
-	return utils.Render(c, pages.ArtDetail(payload, art), http.StatusOK)
+	return utils.Render(c, pages.ArtDetail(user, art), http.StatusOK)
 }

@@ -1,10 +1,17 @@
 package components
 
-templ Avatar(url string, alt string) {
+import "fmt"
+
+css size(sizePx int) {
+	width: { fmt.Sprintf("%dpx", sizePx) };
+	height: { fmt.Sprintf("%dpx", sizePx) };
+}
+
+templ Avatar(url string, alt string, sizePx int) {
 	if url != "" {
-		<img src={ url } alt={ alt } class="inline-block flex-shrink-0 size-[62px] rounded-full"/>
+		<img src={ url } alt={ alt } class={ "inline-block flex-shrink-0 rounded-full", size(sizePx) }/>
 	} else {
-		<span class="inline-block size-[62px] bg-gray-100 rounded-full overflow-hidden">
+		<span class={ "inline-block bg-gray-100 rounded-full overflow-hidden", size(sizePx) }>
 			<svg class="size-full text-gray-300" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
 				<rect x="0.62854" y="0.359985" width="15" height="15" rx="7.5" fill="white"></rect>
 				<path d="M8.12421 7.20374C9.21151 7.20374 10.093 6.32229 10.093 5.23499C10.093 4.14767 9.21151 3.26624 8.12421 3.26624C7.0369 3.26624 6.15546 4.14767 6.15546 5.23499C6.15546 6.32229 7.0369 7.20374 8.12421 7.20374Z" fill="currentColor"></path>

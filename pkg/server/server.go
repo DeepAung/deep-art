@@ -38,6 +38,7 @@ func (s *Server) Start() {
 	mid := s.InitMiddleware()
 
 	s.app.Static("/static", "static")
+	s.app.Static("/node_modules", "node_modules")
 
 	s.InitRouter(mid, storer)
 
@@ -68,6 +69,7 @@ func (s *Server) InitRouter(mid *middlewares.Middleware, storer storer.Storer) {
 
 	r.UsersRouter()
 	r.ArtsRouter()
+	r.CodesRouter()
 	r.TestRouter()
 	r.PagesRouter()
 

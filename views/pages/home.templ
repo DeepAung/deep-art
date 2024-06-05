@@ -1,15 +1,10 @@
 package pages
 
 import "github.com/DeepAung/deep-art/views/layouts"
-import "github.com/DeepAung/deep-art/pkg/mytoken"
+import "github.com/DeepAung/deep-art/api/types"
 
-templ Home(payload mytoken.Payload) {
-	@layouts.WithNav(layouts.Buyer) {
-		<!--<h1>Home page</h1>
-		<p>{ strconv.Itoa(payload.UserId) }</p>
-		<p>{ payload.Username }</p>
-		<p class="cursor-pointer" hx-post="/api/signout" hx-target-error="#error-text">Sign out</p>
-		<p id="#error-text"></p>-->
+templ Home(user types.User) {
+	@layouts.WithNav(layouts.Buyer, user) {
 		<div hx-get="/api/arts" hx-swap="outerHTML" hx-trigger="load" class="flex items-center justify-center h-full">
 			<div id="arts-spinner" class="animate-spin inline-block size-6 border-[3px] border-current border-t-transparent text-blue-600 rounded-full dark:text-blue-500" role="status" aria-label="loading">
 				<span class="sr-only">Loading...</span>

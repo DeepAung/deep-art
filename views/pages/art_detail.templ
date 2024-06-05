@@ -1,14 +1,13 @@
 package pages
 
 import "github.com/DeepAung/deep-art/views/layouts"
-import "github.com/DeepAung/deep-art/pkg/mytoken"
 import "github.com/DeepAung/deep-art/api/types"
 import "github.com/DeepAung/deep-art/views/components"
 import "fmt"
 
-templ ArtDetail(payload mytoken.Payload, art types.Art) {
-	@layouts.WithNav(layouts.Buyer) {
-		<div class="flex flex-col gap-4 p-4">
+templ ArtDetail(user types.User, art types.Art) {
+	@layouts.WithNav(layouts.Buyer, user) {
+		<div class="flex flex-col gap-4 p-4 pt-0">
 			<div>
 				<a href="/home" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800">
 					<i class="fa-solid fa-chevron-left"></i>
@@ -20,7 +19,7 @@ templ ArtDetail(payload mytoken.Payload, art types.Art) {
 			</div>
 			<div class="flex flex-col sm:flex-row items-center justify-between gap-4">
 				<div class="text-xs flex items-center gap-3">
-					@components.Avatar(art.Creator.AvatarURL, art.Creator.Username)
+					@components.Avatar(art.Creator.AvatarURL, art.Creator.Username, 62)
 					<div>
 						<h3 class="font-semibold text-gray-800 dark:text-white">{ art.Creator.Username }</h3>
 						<p class="font-medium text-gray-400 dark:text-neutral-500">{ art.Creator.Email }</p>
