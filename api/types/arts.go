@@ -7,7 +7,6 @@ type ManyArts []struct {
 
 	Creator model.Users `alias:"Creator.*"`
 	Cover   model.Files `alias:"Cover.*"`
-	Files   []model.Files
 	Tags    []model.Tags
 
 	TotalDownloads int `alias:"Info.TotalDownloads"`

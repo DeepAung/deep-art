@@ -35,16 +35,14 @@ func (r *Router) PagesRouter() {
 	artsSvc := services.NewArtsSvc(artsRepo, r.s.cfg)
 	handler := handlers.NewPagesHandler(artsSvc)
 
-	opts := middlewares.AuthorizedOpts{
-		SetPayload:  true,
-		SetUserData: true,
-	}
+	setPayload := middlewares.SetPayload
+	setUserData := middlewares.SetUserData
 
 	r.s.app.GET("/", handler.Welcome)
 	r.s.app.GET("/signin", handler.SignIn)
 	r.s.app.GET("/signup", handler.SignUp)
-	r.s.app.GET("/home", handler.Home, r.mid.OnlyAuthorized(opts))
-	r.s.app.GET("/arts/:id", handler.ArtDetail, r.mid.OnlyAuthorized(opts))
+	r.s.app.GET("/home", handler.Home, r.mid.OnlyAuthorized(setPayload(), setUserData()))
+	r.s.app.GET("/arts/:id", handler.ArtDetail, r.mid.OnlyAuthorized(setPayload(), setUserData()))
 }
 
 func (r *Router) UsersRouter() {
@@ -52,14 +50,9 @@ func (r *Router) UsersRouter() {
 	svc := services.NewUsersSvc(repo, r.s.cfg)
 	handler := handlers.NewUsersHandler(svc, r.s.cfg)
 
-	opts := middlewares.AuthorizedOpts{
-		SetPayload:  true,
-		SetUserData: false,
-	}
-
 	r.s.app.POST("/api/signin", handler.SignIn)
 	r.s.app.POST("/api/signup", handler.SignUp)
-	r.s.app.POST("/api/signout", handler.SignOut, r.mid.OnlyAuthorized(opts))
+	r.s.app.POST("/api/signout", handler.SignOut, r.mid.OnlyAuthorized(middlewares.SetPayload()))
 }
 
 func (r *Router) ArtsRouter() {
@@ -75,12 +68,7 @@ func (r *Router) CodesRouter() {
 	svc := services.NewCodesSvc(repo, r.s.cfg)
 	handler := handlers.NewCodesHandler(svc, r.s.cfg)
 
-	opts := middlewares.AuthorizedOpts{
-		SetPayload:  true,
-		SetUserData: false,
-	}
-
-	r.s.app.POST("/api/codes/use", handler.UseCode, r.mid.OnlyAuthorized(opts))
+	r.s.app.POST("/api/codes/use", handler.UseCode, r.mid.OnlyAuthorized(middlewares.SetPayload()))
 }
 
 // ------------------------------------------------------------------------- //

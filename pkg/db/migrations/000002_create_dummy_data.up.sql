@@ -8,10 +8,10 @@ INSERT INTO "arts" ("cover_id", "name", "description", "creator_id", "price")
 
 
 INSERT INTO "files" ("art_id", "filename", "filetype", "url")
-  VALUES (1, 'kadoru.jpg', 'jpg', './static/storage/kadoru.jpg'),
-  (1, 'kadoru2.jpg', 'jpg', './static/storage/kadoru2.jpg'),
-  (1, 'kadoru3.jpg', 'jpg', './static/storage/kadoru3.jpg'),
-  (1, 'kadoru4.jpg', 'jpg', './static/storage/kadoru4.jpg');
+  VALUES (1, 'kadoru.jpg', 'jpg', '/static/storage/kadoru.jpg'),
+  (1, 'kadoru2.jpg', 'jpg', '/static/storage/kadoru2.jpg'),
+  (1, 'kadoru3.jpg', 'jpg', '/static/storage/kadoru3.jpg'),
+  (1, 'kadoru4.jpg', 'jpg', '/static/storage/kadoru4.jpg');
 
 
 INSERT INTO "users_starred_arts" ("user_id", "art_id")

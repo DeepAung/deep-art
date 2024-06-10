@@ -56,12 +56,34 @@ func (m *Middleware) Logger() echo.MiddlewareFunc {
 	})
 }
 
-type AuthorizedOpts struct {
-	SetPayload  bool
-	SetUserData bool
+type Authorized struct {
+	c       echo.Context
+	mid     *Middleware
+	payload mytoken.Payload
 }
 
-func (m *Middleware) OnlyAuthorized(opts AuthorizedOpts) echo.MiddlewareFunc {
+type AuthorizedOpt func(*Authorized) error
+
+func SetPayload() AuthorizedOpt {
+	return func(a *Authorized) error {
+		a.c.Set("payload", a.payload)
+		return nil
+	}
+}
+
+func SetUserData() AuthorizedOpt {
+	return func(a *Authorized) error {
+		user, err := a.mid.usersSvc.GetUser(a.payload.UserId)
+		if err != nil {
+			return err
+		}
+
+		a.c.Set("user", user)
+		return nil
+	}
+}
+
+func (m *Middleware) OnlyAuthorized(opts ...AuthorizedOpt) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			payload, err := m.authorized(c)
@@ -71,12 +93,14 @@ func (m *Middleware) OnlyAuthorized(opts AuthorizedOpts) echo.MiddlewareFunc {
 				return nil
 			}
 
-			if opts.SetPayload {
-				m.setPayload(c, payload)
+			a := &Authorized{
+				c:       c,
+				mid:     m,
+				payload: payload,
 			}
 
-			if opts.SetUserData {
-				err := m.setUserData(c, payload)
+			for _, o := range opts {
+				err := o(a)
 				if err != nil {
 					utils.ClearCookies(c)
 					c.Redirect(http.StatusFound, "/signin")
@@ -114,18 +138,4 @@ func (m *Middleware) authorized(c echo.Context) (mytoken.Payload, error) {
 	}
 
 	return claims.Payload, nil
-}
-
-func (m *Middleware) setPayload(c echo.Context, payload mytoken.Payload) {
-	c.Set("payload", payload)
-}
-
-func (m *Middleware) setUserData(c echo.Context, payload mytoken.Payload) error {
-	user, err := m.usersSvc.GetUser(payload.UserId)
-	if err != nil {
-		return err
-	}
-
-	c.Set("user", user)
-	return nil
 }
