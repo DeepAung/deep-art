@@ -23,8 +23,8 @@ func NewArtsSvc(artsRepo *repositories.ArtsRepo, cfg *config.Config) *ArtsSvc {
 	}
 }
 
-func (s *ArtsSvc) FindManyArts(page int) (types.ManyArts, error) {
-	return s.artsRepo.FindManyArts(page)
+func (s *ArtsSvc) FindManyArts(req types.ManyArtsReq) (types.ManyArts, error) {
+	return s.artsRepo.FindManyArts(req)
 }
 
 func (s *ArtsSvc) FindOneArt(id int) (types.Art, error) {

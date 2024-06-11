@@ -1,5 +1,5 @@
 DATABASE_URL = sqlite3://$(abspath ./db.db)
-MIGRATION_URL = file://$(abspath ./pkg/db/migrations)
+MIGRATION_URL = file://$(abspath ./migrations)
 
 air:
 	air -c .air.toml

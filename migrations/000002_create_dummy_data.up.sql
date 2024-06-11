@@ -1,5 +1,8 @@
 INSERT INTO "users" ("username", "email", "password")
-  VALUES ('DeepAung', 'i.deepaung@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi');
+  VALUES ('DeepAung', 'i.deepaung@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi'),
+  ('user1', 'user1@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi'),
+  ('user2', 'user2@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi'),
+  ('user3', 'user3@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi');
 
 
 INSERT INTO "arts" ("cover_id", "name", "description", "creator_id", "price")
@@ -12,7 +15,6 @@ INSERT INTO "files" ("art_id", "filename", "filetype", "url")
   (1, 'kadoru2.jpg', 'jpg', '/static/storage/kadoru2.jpg'),
   (1, 'kadoru3.jpg', 'jpg', '/static/storage/kadoru3.jpg'),
   (1, 'kadoru4.jpg', 'jpg', '/static/storage/kadoru4.jpg');
-
 
 INSERT INTO "users_starred_arts" ("user_id", "art_id")
   VALUES (1, 1);
@@ -33,3 +35,21 @@ INSERT INTO "codes" ("name", "value", "exp_time")
   VALUES ('GETME100', 100, '2025-12-14T15:04:05Z'),
   ('GETME1000', 1000, '2025-12-14T15:04:05Z'),
   ('GETME10000', 10000, '2025-12-14T15:04:05Z');
+
+------------------------------------------------------------------------------
+
+WITH RECURSIVE cte(x) AS (
+  SELECT 1 x
+  UNION ALL SELECT x+1 FROM cte WHERE x < 100
+)
+INSERT INTO "files" ("art_id", "filename", "filetype", "url")
+  SELECT x+4, printf("%05d.png", x+4), 'png', printf("/static/storage/%05d.png", x+4)
+  FROM cte;
+
+WITH RECURSIVE cte(x) AS (
+  SELECT 1 x
+  UNION ALL SELECT x+1 FROM cte WHERE x < 100
+)
+INSERT INTO "arts" ("cover_id", "name", "description", "creator_id", "price")
+  SELECT x+4, printf("dummy art no. %d", x+2), 'dummy description', 1, x+2
+  FROM cte;
