@@ -16,7 +16,10 @@ import (
 	. "github.com/go-jet/jet/v2/sqlite"
 )
 
-var ErrArtsNotFound = httperror.New("art not found", http.StatusBadRequest)
+var (
+	ErrArtsNotFound       = httperror.New("art not found", http.StatusBadRequest)
+	ErrInvalidSortingType = httperror.New("invalid sorting type", http.StatusBadRequest)
+)
 
 type ArtsRepo struct {
 	storer  storer.Storer
@@ -33,17 +36,19 @@ func NewArtsRepo(storer storer.Storer, db *sql.DB, timeout time.Duration) *ArtsR
 }
 
 func (r *ArtsRepo) FindManyArts(req types.ManyArtsReq) (types.ManyArts, error) {
-	stats := r.statsExpression()
-	statsTable := r.statsTable(stats)
+	statsTable := r.statsTable()
+	stats := r.statsColumn(statsTable)
 
 	var cond BoolExpression = Arts.ID.EQ(Arts.ID)
 	cond = r.withFilterCond(cond, req.Filter)
 	cond = r.withSearchCond(cond, req.Search)
 
 	stmt := r.findManyArtsStmt(cond, statsTable)
-	stmt = r.withSortStmt(stmt, req.Sort, stats)
-	// TODO:
-	// stmt = r.withPaginationStmt(stmt, req.Page)
+	stmt, err := r.withSortStmt(stmt, req.Sort, stats)
+	if err != nil {
+		return types.ManyArts{}, err
+	}
+	stmt = r.withPaginationStmt(stmt, req.Page)
 
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
@@ -53,6 +58,11 @@ func (r *ArtsRepo) FindManyArts(req types.ManyArtsReq) (types.ManyArts, error) {
 		if errors.Is(err, qrm.ErrNoRows) {
 			return types.ManyArts{}, ErrArtsNotFound
 		}
+		return types.ManyArts{}, err
+	}
+
+	err = dest.FillTags()
+	if err != nil {
 		return types.ManyArts{}, err
 	}
 
@@ -120,57 +130,64 @@ func (r *ArtsRepo) FindOneArt(id int) (types.Art, error) {
 
 // ---------------------------------------------- //
 
-type statsExpression struct {
-	totalDownloads   Expression
-	weeklyDownloads  Expression
-	monthlyDownloads Expression
-	yearlyDownloads  Expression
-	totalStars       Expression
-	weeklyStars      Expression
-	monthlyStars     Expression
-	yearlyStars      Expression
+type statsColumn struct {
+	totalDownloads   Column
+	weeklyDownloads  Column
+	monthlyDownloads Column
+	yearlyDownloads  Column
+	totalStars       Column
+	weeklyStars      Column
+	monthlyStars     Column
+	yearlyStars      Column
 }
 
-func (r *ArtsRepo) statsExpression() statsExpression {
-	stats := statsExpression{}
-
+func (r *ArtsRepo) statsTable() SelectTable {
 	id := DownloadedArts.ID
 	time := DownloadedArts.CreatedAt
 
-	stats.totalDownloads = COUNT(DISTINCT(id))
-	stats.weeklyDownloads = r.countInterval(id, time, DAYS(-7))
-	stats.monthlyDownloads = r.countInterval(id, time, MONTHS(-1))
-	stats.yearlyDownloads = r.countInterval(id, time, YEARS(-1))
+	totalDownloads := COUNT(DISTINCT(id))
+	weeklyDownloads := r.countInterval(id, time, DAYS(-7))
+	monthlyDownloads := r.countInterval(id, time, MONTHS(-1))
+	yearlyDownloads := r.countInterval(id, time, YEARS(-1))
 
 	id = UsersStarredArts.UserID
 	time = UsersStarredArts.CreatedAt
 
-	stats.totalStars = COUNT(DISTINCT(id))
-	stats.weeklyStars = r.countInterval(id, time, DAYS(-7))
-	stats.monthlyStars = r.countInterval(id, time, MONTHS(-1))
-	stats.yearlyStars = r.countInterval(id, time, YEARS(-1))
+	totalStars := COUNT(DISTINCT(id))
+	weeklyStars := r.countInterval(id, time, DAYS(-7))
+	monthlyStars := r.countInterval(id, time, MONTHS(-1))
+	yearlyStars := r.countInterval(id, time, YEARS(-1))
 
-	return stats
-}
-
-func (r *ArtsRepo) statsTable(stats statsExpression) SelectTable {
 	return SELECT(
 		Arts.ID,
 
-		stats.totalDownloads.AS("TotalDownloads"),
-		stats.weeklyDownloads.AS("WeeklyDownloads"),
-		stats.monthlyDownloads.AS("MonthlyDownloads"),
-		stats.yearlyDownloads.AS("YearlyDownloads"),
+		totalDownloads.AS("TotalDownloads"),
+		weeklyDownloads.AS("WeeklyDownloads"),
+		monthlyDownloads.AS("MonthlyDownloads"),
+		yearlyDownloads.AS("YearlyDownloads"),
 
-		stats.totalStars.AS("TotalStars"),
-		stats.weeklyStars.AS("WeeklyStars"),
-		stats.monthlyStars.AS("MonthlyStars"),
-		stats.yearlyStars.AS("YearlyStars"),
+		totalStars.AS("TotalStars"),
+		weeklyStars.AS("WeeklyStars"),
+		monthlyStars.AS("MonthlyStars"),
+		yearlyStars.AS("YearlyStars"),
 	).FROM(
 		Arts.
 			LEFT_JOIN(DownloadedArts, DownloadedArts.ArtID.EQ(Arts.ID)).
 			LEFT_JOIN(UsersStarredArts, UsersStarredArts.ArtID.EQ(Arts.ID)),
 	).AsTable("Stats")
+}
+
+func (r *ArtsRepo) statsColumn(statsTable SelectTable) statsColumn {
+	return statsColumn{
+		totalDownloads:   IntegerColumn("TotalDownloads").From(statsTable),
+		weeklyDownloads:  IntegerColumn("WeeklyDownloads").From(statsTable),
+		monthlyDownloads: IntegerColumn("MonthlyDownloads").From(statsTable),
+		yearlyDownloads:  IntegerColumn("YearlyDownloads").From(statsTable),
+		totalStars:       IntegerColumn("TotalStars").From(statsTable),
+		weeklyStars:      IntegerColumn("WeeklyStars").From(statsTable),
+		monthlyStars:     IntegerColumn("MonthlyStars").From(statsTable),
+		yearlyStars:      IntegerColumn("YearlyStars").From(statsTable),
+	}
 }
 
 func (r *ArtsRepo) findManyArtsStmt(
@@ -184,7 +201,8 @@ func (r *ArtsRepo) findManyArtsStmt(
 		Arts.AllColumns,
 		creator.AllColumns.Except(creator.Password),
 		cover.AllColumns,
-		Tags.AllColumns,
+		Raw("group_concat(tags.name)").AS("TagNames"),
+		Raw("group_concat(tags.id)").AS("TagIDs"),
 		statsTable.AllColumns().As("Stats.*"),
 	).FROM(
 		Arts.
@@ -193,7 +211,7 @@ func (r *ArtsRepo) findManyArtsStmt(
 			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
 			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
 			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),
-	).WHERE(cond)
+	).WHERE(cond).GROUP_BY(Arts.ID)
 }
 
 func (r *ArtsRepo) withFilterCond(cond BoolExpression, filter types.Filter) BoolExpression {
@@ -248,21 +266,25 @@ func (r *ArtsRepo) withSearchCond(cond BoolExpression, search string) BoolExpres
 func (r *ArtsRepo) withSortStmt(
 	stmt SelectStatement,
 	sort types.Sort,
-	stats statsExpression,
-) SelectStatement {
+	stats statsColumn,
+) (SelectStatement, error) {
 	if sort.By == "" {
-		return stmt
+		return stmt, nil
 	}
 
 	var orderBy Expression
 	by := types.By(sort.By)
 	switch by {
+	case types.TotalDownloads:
+		orderBy = stats.totalDownloads
 	case types.WeeklyDownloads:
 		orderBy = stats.weeklyDownloads
 	case types.MonthlyDownloads:
 		orderBy = stats.monthlyDownloads
 	case types.YearlyDownloads:
 		orderBy = stats.yearlyDownloads
+	case types.TotalStars:
+		orderBy = stats.totalStars
 	case types.WeeklyStars:
 		orderBy = stats.weeklyStars
 	case types.MonthlyStars:
@@ -272,7 +294,7 @@ func (r *ArtsRepo) withSortStmt(
 	case types.Price:
 		orderBy = Arts.Price
 	default:
-		// TODO:
+		return nil, ErrInvalidSortingType
 	}
 
 	if sort.Asc {
@@ -281,7 +303,7 @@ func (r *ArtsRepo) withSortStmt(
 		stmt = stmt.ORDER_BY(orderBy.DESC())
 	}
 
-	return stmt
+	return stmt, nil
 }
 
 func (r *ArtsRepo) withPaginationStmt(stmt SelectStatement, page int) SelectStatement {
