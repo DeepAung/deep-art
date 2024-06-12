@@ -13,7 +13,10 @@ get {
 body:json {
   {
     "search": "",
-    "page": 21,
+    "pagination": {
+      "limit": 5,
+      "page": 1
+    },
     "filter": {
       "tags": [],
       "minPrice": -1,
@@ -21,7 +24,7 @@ body:json {
       "imagesExts": []
     },
     "sort": {
-      "by": "totalStars",
+      "by": "price",
       "asc": true
     }
   }

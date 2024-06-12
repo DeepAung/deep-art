@@ -74,10 +74,10 @@ func (arts ManyArts) FillTags() error {
 }
 
 type ManyArtsReq struct {
-	Search string `form:"search" json:"search"`
-	Filter Filter `              json:"filter"`
-	Sort   Sort   `              json:"sort"`
-	Page   int    `form:"page"   json:"page"`
+	Search     string     `form:"search" json:"search"`
+	Filter     Filter     `              json:"filter"`
+	Sort       Sort       `              json:"sort"`
+	Pagination Pagination `              json:"pagination"`
 }
 
 type Filter struct {
@@ -90,6 +90,11 @@ type Filter struct {
 type Sort struct {
 	By  string `form:"sort.by"  json:"by"`
 	Asc bool   `form:"sort.asc" json:"asc"`
+}
+
+type Pagination struct {
+	Page  int `form:"pagination.page"  json:"page"`
+	Limit int `form:"pagination.limit" json:"limit"`
 }
 
 type By string

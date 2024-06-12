@@ -36,7 +36,7 @@ func NewArtsRepo(storer storer.Storer, db *sql.DB, timeout time.Duration) *ArtsR
 }
 
 func (r *ArtsRepo) FindManyArts(req types.ManyArtsReq) (types.ManyArts, error) {
-	statsTable := r.statsTable()
+	statsTable := r.statsTable().AsTable("Stats")
 	stats := r.statsColumn(statsTable)
 
 	var cond BoolExpression = Arts.ID.EQ(Arts.ID)
@@ -48,7 +48,7 @@ func (r *ArtsRepo) FindManyArts(req types.ManyArtsReq) (types.ManyArts, error) {
 	if err != nil {
 		return types.ManyArts{}, err
 	}
-	stmt = r.withPaginationStmt(stmt, req.Page)
+	stmt = r.withPaginationStmt(stmt, req.Pagination)
 
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
@@ -70,28 +70,9 @@ func (r *ArtsRepo) FindManyArts(req types.ManyArtsReq) (types.ManyArts, error) {
 }
 
 func (r *ArtsRepo) FindOneArt(id int) (types.Art, error) {
-	statsTable := SELECT(
-		Arts.ID,
-		COUNT(DISTINCT(DownloadedArts.ID)).AS("TotalDownloads"),
-		r.countInterval(DownloadedArts.ID, DownloadedArts.CreatedAt, DAYS(-7)).
-			AS("WeeklyDownloads"),
-		r.countInterval(DownloadedArts.ID, DownloadedArts.CreatedAt, MONTHS(-1)).
-			AS("MonthlyDownloads"),
-		r.countInterval(DownloadedArts.ID, DownloadedArts.CreatedAt, YEARS(-1)).
-			AS("YearlyDownloads"),
-
-		COUNT(DISTINCT(UsersStarredArts.UserID)).AS("TotalStars"),
-		r.countInterval(UsersStarredArts.UserID, UsersStarredArts.CreatedAt, DAYS(-7)).
-			AS("WeeklyStars"),
-		r.countInterval(UsersStarredArts.UserID, UsersStarredArts.CreatedAt, MONTHS(-1)).
-			AS("MonthlyStars"),
-		r.countInterval(UsersStarredArts.UserID, UsersStarredArts.CreatedAt, YEARS(-1)).
-			AS("YearlyStars"),
-	).FROM(
-		Arts.
-			LEFT_JOIN(DownloadedArts, DownloadedArts.ArtID.EQ(Arts.ID)).
-			LEFT_JOIN(UsersStarredArts, UsersStarredArts.ArtID.EQ(Arts.ID)),
-	).WHERE(Arts.ID.EQ(Int(int64(id)))).AsTable("Stats")
+	statsTable := r.statsTable().
+		WHERE(Arts.ID.EQ(Int(int64(id)))).
+		AsTable("Stats")
 
 	creator := Users.AS("Creator")
 	cover := Files.AS("Cover")
@@ -141,7 +122,7 @@ type statsColumn struct {
 	yearlyStars      Column
 }
 
-func (r *ArtsRepo) statsTable() SelectTable {
+func (r *ArtsRepo) statsTable() SelectStatement {
 	id := DownloadedArts.ID
 	time := DownloadedArts.CreatedAt
 
@@ -174,7 +155,7 @@ func (r *ArtsRepo) statsTable() SelectTable {
 		Arts.
 			LEFT_JOIN(DownloadedArts, DownloadedArts.ArtID.EQ(Arts.ID)).
 			LEFT_JOIN(UsersStarredArts, UsersStarredArts.ArtID.EQ(Arts.ID)),
-	).AsTable("Stats")
+	)
 }
 
 func (r *ArtsRepo) statsColumn(statsTable SelectTable) statsColumn {
@@ -306,9 +287,13 @@ func (r *ArtsRepo) withSortStmt(
 	return stmt, nil
 }
 
-func (r *ArtsRepo) withPaginationStmt(stmt SelectStatement, page int) SelectStatement {
-	const items = 5
-	return stmt.LIMIT(items).OFFSET(int64(items*page - items))
+func (r *ArtsRepo) withPaginationStmt(
+	stmt SelectStatement,
+	pagination types.Pagination,
+) SelectStatement {
+	page := pagination.Page
+	limit := pagination.Limit
+	return stmt.LIMIT(int64(limit)).OFFSET(int64(limit*page - limit))
 }
 
 func (r *ArtsRepo) countInterval(
