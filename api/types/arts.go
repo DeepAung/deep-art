@@ -10,15 +10,15 @@ type Art struct {
 	Files   []model.Files
 	Tags    []model.Tags
 
-	TotalDownloads   int `alias:"Info.TotalDownloads"`
-	WeeklyDownloads  int `alias:"Info.WeeklyDownloads"`
-	MonthlyDownloads int `alias:"Info.MonthlyDownloads"`
-	YearlyDownloads  int `alias:"Info.YearlyDownloads"`
+	TotalDownloads   int `alias:"Stats.TotalDownloads"`
+	WeeklyDownloads  int `alias:"Stats.WeeklyDownloads"`
+	MonthlyDownloads int `alias:"Stats.MonthlyDownloads"`
+	YearlyDownloads  int `alias:"Stats.YearlyDownloads"`
 
-	TotalStars   int `alias:"Info.TotalStars"`
-	WeeklyStars  int `alias:"Info.WeeklyStars"`
-	MonthlyStars int `alias:"Info.MonthlyStars"`
-	YearlyStars  int `alias:"Info.YearlyStars"`
+	TotalStars   int `alias:"Stats.TotalStars"`
+	WeeklyStars  int `alias:"Stats.WeeklyStars"`
+	MonthlyStars int `alias:"Stats.MonthlyStars"`
+	YearlyStars  int `alias:"Stats.YearlyStars"`
 }
 
 type ManyArts []struct {
@@ -28,34 +28,34 @@ type ManyArts []struct {
 	Cover   model.Files `alias:"Cover.*"`
 	Tags    []model.Tags
 
-	TotalDownloads   int `alias:"Info.TotalDownloads"`
-	WeeklyDownloads  int `alias:"Info.WeeklyDownloads"`
-	MonthlyDownloads int `alias:"Info.MonthlyDownloads"`
-	YearlyDownloads  int `alias:"Info.YearlyDownloads"`
+	TotalDownloads   int `alias:"Stats.TotalDownloads"`
+	WeeklyDownloads  int `alias:"Stats.WeeklyDownloads"`
+	MonthlyDownloads int `alias:"Stats.MonthlyDownloads"`
+	YearlyDownloads  int `alias:"Stats.YearlyDownloads"`
 
-	TotalStars   int `alias:"Info.TotalStars"`
-	WeeklyStars  int `alias:"Info.WeeklyStars"`
-	MonthlyStars int `alias:"Info.MonthlyStars"`
-	YearlyStars  int `alias:"Info.YearlyStars"`
+	TotalStars   int `alias:"Stats.TotalStars"`
+	WeeklyStars  int `alias:"Stats.WeeklyStars"`
+	MonthlyStars int `alias:"Stats.MonthlyStars"`
+	YearlyStars  int `alias:"Stats.YearlyStars"`
 }
 
 type ManyArtsReq struct {
-	Search string `form:"search"`
-	Filter Filter
-	Sort   Sort
-	Page   int `form:"page"`
+	Search string `form:"search" json:"search"`
+	Filter Filter `              json:"filter"`
+	Sort   Sort   `              json:"sort"`
+	Page   int    `form:"page"   json:"page"`
 }
 
 type Filter struct {
-	Tags      []string `form:"filter.tags"`
-	MinPrice  int      `form:"filter.minPrice"`
-	MaxPrice  int      `form:"filter.maxPrice"`
-	ImageExts []string `form:"filter.imageExts"`
+	Tags      []string `form:"filter.tags"      json:"tags"`
+	MinPrice  int      `form:"filter.minPrice"  json:"minPrice"`
+	MaxPrice  int      `form:"filter.maxPrice"  json:"maxPrice"`
+	ImageExts []string `form:"filter.imageExts" json:"imageExts"`
 }
 
 type Sort struct {
-	By  string `form:"sort.by"`
-	Asc bool   `form:"sort.asc"`
+	By  string `form:"sort.by"  json:"by"`
+	Asc bool   `form:"sort.asc" json:"asc"`
 }
 
 type By string

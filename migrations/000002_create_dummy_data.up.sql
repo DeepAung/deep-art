@@ -29,7 +29,7 @@ INSERT INTO "tags" ("name")
 
 
 INSERT INTO "arts_tags" ("art_id", "tag_id")
-  VALUES (1, 1), (1, 2), (1, 3);
+  VALUES (1, 1), (1, 2), (1, 3), (2, 1);
 
 INSERT INTO "codes" ("name", "value", "exp_time")
   VALUES ('GETME100', 100, '2025-12-14T15:04:05Z'),

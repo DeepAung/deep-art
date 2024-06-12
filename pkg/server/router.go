@@ -75,7 +75,7 @@ func (r *Router) CodesRouter() {
 
 func (r *Router) TestRouter() {
 	test := r.s.app.Group("/test")
-	test.GET("/", func(c echo.Context) error {
+	test.GET("", func(c echo.Context) error {
 		return c.String(http.StatusOK, "test route")
 	})
 

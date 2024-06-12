@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/DeepAung/deep-art/api/repositories"
+	"github.com/DeepAung/deep-art/api/types"
 	"github.com/DeepAung/deep-art/pkg/httperror"
 	"github.com/labstack/echo/v4"
 )
@@ -20,7 +21,12 @@ func NewTestArtsHandler(artsRepo *repositories.ArtsRepo) *testArtsHandler {
 }
 
 func (h *testArtsHandler) FindManyArts(c echo.Context) error {
-	arts, err := h.artsRepo.FindManyArts(1)
+	var req types.ManyArtsReq
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	arts, err := h.artsRepo.FindManyArts(req)
 	if err != nil {
 		_, status := httperror.Extract(err)
 		return c.String(status, err.Error())

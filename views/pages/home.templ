@@ -5,7 +5,7 @@ import "github.com/DeepAung/deep-art/api/types"
 
 templ Home(user types.User) {
 	@layouts.WithNav(layouts.Buyer, user) {
-		<div hx-get="/api/arts" hx-swap="outerHTML" hx-trigger="load" class="flex items-center justify-center h-full">
+		<div hx-get="/api/arts" hx-swap="outerHTML" hx-trigger="load" hx-target-error="#arts-spinner" class="flex items-center justify-center h-full">
 			<div id="arts-spinner" class="animate-spin inline-block size-6 border-[3px] border-current border-t-transparent text-blue-600 rounded-full dark:text-blue-500" role="status" aria-label="loading">
 				<span class="sr-only">Loading...</span>
 			</div>

@@ -5,7 +5,31 @@ meta {
 }
 
 get {
-  url: {{url}}/test/arts/1
-  body: none
+  url: {{url}}/test/arts
+  body: json
   auth: none
+}
+
+body:json {
+  {
+    "search": "",
+    "page": 1,
+    "filter": {
+      "tags": [
+        "tag1"
+      ],
+      "minPrice": -1,
+      "maxPrice": -1,
+      "imagesExts": []
+    },
+    "sort": {
+      "by": "price",
+      "asc": true
+    }
+  }
+}
+
+body:form-urlencoded {
+  hello: helllo
+  sdf: sdf
 }
