@@ -69,6 +69,7 @@ func (s *Server) InitRouter(mid *middlewares.Middleware, storer storer.Storer) {
 
 	r.UsersRouter()
 	r.ArtsRouter()
+	r.TagsRouter()
 	r.CodesRouter()
 	r.TestRouter()
 	r.PagesRouter()

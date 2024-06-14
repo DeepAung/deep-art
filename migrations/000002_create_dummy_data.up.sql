@@ -43,7 +43,7 @@ WITH RECURSIVE cte(x) AS (
   UNION ALL SELECT x+1 FROM cte WHERE x < 100
 )
 INSERT INTO "files" ("art_id", "filename", "filetype", "url")
-  SELECT x+4, printf("%05d.png", x+4), 'png', printf("/static/storage/%05d.png", x+4)
+  SELECT x+4, printf("%05d.png", x+4), 'png', printf("/static/storage/genimages/%05d.png", x+4)
   FROM cte;
 
 WITH RECURSIVE cte(x) AS (

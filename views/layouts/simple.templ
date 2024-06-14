@@ -4,16 +4,18 @@ templ Simple() {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
-			<title></title>
+			<title>Deep Art</title>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<link href="/static/css/output.css" rel="stylesheet"/>
 			<script src="https://unpkg.com/htmx.org@1.9.12"></script>
 			<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/response-targets.js"></script>
+			<script src="https://unpkg.com/htmx.org@1.9.12/dist/ext/json-enc.js"></script>
+			<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 			<script src="https://kit.fontawesome.com/8e504b9924.js" crossorigin="anonymous"></script>
 			<script src="./node_modules/preline/dist/preline.js"></script>
 		</head>
-		<body class="flex flex-col h-screen" hx-ext="response-targets">
+		<body class="flex flex-col min-h-screen" hx-ext="response-targets">
 			{ children... }
 		</body>
 	</html>

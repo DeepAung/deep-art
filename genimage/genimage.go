@@ -15,15 +15,14 @@ func main() {
 	width := flag.Int("width", 400, "width")
 	height := flag.Int("height", 300, "height")
 	n := flag.Int("n", 1, "times")
+	imagesDir := flag.String("dir", "../static/storage/genimages", "output directory")
 	flag.Parse()
 
-	imagesDir := "../static/storage/genimages"
-
-	err := os.RemoveAll(imagesDir + "/")
+	err := os.RemoveAll(*imagesDir)
 	if err != nil {
 		log.Fatalf("os.RemoveAll: %v", err)
 	}
-	err = os.MkdirAll(imagesDir+"/", os.ModePerm)
+	err = os.MkdirAll(*imagesDir, os.ModePerm)
 	if err != nil {
 		log.Fatalf("os.MkdirAll: %v", err)
 	}
@@ -45,7 +44,7 @@ func main() {
 			}
 		}
 
-		f, err := os.Create(fmt.Sprintf("%s/%05d.png", imagesDir, i+1))
+		f, err := os.Create(fmt.Sprintf("%s/%05d.png", *imagesDir, i+1))
 		if err != nil {
 			log.Fatalf("os.Create: %v", err)
 		}

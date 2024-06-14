@@ -60,7 +60,15 @@ func (r *Router) ArtsRouter() {
 	svc := services.NewArtsSvc(repo, r.s.cfg)
 	handler := handlers.NewArtsHandler(svc, r.s.cfg)
 
-	r.s.app.GET("/api/arts", handler.FindManyArts)
+	r.s.app.POST("/api/arts", handler.FindManyArts)
+}
+
+func (r *Router) TagsRouter() {
+	repo := repositories.NewTagsRepo(r.s.db, r.s.cfg.App.Timeout)
+	svc := services.NewTagsSvc(repo)
+	handler := handlers.NewTagsHandler(svc)
+
+	r.s.app.GET("/api/tags/filter", handler.TagsFilter)
 }
 
 func (r *Router) CodesRouter() {

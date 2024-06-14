@@ -30,15 +30,15 @@ func (h *ArtsHandler) FindManyArts(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return utils.Render(
 			c,
-			components.Error("fetching arts failed"),
-			http.StatusInternalServerError,
+			components.Error(err.Error()),
+			http.StatusBadRequest,
 		)
 	}
 	if err := utils.Validate(&req); err != nil {
 		return utils.Render(
 			c,
 			components.Error(err.Error()),
-			http.StatusInternalServerError,
+			http.StatusBadRequest,
 		)
 	}
 

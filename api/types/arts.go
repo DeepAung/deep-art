@@ -74,27 +74,27 @@ func (arts ManyArts) FillTags() error {
 }
 
 type ManyArtsReq struct {
-	Search     string     `form:"search" json:"search"`
-	Filter     Filter     `              json:"filter"`
-	Sort       Sort       `              json:"sort"`
-	Pagination Pagination `              json:"pagination"`
+	Search     string     `json:"search"     form:"search"`
+	Filter     Filter     `json:"filter"`
+	Sort       Sort       `json:"sort"`
+	Pagination Pagination `json:"pagination"`
 }
 
 type Filter struct {
-	Tags      []string `form:"filter.tags"      json:"tags"`
-	MinPrice  int      `form:"filter.minPrice"  json:"minPrice"`
-	MaxPrice  int      `form:"filter.maxPrice"  json:"maxPrice"`
-	ImageExts []string `form:"filter.imageExts" json:"imageExts"`
+	Tags      []string `json:"tags"      form:"filter.tags"`
+	MinPrice  int      `json:"minPrice"  form:"filter.minPrice"  validate:"gte=-1"`
+	MaxPrice  int      `json:"maxPrice"  form:"filter.maxPrice"  validate:"gte=-1"`
+	ImageExts []string `json:"imageExts" form:"filter.imageExts"`
 }
 
 type Sort struct {
-	By  string `form:"sort.by"  json:"by"`
-	Asc bool   `form:"sort.asc" json:"asc"`
+	By  string `json:"by"  form:"sort.by"`
+	Asc bool   `json:"asc" form:"sort.asc"`
 }
 
 type Pagination struct {
-	Page  int `form:"pagination.page"  json:"page"`
-	Limit int `form:"pagination.limit" json:"limit"`
+	Page  int `json:"page"  form:"pagination.page"  validate:"gte=1"`
+	Limit int `json:"limit" form:"pagination.limit" validate:"gte=1"`
 }
 
 type By string

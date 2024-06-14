@@ -1,0 +1,16 @@
+package components
+
+import "github.com/DeepAung/deep-art/.gen/model"
+import "fmt"
+
+templ TagsFilter(tags []model.Tags) {
+	<label for="tags" class="block text-sm font-medium mb-2 dark:text-white">Tags</label>
+	<div class="flex gap-x-6">
+		for i, tag := range tags {
+			<div class="flex">
+				<input type="checkbox" value={ tag.Name } x-model="$store.req.filter.tags" class="peer sr-only" id={ fmt.Sprintf("tags-%d", i) }/>
+				<label for={ fmt.Sprintf("tags-%d", i) } class="cursor-pointer inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium border border-bule-50 hover:bg-blue-50 peer-checked:bg-blue-100 peer-checked:text-blue-800 dark:bg-blue-800/30 dark:text-blue-500">{ tag.Name }</label>
+			</div>
+		}
+	</div>
+}
