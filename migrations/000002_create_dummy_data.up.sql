@@ -5,9 +5,9 @@ INSERT INTO "users" ("username", "email", "password")
   ('user3', 'user3@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi');
 
 
-INSERT INTO "arts" ("cover_id", "name", "description", "creator_id", "price")
-  VALUES (1, 'the first art', 'just the first art bro.', 1, 0),
-  (4, 'second art broo', '', 1, 0);
+INSERT INTO "arts" ("cover_url", "name", "description", "creator_id", "price")
+  VALUES ('/static/storage/kadoru.jpg', 'the first art', 'just the first art bro.', 1, 0),
+  ('/static/storage/kadoru4.jpg', 'second art broo', '', 1, 0);
 
 
 INSERT INTO "files" ("art_id", "filename", "filetype", "url")
@@ -50,6 +50,10 @@ WITH RECURSIVE cte(x) AS (
   SELECT 1 x
   UNION ALL SELECT x+1 FROM cte WHERE x < 100
 )
-INSERT INTO "arts" ("cover_id", "name", "description", "creator_id", "price")
-  SELECT x+4, printf("dummy art no. %d", x+2), 'dummy description', 1, x+2
+INSERT INTO "arts" ("cover_url", "name", "description", "creator_id", "price")
+  SELECT printf("/static/storage/genimages/%05d.png", x+4),
+    printf("dummy art no. %d", x+2),
+    'dummy description',
+    1,
+    x+2
   FROM cte;

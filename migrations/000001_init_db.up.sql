@@ -33,7 +33,7 @@ CREATE TABLE "oauths" (
 
 CREATE TABLE "arts" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-  "cover_id" INT UNIQUE NOT NULL,
+  "cover_url" VARCHAR UNIQUE NOT NULL,
   "name" VARCHAR NOT NULL,
   "description" VARCHAR NOT NULL,
   "creator_id" INT NOT NULL,
@@ -41,7 +41,6 @@ CREATE TABLE "arts" (
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE ("name", "creator_id"),
-  FOREIGN KEY ("cover_id") REFERENCES "files" ("id"),
   FOREIGN KEY ("creator_id") REFERENCES "users" ("id")
 );
 

@@ -2,10 +2,11 @@ package components
 
 import "fmt"
 
-// TODO: no hard limit number make an input limit per page???
+const pageLimit = 20
+
 func maxPage(total int) int {
-	maxPage := total / 20
-	if total%20 == 0 {
+	maxPage := total / pageLimit
+	if total%pageLimit == 0 {
 		maxPage += 1
 	}
 	return maxPage

@@ -87,21 +87,17 @@ func (r *ArtsRepo) FindOneArt(id int) (types.Art, error) {
 		AsTable("Stats")
 
 	creator := Users.AS("Creator")
-	cover := Files.AS("Cover")
 
 	stmt := SELECT(
 		Arts.AllColumns,
 		creator.AllColumns.Except(creator.Password),
-		cover.AllColumns,
 		Files.AllColumns,
 		Tags.AllColumns,
 		statsTable.AllColumns().As("Stats.*"),
 	).FROM(
 		Arts.
 			LEFT_JOIN(creator, creator.AS("Creator").ID.EQ(Arts.CreatorID)).
-			LEFT_JOIN(cover, cover.ID.EQ(Arts.CoverID)).
-			LEFT_JOIN(Files, Files.ArtID.EQ(Arts.ID).
-				AND(Files.ID.NOT_EQ(Arts.CoverID))).
+			LEFT_JOIN(Files, Files.ArtID.EQ(Arts.ID)).
 			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
 			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
 			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),
@@ -188,19 +184,16 @@ func (r *ArtsRepo) findManyArtsStmt(
 	statsTable SelectTable,
 ) SelectStatement {
 	creator := Users.AS("Creator")
-	cover := Files.AS("Cover")
 
 	return SELECT(
 		Arts.AllColumns,
 		creator.AllColumns.Except(creator.Password),
-		cover.AllColumns,
 		Raw("group_concat(tags.name)").AS("TagNames"),
 		Raw("group_concat(tags.id)").AS("TagIDs"),
 		statsTable.AllColumns().As("Stats.*"),
 	).FROM(
 		Arts.
 			LEFT_JOIN(creator, creator.ID.EQ(Arts.CreatorID)).
-			LEFT_JOIN(cover, cover.ID.EQ(Arts.CoverID)).
 			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
 			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
 			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),
@@ -212,14 +205,12 @@ func (r *ArtsRepo) findCountManyArtsStmt(
 	statsTable SelectTable,
 ) SelectStatement {
 	creator := Users.AS("Creator")
-	cover := Files.AS("Cover")
 
 	return SELECT(
 		COUNT(DISTINCT(Arts.ID)).AS("Count"),
 	).FROM(
 		Arts.
 			LEFT_JOIN(creator, creator.ID.EQ(Arts.CreatorID)).
-			LEFT_JOIN(cover, cover.ID.EQ(Arts.CoverID)).
 			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
 			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
 			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),

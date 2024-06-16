@@ -22,6 +22,8 @@ migrate.force:
 	migrate -database $(DATABASE_URL) -source $(MIGRATION_URL) -verbose force $(VERSION)
 migrate.version:
 	migrate -database $(DATABASE_URL) -source $(MIGRATION_URL) version
+migrate.reset:
+	make migrate.down && make migrate.up
 
 jet:
 	jet -source=sqlite -dsn="./db.db" -schema=dvds -path=./.gen

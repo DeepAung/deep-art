@@ -4,6 +4,7 @@ DROP TRIGGER IF EXISTS update_timestamp_oauths;
 DROP TRIGGER IF EXISTS update_timestamp_arts;
 DROP TRIGGER IF EXISTS update_timestamp_files;
 
+DROP TABLE IF EXISTS "schema_migrations"; -- CASCADE;
 DROP TABLE IF EXISTS "users"; -- CASCADE;
 DROP TABLE IF EXISTS "tokens"; -- CASCADE;
 DROP TABLE IF EXISTS "oauths"; -- CASCADE;

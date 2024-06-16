@@ -14,7 +14,7 @@ templ Home(user types.User) {
 			hx-indicator="#arts-spinner"
 			hx-target="#arts"
 			hx-target-error="#arts-error"
-			hx-trigger="load, keyup[keyCode==13], findManyArts from:window"
+			hx-trigger="load, keyup[keyCode==13], findManyArts from:body"
 			hx-ext="json-enc,response-targets"
 			class="flex gap-3 justify-center items-center"
 		>

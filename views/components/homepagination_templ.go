@@ -12,10 +12,11 @@ import "bytes"
 
 import "fmt"
 
-// TODO: no hard limit number make an input limit per page???
+const pageLimit = 20
+
 func maxPage(total int) int {
-	maxPage := total / 20
-	if total%20 == 0 {
+	maxPage := total / pageLimit
+	if total%pageLimit == 0 {
 		maxPage += 1
 	}
 	return maxPage
@@ -51,7 +52,7 @@ func HomePagination(total int) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(leftPagination())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/components/homepagination.templ`, Line: 26, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/components/homepagination.templ`, Line: 27, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -64,7 +65,7 @@ func HomePagination(total int) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(maxPage(total)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/components/homepagination.templ`, Line: 35, Col: 147}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/components/homepagination.templ`, Line: 36, Col: 147}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -77,7 +78,7 @@ func HomePagination(total int) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(rightPagination(total))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/components/homepagination.templ`, Line: 37, Col: 41}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `views/components/homepagination.templ`, Line: 38, Col: 41}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {

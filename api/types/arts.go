@@ -11,7 +11,6 @@ type Art struct {
 	model.Arts
 
 	Creator model.Users `alias:"Creator.*"`
-	Cover   model.Files `alias:"Cover.*"`
 	Files   []model.Files
 	Tags    []model.Tags
 
@@ -35,7 +34,6 @@ type ManyArts []struct {
 	model.Arts
 
 	Creator  model.Users `alias:"Creator.*"`
-	Cover    model.Files `alias:"Cover.*"`
 	Tags     []model.Tags
 	TagNames string
 	TagIDs   string

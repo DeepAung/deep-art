@@ -29,7 +29,7 @@ document.addEventListener("alpine:init", () => {
 });
 
 function requestBody() {
-  let req = { ...Alpine.store("req") };
+  let req = Alpine.store("req");
 
   if (req.filter.minPrice == null) {
     req.filter.minPrice = -1;
