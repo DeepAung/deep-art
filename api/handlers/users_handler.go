@@ -101,3 +101,30 @@ func (h *UsersHandler) SignOut(c echo.Context) error {
 	c.Response().Header().Add("HX-Redirect", "/signin")
 	return nil
 }
+
+func (h *UsersHandler) UpdateTokens(c echo.Context) error {
+	errStatus := http.StatusInternalServerError
+	errMsg := http.StatusText(errStatus)
+
+	payload, ok := c.Get("payload").(mytoken.Payload)
+	if !ok {
+		return utils.Render(c, components.Error(errMsg), errStatus)
+	}
+
+	refreshTokenCookie, err := c.Cookie("refreshToken")
+	if err != nil {
+		return utils.Render(c, components.Error(errMsg), errStatus)
+	}
+
+	token, err := h.usersSvc.UpdateTokens(payload.UserId, refreshTokenCookie.Value)
+	if err != nil {
+		errMsg, errStatus = httperror.Extract(err)
+		return utils.Render(c, components.Error(errMsg), errStatus)
+	}
+
+	utils.SetCookie(c, "accessToken", token.AccessToken, h.cfg.Jwt.AccessExpires)
+	utils.SetCookie(c, "refreshToken", token.RefreshToken, h.cfg.Jwt.RefreshExpires)
+	utils.SetCookie(c, "tokenId", strconv.Itoa(token.Id), 0)
+
+	return nil
+}

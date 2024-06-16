@@ -46,12 +46,22 @@ func (s *UsersSvc) SignIn(email string, password string) (types.Passport, error)
 		Username: user.Username,
 	}
 
-	accessToken, err := mytoken.GenerateToken(mytoken.Access, s.cfg.Jwt.AccessExpires, s.cfg.Jwt.SecretKey, payload)
+	accessToken, err := mytoken.GenerateToken(
+		mytoken.Access,
+		s.cfg.Jwt.AccessExpires,
+		s.cfg.Jwt.SecretKey,
+		payload,
+	)
 	if err != nil {
 		return types.Passport{}, err
 	}
 
-	refreshToken, err := mytoken.GenerateToken(mytoken.Refresh, s.cfg.Jwt.RefreshExpires, s.cfg.Jwt.SecretKey, payload)
+	refreshToken, err := mytoken.GenerateToken(
+		mytoken.Refresh,
+		s.cfg.Jwt.RefreshExpires,
+		s.cfg.Jwt.SecretKey,
+		payload,
+	)
 	if err != nil {
 		return types.Passport{}, err
 	}
@@ -108,12 +118,27 @@ func (s *UsersSvc) UpdateTokens(userId int, refreshToken string) (types.Token, e
 		return types.Token{}, err
 	}
 
-	newAccessToken, err := mytoken.GenerateToken(mytoken.Access, s.cfg.Jwt.AccessExpires, s.cfg.Jwt.SecretKey, claims.Payload)
+	newAccessToken, err := mytoken.GenerateToken(
+		mytoken.Access,
+		s.cfg.Jwt.AccessExpires,
+		s.cfg.Jwt.SecretKey,
+		claims.Payload,
+	)
 	if err != nil {
 		return types.Token{}, err
 	}
 
-	newRefreshToken, err := mytoken.GenerateToken(mytoken.Refresh, s.cfg.Jwt.RefreshExpires, s.cfg.Jwt.SecretKey, claims.Payload)
+	newRefreshToken, err := mytoken.GenerateToken(
+		mytoken.Refresh,
+		s.cfg.Jwt.RefreshExpires,
+		s.cfg.Jwt.SecretKey,
+		claims.Payload,
+	)
+	if err != nil {
+		return types.Token{}, err
+	}
+
+	err = s.usersRepo.UpdateTokens(tokenId, newAccessToken, newRefreshToken)
 	if err != nil {
 		return types.Token{}, err
 	}
@@ -127,6 +152,10 @@ func (s *UsersSvc) UpdateTokens(userId int, refreshToken string) (types.Token, e
 
 func (s *UsersSvc) HasAccessToken(userId int, accessToken string) (bool, error) {
 	return s.usersRepo.HasAccessToken(userId, accessToken)
+}
+
+func (s *UsersSvc) HasRefreshToken(userId int, refreshToken string) (bool, error) {
+	return s.usersRepo.HasRefreshToken(userId, refreshToken)
 }
 
 func (s *UsersSvc) GetUser(id int) (types.User, error) {

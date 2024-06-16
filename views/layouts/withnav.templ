@@ -31,6 +31,7 @@ templ WithNav(navType navType, user types.User) {
 			</nav>
 		</header>
 		<main class="flex-auto">
+			<span hx-post="/api/tokens/update" hx-trigger="load, every 55m" hx-swap="none"></span>
 			{ children... }
 		</main>
 	}

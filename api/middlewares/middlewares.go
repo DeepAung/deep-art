@@ -86,7 +86,7 @@ func SetUserData() AuthorizedOpt {
 func (m *Middleware) OnlyAuthorized(opts ...AuthorizedOpt) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			payload, err := m.authorized(c)
+			payload, err := m.jwtAccessToken(c)
 			if err != nil {
 				utils.ClearCookies(c)
 				c.Redirect(http.StatusFound, "/signin")
@@ -113,7 +113,64 @@ func (m *Middleware) OnlyAuthorized(opts ...AuthorizedOpt) echo.MiddlewareFunc {
 	}
 }
 
-func (m *Middleware) authorized(c echo.Context) (mytoken.Payload, error) {
+func (m *Middleware) JwtRefreshToken(opts ...AuthorizedOpt) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			payload, err := m.jwtRefreshToken(c)
+			if err != nil {
+				utils.ClearCookies(c)
+				c.Redirect(http.StatusFound, "/signin")
+				return nil
+			}
+
+			a := &Authorized{
+				c:       c,
+				mid:     m,
+				payload: payload,
+			}
+
+			for _, o := range opts {
+				err := o(a)
+				if err != nil {
+					utils.ClearCookies(c)
+					c.Redirect(http.StatusFound, "/signin")
+					return nil
+				}
+			}
+
+			return next(c)
+		}
+	}
+}
+
+func (m *Middleware) jwtRefreshToken(c echo.Context) (mytoken.Payload, error) {
+	cookie, err := c.Cookie("refreshToken")
+	if err != nil {
+		return mytoken.Payload{}, err
+	}
+
+	tokenString := cookie.Value
+	if tokenString == "" {
+		return mytoken.Payload{}, errors.New("invalid or empty token string")
+	}
+
+	claims, err := mytoken.ParseToken(mytoken.Refresh, m.cfg.Jwt.SecretKey, tokenString)
+	if err != nil {
+		return mytoken.Payload{}, err
+	}
+
+	has, err := m.usersSvc.HasRefreshToken(claims.Payload.UserId, tokenString)
+	if err != nil {
+		return mytoken.Payload{}, err
+	}
+	if !has {
+		return mytoken.Payload{}, errors.New("invalid or empty token string")
+	}
+
+	return claims.Payload, nil
+}
+
+func (m *Middleware) jwtAccessToken(c echo.Context) (mytoken.Payload, error) {
 	cookie, err := c.Cookie("accessToken")
 	if err != nil {
 		return mytoken.Payload{}, err

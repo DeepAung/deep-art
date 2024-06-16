@@ -50,9 +50,12 @@ func (r *Router) UsersRouter() {
 	svc := services.NewUsersSvc(repo, r.s.cfg)
 	handler := handlers.NewUsersHandler(svc, r.s.cfg)
 
+	setPayload := middlewares.SetPayload
+
 	r.s.app.POST("/api/signin", handler.SignIn)
 	r.s.app.POST("/api/signup", handler.SignUp)
-	r.s.app.POST("/api/signout", handler.SignOut, r.mid.OnlyAuthorized(middlewares.SetPayload()))
+	r.s.app.POST("/api/signout", handler.SignOut, r.mid.OnlyAuthorized(setPayload()))
+	r.s.app.POST("/api/tokens/update", handler.UpdateTokens, r.mid.JwtRefreshToken(setPayload()))
 }
 
 func (r *Router) ArtsRouter() {

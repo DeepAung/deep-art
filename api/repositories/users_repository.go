@@ -16,10 +16,11 @@ import (
 )
 
 var (
-	ErrUserNotFound       = httperror.New("user not found", http.StatusBadRequest)
-	ErrUserNoRowsAffected = httperror.New("user no rows affected", http.StatusInternalServerError)
-	ErrCreateUserFailed   = httperror.New("create user failed", http.StatusInternalServerError)
-	ErrTokenNotFound      = httperror.New("token not found", http.StatusBadRequest)
+	ErrUserNotFound        = httperror.New("user not found", http.StatusBadRequest)
+	ErrUserNoRowsAffected  = httperror.New("user no rows affected", http.StatusInternalServerError)
+	ErrCreateUserFailed    = httperror.New("create user failed", http.StatusInternalServerError)
+	ErrTokenNotFound       = httperror.New("token not found", http.StatusBadRequest)
+	ErrTokenNoRowsAffected = httperror.New("token no rows affected", http.StatusInternalServerError)
 )
 
 type UsersRepo struct {
@@ -178,6 +179,27 @@ func (r *UsersRepo) HasAccessToken(userId int, accessToken string) (bool, error)
 	return true, nil
 }
 
+func (r *UsersRepo) HasRefreshToken(userId int, refreshToken string) (bool, error) {
+	stmt := SELECT(Int(1)).
+		FROM(Tokens).
+		WHERE(
+			Tokens.UserID.EQ(Int(int64(userId))).
+				AND(Tokens.RefreshToken.EQ(String(refreshToken))))
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	var tmp struct{ int }
+	if err := stmt.QueryContext(ctx, r.db, &tmp); err != nil {
+		if errors.Is(err, qrm.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
 func (r *UsersRepo) FindOneTokenId(userId int, refreshToken string) (int, error) {
 	stmt := SELECT(Tokens.ID).
 		FROM(Tokens).
@@ -214,6 +236,29 @@ func (r *UsersRepo) CreateToken(userId int, accessToken, refreshToken string) (i
 	}
 
 	return int(*res.ID), nil
+}
+
+func (r *UsersRepo) UpdateTokens(tokenId int, newAccessToken, newRefreshToken string) error {
+	stmt := Tokens.UPDATE(Tokens.AccessToken, Tokens.RefreshToken).
+		SET(newAccessToken, newRefreshToken).
+		WHERE(Tokens.ID.EQ(Int(int64(tokenId))))
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	result, err := stmt.ExecContext(ctx, r.db)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrTokenNoRowsAffected
+	}
+
+	return nil
 }
 
 func (r *UsersRepo) DeleteToken(userId int, tokenId int) error {
