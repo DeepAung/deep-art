@@ -23,7 +23,7 @@ func NewArtsSvc(artsRepo *repositories.ArtsRepo, cfg *config.Config) *ArtsSvc {
 	}
 }
 
-func (s *ArtsSvc) FindManyArts(req types.ManyArtsReq) (types.ManyArts, error) {
+func (s *ArtsSvc) FindManyArts(req types.ManyArtsReq) (types.ManyArtsRes, error) {
 	return s.artsRepo.FindManyArts(req)
 }
 

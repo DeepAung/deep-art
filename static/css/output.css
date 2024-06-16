@@ -750,6 +750,10 @@ video {
   height: 100%;
 }
 
+.h-\[1px\]{
+  height: 1px;
+}
+
 .h-\[70vh\]{
   height: 70vh;
 }
@@ -762,13 +766,8 @@ video {
   height: 100%;
 }
 
-.h-\[max-content\]{
-  height: -moz-max-content;
-  height: max-content;
-}
-
-.h-\[20rem\]{
-  height: 20rem;
+.min-h-\[38px\]{
+  min-height: 38px;
 }
 
 .min-h-screen{
@@ -785,6 +784,10 @@ video {
 
 .w-full{
   width: 100%;
+}
+
+.min-w-\[38px\]{
+  min-width: 38px;
 }
 
 .max-w-\[85rem\]{
@@ -1041,11 +1044,6 @@ video {
   background-color: rgb(255 255 255 / var(--tw-bg-opacity));
 }
 
-.bg-red-400{
-  --tw-bg-opacity: 1;
-  background-color: rgb(248 113 113 / var(--tw-bg-opacity));
-}
-
 .bg-opacity-50{
   --tw-bg-opacity: 0.5;
 }
@@ -1065,6 +1063,26 @@ video {
 
 .p-4{
   padding: 1rem;
+}
+
+.px-1{
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+.px-1\.5{
+  padding-left: 0.375rem;
+  padding-right: 0.375rem;
+}
+
+.px-2{
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.px-2\.5{
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
 }
 
 .px-3{
@@ -1309,8 +1327,8 @@ video {
   transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
 }
 
-.\[--auto-close\:false\]{
-  --auto-close: false;
+.\[--auto-close\:inside\]{
+  --auto-close: inside;
 }
 
 .htmx-indicator {
@@ -1483,6 +1501,11 @@ video {
 .focus\:bg-gray-100:focus{
   --tw-bg-opacity: 1;
   background-color: rgb(243 244 246 / var(--tw-bg-opacity));
+}
+
+.focus\:bg-gray-50:focus{
+  --tw-bg-opacity: 1;
+  background-color: rgb(249 250 251 / var(--tw-bg-opacity));
 }
 
 .focus\:outline-none:focus{
@@ -1809,6 +1832,10 @@ video {
     background-color: rgb(30 41 59 / var(--tw-bg-opacity));
   }
 
+  .dark\:hover\:bg-white\/10:hover{
+    background-color: rgb(255 255 255 / 0.1);
+  }
+
   .dark\:hover\:text-blue-400:hover{
     --tw-text-opacity: 1;
     color: rgb(96 165 250 / var(--tw-text-opacity));
@@ -1817,6 +1844,10 @@ video {
   .dark\:focus\:bg-slate-800:focus{
     --tw-bg-opacity: 1;
     background-color: rgb(30 41 59 / var(--tw-bg-opacity));
+  }
+
+  .dark\:focus\:bg-white\/10:focus{
+    background-color: rgb(255 255 255 / 0.1);
   }
 
   .dark\:focus\:ring-neutral-600:focus{

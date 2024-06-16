@@ -1,4 +1,5 @@
-<div class=\"grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4 p-4\">
+<div id=\"pagination\" hx-swap-oob=\"outerHTML:#pagination\">
+</div><div class=\"grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4 p-4\">
 <a class=\"flex flex-col group bg-white border shadow-sm rounded-xl overflow-hidden hover:shadow-lg transition dark:bg-neutral-900 dark:border-neutral-700 dark:shadow-neutral-700/70\" href=\"
 \"><div class=\"relative pt-[50%] sm:pt-[60%] lg:pt-[80%] rounded-t-xl overflow-hidden\"><img class=\"size-full absolute top-0 start-0 object-contain group-hover:scale-105 transition-transform duration-500 ease-in-out rounded-t-xl\" src=\"
 \" alt=\"Image Description\"></div><div class=\" p-4 md:p-5\"><div class=\"flex items-start justify-between\"><div><h3 class=\"text-lg font-bold text-gray-800 dark:text-white\">

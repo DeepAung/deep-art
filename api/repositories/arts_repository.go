@@ -35,7 +35,7 @@ func NewArtsRepo(storer storer.Storer, db *sql.DB, timeout time.Duration) *ArtsR
 	}
 }
 
-func (r *ArtsRepo) FindManyArts(req types.ManyArtsReq) (types.ManyArts, error) {
+func (r *ArtsRepo) FindManyArts(req types.ManyArtsReq) (types.ManyArtsRes, error) {
 	statsTable := r.statsTable().AsTable("Stats")
 	stats := r.statsColumn(statsTable)
 
@@ -46,7 +46,7 @@ func (r *ArtsRepo) FindManyArts(req types.ManyArtsReq) (types.ManyArts, error) {
 	stmt := r.findManyArtsStmt(cond, statsTable)
 	stmt, err := r.withSortStmt(stmt, req.Sort, stats)
 	if err != nil {
-		return types.ManyArts{}, err
+		return types.ManyArtsRes{}, err
 	}
 	stmt = r.withPaginationStmt(stmt, req.Pagination)
 
@@ -56,17 +56,29 @@ func (r *ArtsRepo) FindManyArts(req types.ManyArtsReq) (types.ManyArts, error) {
 	var dest types.ManyArts
 	if err := stmt.QueryContext(ctx, r.db, &dest); err != nil {
 		if errors.Is(err, qrm.ErrNoRows) {
-			return types.ManyArts{}, ErrArtsNotFound
+			return types.ManyArtsRes{}, ErrArtsNotFound
 		}
-		return types.ManyArts{}, err
+		return types.ManyArtsRes{}, err
 	}
 
 	err = dest.FillTags()
 	if err != nil {
-		return types.ManyArts{}, err
+		return types.ManyArtsRes{}, err
 	}
 
-	return dest, nil
+	stmt2 := r.findCountManyArtsStmt(cond, statsTable)
+	var dest2 struct{ Count int }
+	if err := stmt2.QueryContext(ctx, r.db, &dest2); err != nil {
+		if errors.Is(err, qrm.ErrNoRows) {
+			return types.ManyArtsRes{}, ErrArtsNotFound
+		}
+		return types.ManyArtsRes{}, err
+	}
+
+	return types.ManyArtsRes{
+		Arts:  dest,
+		Total: dest2.Count,
+	}, nil
 }
 
 func (r *ArtsRepo) FindOneArt(id int) (types.Art, error) {
@@ -193,6 +205,25 @@ func (r *ArtsRepo) findManyArtsStmt(
 			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
 			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),
 	).WHERE(cond).GROUP_BY(Arts.ID)
+}
+
+func (r *ArtsRepo) findCountManyArtsStmt(
+	cond BoolExpression,
+	statsTable SelectTable,
+) SelectStatement {
+	creator := Users.AS("Creator")
+	cover := Files.AS("Cover")
+
+	return SELECT(
+		COUNT(DISTINCT(Arts.ID)).AS("Count"),
+	).FROM(
+		Arts.
+			LEFT_JOIN(creator, creator.ID.EQ(Arts.CreatorID)).
+			LEFT_JOIN(cover, cover.ID.EQ(Arts.CoverID)).
+			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
+			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
+			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),
+	).WHERE(cond)
 }
 
 func (r *ArtsRepo) withFilterCond(cond BoolExpression, filter types.Filter) BoolExpression {

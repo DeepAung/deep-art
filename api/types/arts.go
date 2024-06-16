@@ -26,6 +26,11 @@ type Art struct {
 	YearlyStars  int `alias:"Stats.YearlyStars"`
 }
 
+type ManyArtsRes struct {
+	Arts  ManyArts
+	Total int
+}
+
 type ManyArts []struct {
 	model.Arts
 
