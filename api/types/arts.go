@@ -10,7 +10,8 @@ import (
 type Art struct {
 	model.Arts
 
-	Creator model.Users `alias:"Creator.*"`
+	// Users     model.Users `alias:"Creator.*"`
+	Creator Creator `alias:"Creator.*"`
 	Files   []model.Files
 	Tags    []model.Tags
 
@@ -33,7 +34,7 @@ type ManyArtsRes struct {
 type ManyArts []struct {
 	model.Arts
 
-	Creator  model.Users `alias:"Creator.*"`
+	Creator  Creator `alias:"Creator.*"`
 	Tags     []model.Tags
 	TagNames string
 	TagIDs   string

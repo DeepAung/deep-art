@@ -1,6 +1,7 @@
 DELETE FROM "users";
 DELETE FROM "tokens";
 DELETE FROM "oauths";
+DELETE FROM "follow";
 DELETE FROM "arts";
 DELETE FROM "downloaded_arts";
 DELETE FROM "users_starred_arts";

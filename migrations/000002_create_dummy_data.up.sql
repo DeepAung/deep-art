@@ -4,6 +4,9 @@ INSERT INTO "users" ("username", "email", "password")
   ('user2', 'user2@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi'),
   ('user3', 'user3@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi');
 
+INSERT INTO "follow" ("user_id_follower", "user_id_followee")
+  VALUES (2, 1), (3, 1), (4, 1);
+
 
 INSERT INTO "arts" ("cover_url", "name", "description", "creator_id", "price")
   VALUES ('/static/storage/kadoru.jpg', 'the first art', 'just the first art bro.', 1, 0),

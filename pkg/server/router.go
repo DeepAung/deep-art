@@ -94,6 +94,7 @@ func (r *Router) TestRouter() {
 	r.testCodesRouter(test)
 	r.testFilesRouter(test)
 	r.testArtsRouter(test)
+	r.testUsersRouter(test)
 }
 
 func (r *Router) testTagsRouter(testGroup *echo.Group) {
@@ -139,4 +140,12 @@ func (r *Router) testArtsRouter(testGroup *echo.Group) {
 	artsGroup := testGroup.Group("/arts")
 	artsGroup.GET("", handler.FindManyArts)
 	artsGroup.GET("/:id", handler.FindOneArt)
+}
+
+func (r *Router) testUsersRouter(testGroup *echo.Group) {
+	repo := repositories.NewUsersRepo(r.s.db, r.s.cfg.App.Timeout)
+	handler := handlers.NewTestUsersHandler(repo)
+
+	usersGroup := testGroup.Group("/users")
+	usersGroup.GET("/creator/:id", handler.GetCreator)
 }

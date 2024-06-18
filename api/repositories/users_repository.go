@@ -62,6 +62,38 @@ func (r *UsersRepo) FindOneUserById(id int) (types.User, error) {
 	}, nil
 }
 
+func (r *UsersRepo) FindOneCreatorById(id int) (types.Creator, error) {
+	stmt := SELECT(
+		Users.AllColumns,
+		COUNT(Follow.UserIDFollower).AS("Followers"),
+	).FROM(
+		Users.
+			LEFT_JOIN(Follow, Follow.UserIDFollowee.EQ(Users.ID)),
+	).WHERE(Users.ID.EQ(Int(int64(id)))).GROUP_BY(Users.ID)
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	var dest struct {
+		model.Users
+		Followers int
+	}
+	if err := stmt.QueryContext(ctx, r.db, &dest); err != nil {
+		if errors.Is(err, qrm.ErrNoRows) {
+			return types.Creator{}, ErrUserNotFound
+		}
+		return types.Creator{}, err
+	}
+
+	return types.Creator{
+		Id:        int(*dest.ID),
+		Username:  dest.Username,
+		Email:     dest.Email,
+		AvatarURL: dest.AvatarURL,
+		Followers: dest.Followers,
+	}, nil
+}
+
 func (r *UsersRepo) FindOneUserWithPasswordByEmail(email string) (types.UserWithPassword, error) {
 	stmt := SELECT(Users.AllColumns).
 		FROM(Users).

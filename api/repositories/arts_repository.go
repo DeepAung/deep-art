@@ -91,12 +91,14 @@ func (r *ArtsRepo) FindOneArt(id int) (types.Art, error) {
 	stmt := SELECT(
 		Arts.AllColumns,
 		creator.AllColumns.Except(creator.Password),
+		COUNT(DISTINCT(Follow.UserIDFollower)).AS("Creator.Followers"),
 		Files.AllColumns,
 		Tags.AllColumns,
 		statsTable.AllColumns().As("Stats.*"),
 	).FROM(
 		Arts.
-			LEFT_JOIN(creator, creator.AS("Creator").ID.EQ(Arts.CreatorID)).
+			LEFT_JOIN(creator, creator.ID.EQ(Arts.CreatorID)).
+			LEFT_JOIN(Follow, Follow.UserIDFollowee.EQ(creator.ID)).
 			LEFT_JOIN(Files, Files.ArtID.EQ(Arts.ID)).
 			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
 			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
@@ -188,12 +190,14 @@ func (r *ArtsRepo) findManyArtsStmt(
 	return SELECT(
 		Arts.AllColumns,
 		creator.AllColumns.Except(creator.Password),
+		COUNT(DISTINCT(Follow.UserIDFollower)).AS("Creator.Followers"),
 		Raw("group_concat(tags.name)").AS("TagNames"),
 		Raw("group_concat(tags.id)").AS("TagIDs"),
 		statsTable.AllColumns().As("Stats.*"),
 	).FROM(
 		Arts.
 			LEFT_JOIN(creator, creator.ID.EQ(Arts.CreatorID)).
+			LEFT_JOIN(Follow, Follow.UserIDFollowee.EQ(creator.ID)).
 			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
 			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
 			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),

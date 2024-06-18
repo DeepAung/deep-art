@@ -162,6 +162,10 @@ func (s *UsersSvc) GetUser(id int) (types.User, error) {
 	return s.usersRepo.FindOneUserById(id)
 }
 
+func (s *UsersSvc) GetCreator(id int) (types.Creator, error) {
+	return s.usersRepo.FindOneCreatorById(id)
+}
+
 func (s *UsersSvc) UpdateUser(id int, req types.UpdateReq) error {
 	return s.usersRepo.UpdateUser(id, req)
 }

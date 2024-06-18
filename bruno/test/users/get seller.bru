@@ -1,0 +1,11 @@
+meta {
+  name: get creator
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{url}}/test/users/creator/1
+  body: formUrlEncoded
+  auth: none
+}

@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS "schema_migrations"; -- CASCADE;
 DROP TABLE IF EXISTS "users"; -- CASCADE;
 DROP TABLE IF EXISTS "tokens"; -- CASCADE;
 DROP TABLE IF EXISTS "oauths"; -- CASCADE;
+DROP TABLE IF EXISTS "follow"; -- CASCADE;
 DROP TABLE IF EXISTS "arts"; -- CASCADE;
 DROP TABLE IF EXISTS "downloaded_arts"; -- CASCADE;
 DROP TABLE IF EXISTS "users_starred_arts"; -- CASCADE;

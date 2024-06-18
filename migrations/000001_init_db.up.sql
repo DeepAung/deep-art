@@ -31,6 +31,18 @@ CREATE TABLE "oauths" (
   FOREIGN KEY ("user_id") REFERENCES "users" ("id")
 );
 
+-- follower is follwing followee
+-- follower is users
+-- followee is creators
+CREATE TABLE "follow" (
+  "user_id_follower" INT NOT NULL,
+  "user_id_followee" INT NOT NULL,
+  "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY ("user_id_follower", "user_id_followee"),
+  FOREIGN KEY ("user_id_follower") REFERENCES "users" ("id"),
+  FOREIGN KEY ("user_id_followee") REFERENCES "users" ("id")
+);
+
 CREATE TABLE "arts" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "cover_url" VARCHAR UNIQUE NOT NULL,
