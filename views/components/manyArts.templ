@@ -4,7 +4,7 @@ import "github.com/DeepAung/deep-art/api/types"
 import "fmt"
 
 templ ManyArts(res types.ManyArtsRes) {
-	<div id="pagination" hx-swap-oob="outerHTML:#pagination">
+	<div id="pagination" hx-swap-oob="innerHTML:#pagination">
 		@HomePagination(res.Total)
 	</div>
 	<div class="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4 p-4">

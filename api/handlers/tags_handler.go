@@ -29,5 +29,5 @@ func (h *TagsHandler) TagsFilter(c echo.Context) error {
 		return utils.Render(c, components.Error(msg), status)
 	}
 
-	return utils.Render(c, components.TagsFilter(tags), http.StatusOK)
+	return utils.Render(c, components.HomeTagsFilter(tags), http.StatusOK)
 }

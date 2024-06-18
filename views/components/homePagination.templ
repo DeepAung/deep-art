@@ -12,19 +12,19 @@ func maxPage(total int) int {
 	return maxPage
 }
 
-func leftPagination() string {
+func gotoLeft() string {
 	variable := "$store.req.pagination.page"
 	return fmt.Sprintf("%s = Math.max(1, %s - 1)", variable, variable)
 }
 
-func rightPagination(total int) string {
+func gotoRight(total int) string {
 	variable := "$store.req.pagination.page"
 	return fmt.Sprintf("%s = Math.min(%s + 1, %d)", variable, variable, maxPage(total))
 }
 
 templ HomePagination(total int) {
 	<nav x-data class="flex items-center justify-center gap-x-1">
-		<button @click={ leftPagination() } type="button" class="min-h-[38px] min-w-[38px] py-2 px-2.5 inline-flex justify-center items-center gap-x-2 text-sm rounded-lg text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:hover:bg-white/10 dark:focus:bg-white/10">
+		<button @click={ gotoLeft() } type="button" class="min-h-[38px] min-w-[38px] py-2 px-2.5 inline-flex justify-center items-center gap-x-2 text-sm rounded-lg text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:hover:bg-white/10 dark:focus:bg-white/10">
 			<svg class="flex-shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<path d="m15 18-6-6 6-6"></path>
 			</svg>
@@ -35,7 +35,7 @@ templ HomePagination(total int) {
 			<span class="min-h-[38px] flex justify-center items-center text-gray-500 py-2 px-1.5 text-sm dark:text-neutral-500">of</span>
 			<span class="min-h-[38px] flex justify-center items-center text-gray-500 py-2 px-1.5 text-sm dark:text-neutral-500">{ fmt.Sprint(maxPage(total)) }</span>
 		</div>
-		<button @click={ rightPagination(total) } type="button" class="min-h-[38px] min-w-[38px] py-2 px-2.5 inline-flex justify-center items-center gap-x-2 text-sm rounded-lg text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:hover:bg-white/10 dark:focus:bg-white/10">
+		<button @click={ gotoRight(total) } type="button" class="min-h-[38px] min-w-[38px] py-2 px-2.5 inline-flex justify-center items-center gap-x-2 text-sm rounded-lg text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:hover:bg-white/10 dark:focus:bg-white/10">
 			<span aria-hidden="true" class="sr-only">Next</span>
 			<svg class="flex-shrink-0 size-3.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<path d="m9 18 6-6-6-6"></path>

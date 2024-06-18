@@ -3,7 +3,7 @@ package components
 import "github.com/DeepAung/deep-art/.gen/model"
 import "fmt"
 
-templ TagsFilter(tags []model.Tags) {
+templ HomeTagsFilter(tags []model.Tags) {
 	<label for="tags" class="block text-sm font-medium mb-2 dark:text-white">Tags</label>
 	<div class="flex gap-x-6">
 		for i, tag := range tags {
