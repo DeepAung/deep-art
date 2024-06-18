@@ -174,5 +174,38 @@ func (s *UsersSvc) DeleteUser(id int) error {
 	return s.usersRepo.DeleteUser(id)
 }
 
+// follower = user
+// followee = creator
+func (s *UsersSvc) ToggleFollow(followerId, followeeId int) (bool, error) {
+	isFollowing, err := s.IsFollowing(followerId, followeeId)
+	if err != nil {
+		return false, err
+	}
+
+	if isFollowing {
+		err = s.UnFollow(followerId, followeeId)
+	} else {
+		err = s.Follow(followerId, followeeId)
+	}
+
+	if err != nil {
+		return false, err
+	}
+
+	return !isFollowing, nil
+}
+
+func (s *UsersSvc) IsFollowing(followerId, followeeId int) (bool, error) {
+	return s.usersRepo.HasFollow(followerId, followeeId)
+}
+
+func (s *UsersSvc) Follow(followerId, followeeId int) error {
+	return s.usersRepo.CreateFollow(followerId, followeeId)
+}
+
+func (s *UsersSvc) UnFollow(followerId, followeeId int) error {
+	return s.usersRepo.DeleteFollow(followerId, followeeId)
+}
+
 func (s *UsersSvc) ConnectOAuth()    {}
 func (s *UsersSvc) DisconnectOAuth() {}

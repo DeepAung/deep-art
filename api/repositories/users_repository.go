@@ -16,11 +16,18 @@ import (
 )
 
 var (
-	ErrUserNotFound        = httperror.New("user not found", http.StatusBadRequest)
-	ErrUserNoRowsAffected  = httperror.New("user no rows affected", http.StatusInternalServerError)
-	ErrCreateUserFailed    = httperror.New("create user failed", http.StatusInternalServerError)
+	ErrUserNotFound         = httperror.New("user not found", http.StatusBadRequest)
+	ErrUserNoRowsAffected   = httperror.New("user no rows affected", http.StatusInternalServerError)
+	ErrCreateUserFailed     = httperror.New("create user failed", http.StatusInternalServerError)
+	ErrFollowNoRowsAffected = httperror.New(
+		"follow no rows affected",
+		http.StatusInternalServerError,
+	)
 	ErrTokenNotFound       = httperror.New("token not found", http.StatusBadRequest)
-	ErrTokenNoRowsAffected = httperror.New("token no rows affected", http.StatusInternalServerError)
+	ErrTokenNoRowsAffected = httperror.New(
+		"token no rows affected",
+		http.StatusInternalServerError,
+	)
 )
 
 type UsersRepo struct {
@@ -185,6 +192,75 @@ func (r *UsersRepo) DeleteUser(id int) error {
 	}
 	if n == 0 {
 		return ErrUserNoRowsAffected
+	}
+
+	return nil
+}
+
+func (r *UsersRepo) HasFollow(followerId, followeeId int) (bool, error) {
+	stmt := SELECT(Int(1)).
+		FROM(Follow).
+		WHERE(
+			Follow.UserIDFollower.EQ(Int(int64(followerId))).
+				AND(Follow.UserIDFollowee.EQ(Int(int64(followeeId)))),
+		)
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	var tmp struct{ int }
+	if err := stmt.QueryContext(ctx, r.db, &tmp); err != nil {
+		if errors.Is(err, qrm.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (r *UsersRepo) CreateFollow(followerId, followeeId int) error {
+	stmt := Follow.
+		INSERT(Follow.UserIDFollower, Follow.UserIDFollowee).
+		VALUES(followerId, followeeId)
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	result, err := stmt.ExecContext(ctx, r.db)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrFollowNoRowsAffected
+	}
+
+	return nil
+}
+
+func (r *UsersRepo) DeleteFollow(followerId, followeeId int) error {
+	stmt := Follow.DELETE().WHERE(
+		Follow.UserIDFollower.EQ(Int(int64(followerId))).
+			AND(Follow.UserIDFollowee.EQ(Int(int64(followeeId)))),
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	result, err := stmt.ExecContext(ctx, r.db)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrFollowNoRowsAffected
 	}
 
 	return nil

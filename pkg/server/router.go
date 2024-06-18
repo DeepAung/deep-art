@@ -31,9 +31,11 @@ func NewRouter(
 }
 
 func (r *Router) PagesRouter() {
+	usersRepo := repositories.NewUsersRepo(r.s.db, r.s.cfg.App.Timeout)
+	usersSvc := services.NewUsersSvc(usersRepo, r.s.cfg)
 	artsRepo := repositories.NewArtsRepo(r.storer, r.s.db, r.s.cfg.App.Timeout)
 	artsSvc := services.NewArtsSvc(artsRepo, r.s.cfg)
-	handler := handlers.NewPagesHandler(artsSvc)
+	handler := handlers.NewPagesHandler(usersSvc, artsSvc)
 
 	setPayload := middlewares.SetPayload
 	setUserData := middlewares.SetUserData
@@ -55,6 +57,11 @@ func (r *Router) UsersRouter() {
 	r.s.app.POST("/api/signin", handler.SignIn)
 	r.s.app.POST("/api/signup", handler.SignUp)
 	r.s.app.POST("/api/signout", handler.SignOut, r.mid.OnlyAuthorized(setPayload()))
+	r.s.app.POST(
+		"/api/creators/:id/toggle-follow",
+		handler.ToggleFollow,
+		r.mid.OnlyAuthorized(setPayload()),
+	)
 	r.s.app.POST("/api/tokens/update", handler.UpdateTokens, r.mid.JwtRefreshToken(setPayload()))
 }
 
@@ -147,5 +154,5 @@ func (r *Router) testUsersRouter(testGroup *echo.Group) {
 	handler := handlers.NewTestUsersHandler(repo)
 
 	usersGroup := testGroup.Group("/users")
-	usersGroup.GET("/creator/:id", handler.GetCreator)
+	usersGroup.GET("/creators/:id", handler.GetCreator)
 }

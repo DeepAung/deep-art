@@ -100,6 +100,29 @@ func (h *UsersHandler) SignOut(c echo.Context) error {
 	return nil
 }
 
+func (h *UsersHandler) ToggleFollow(c echo.Context) error {
+	errStatus := http.StatusInternalServerError
+	errMsg := http.StatusText(errStatus)
+
+	payload, ok := c.Get("payload").(mytoken.Payload)
+	if !ok {
+		return utils.Render(c, components.Error(errMsg), errStatus)
+	}
+
+	creatorId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return utils.Render(c, components.Error(errMsg), errStatus)
+	}
+
+	isFollowing, err := h.usersSvc.ToggleFollow(payload.UserId, creatorId)
+	if err != nil {
+		msg, status := httperror.Extract(err)
+		return utils.Render(c, components.Error(msg), status)
+	}
+
+	return utils.Render(c, components.FollowButton(creatorId, isFollowing), http.StatusOK)
+}
+
 func (h *UsersHandler) UpdateTokens(c echo.Context) error {
 	errStatus := http.StatusInternalServerError
 	errMsg := http.StatusText(errStatus)
