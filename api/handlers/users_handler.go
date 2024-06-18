@@ -44,9 +44,7 @@ func (h *UsersHandler) SignIn(c echo.Context) error {
 		return utils.Render(c, components.Error(msg), status)
 	}
 
-	utils.SetCookie(c, "accessToken", passport.Token.AccessToken, h.cfg.Jwt.AccessExpires)
-	utils.SetCookie(c, "refreshToken", passport.Token.RefreshToken, h.cfg.Jwt.RefreshExpires)
-	utils.SetCookie(c, "tokenId", strconv.Itoa(passport.Token.Id), 0)
+	utils.SetTokensCookies(c, passport.Token, h.cfg.Jwt)
 
 	c.Response().Header().Add("HX-Redirect", "/home")
 	return nil
@@ -97,7 +95,7 @@ func (h *UsersHandler) SignOut(c echo.Context) error {
 		return utils.Render(c, components.Error(msg), status)
 	}
 
-	utils.ClearCookies(c)
+	utils.ClearTokensCookies(c)
 	c.Response().Header().Add("HX-Redirect", "/signin")
 	return nil
 }
@@ -122,9 +120,7 @@ func (h *UsersHandler) UpdateTokens(c echo.Context) error {
 		return utils.Render(c, components.Error(errMsg), errStatus)
 	}
 
-	utils.SetCookie(c, "accessToken", token.AccessToken, h.cfg.Jwt.AccessExpires)
-	utils.SetCookie(c, "refreshToken", token.RefreshToken, h.cfg.Jwt.RefreshExpires)
-	utils.SetCookie(c, "tokenId", strconv.Itoa(token.Id), 0)
+	utils.SetTokensCookies(c, token, h.cfg.Jwt)
 
 	return nil
 }

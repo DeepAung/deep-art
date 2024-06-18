@@ -2,8 +2,11 @@ package utils
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
+	"github.com/DeepAung/deep-art/api/types"
+	"github.com/DeepAung/deep-art/pkg/config"
 	"github.com/labstack/echo/v4"
 )
 
@@ -38,7 +41,13 @@ func DeleteCookie(c echo.Context, name string) {
 	})
 }
 
-func ClearCookies(c echo.Context) {
+func SetTokensCookies(c echo.Context, token types.Token, cfg *config.JwtConfig) {
+	SetCookie(c, "accessToken", token.AccessToken, cfg.AccessExpires)
+	SetCookie(c, "refreshToken", token.RefreshToken, cfg.RefreshExpires)
+	SetCookie(c, "tokenId", strconv.Itoa(token.Id), 0)
+}
+
+func ClearTokensCookies(c echo.Context) {
 	DeleteCookie(c, "accessToken")
 	DeleteCookie(c, "refreshToken")
 	DeleteCookie(c, "tokenId")
