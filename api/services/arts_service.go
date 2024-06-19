@@ -30,3 +30,34 @@ func (s *ArtsSvc) FindManyArts(req types.ManyArtsReq) (types.ManyArtsRes, error)
 func (s *ArtsSvc) FindOneArt(id int) (types.Art, error) {
 	return s.artsRepo.FindOneArt(id)
 }
+
+func (s *ArtsSvc) ToggleStar(userId, artId int) (bool, error) {
+	isStarred, err := s.IsStarred(userId, artId)
+	if err != nil {
+		return false, err
+	}
+
+	if isStarred {
+		err = s.UnStar(userId, artId)
+	} else {
+		err = s.Star(userId, artId)
+	}
+
+	if err != nil {
+		return false, err
+	}
+
+	return !isStarred, nil
+}
+
+func (s *ArtsSvc) IsStarred(userId, artId int) (bool, error) {
+	return s.artsRepo.HasUsersStarredArts(userId, artId)
+}
+
+func (s *ArtsSvc) Star(userId, artId int) error {
+	return s.artsRepo.CreateUsersStarredArts(userId, artId)
+}
+
+func (s *ArtsSvc) UnStar(userId, artId int) error {
+	return s.artsRepo.DeleteUsersStarredArts(userId, artId)
+}

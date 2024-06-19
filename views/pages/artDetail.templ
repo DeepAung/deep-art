@@ -5,7 +5,7 @@ import "github.com/DeepAung/deep-art/api/types"
 import "github.com/DeepAung/deep-art/views/components"
 import "fmt"
 
-templ ArtDetail(user types.User, art types.Art, isFollowing bool) {
+templ ArtDetail(user types.User, art types.Art, isFollowing, isStarred bool) {
 	@layouts.WithNav(layouts.Buyer, user) {
 		<div class="flex flex-col gap-4 p-4 pt-0">
 			<div>
@@ -32,10 +32,7 @@ templ ArtDetail(user types.User, art types.Art, isFollowing bool) {
 					} else {
 						<p>{ fmt.Sprint(art.Price) } Coin</p>
 					}
-					<button type="button" class="py-3 px-4 inline-flex items-center gap-x-2 font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
-						<i class="fa-solid fa-star"></i>
-						Star
-					</button>
+					@components.StarButton(int(*art.ID), isStarred)
 					<button type="button" class="py-3 px-4 inline-flex items-center gap-x-2 font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" disabled?={ art.Price != 0 }>
 						<i class="fa-solid fa-download"></i>
 						Download

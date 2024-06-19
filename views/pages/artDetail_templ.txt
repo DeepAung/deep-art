@@ -9,7 +9,7 @@
 <p>Free</p>
 <p>
  Coin</p>
-<button type=\"button\" class=\"py-3 px-4 inline-flex items-center gap-x-2 font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none\"><i class=\"fa-solid fa-star\"></i> Star</button> <button type=\"button\" class=\"py-3 px-4 inline-flex items-center gap-x-2 font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none\"
+<button type=\"button\" class=\"py-3 px-4 inline-flex items-center gap-x-2 font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none\"
  disabled
 ><i class=\"fa-solid fa-download\"></i> Download</button></div></div><h1 class=\"text-4xl text-center font-bold text-gray-800\">
 </h1><p class=\"text-lg text-center text-grey-300\"><em>

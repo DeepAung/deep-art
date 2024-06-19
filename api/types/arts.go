@@ -11,9 +11,11 @@ type Art struct {
 	model.Arts
 
 	// Users     model.Users `alias:"Creator.*"`
-	Creator Creator `alias:"Creator.*"`
-	Files   []model.Files
-	Tags    []model.Tags
+	Creator  Creator `alias:"Creator.*"`
+	Files    []model.Files
+	Tags     []model.Tags
+	TagNames string `alias:"Temp.TagNames"`
+	TagIDs   string `alias:"Temp.TagIDs"`
 
 	TotalDownloads   int `alias:"Stats.TotalDownloads"`
 	WeeklyDownloads  int `alias:"Stats.WeeklyDownloads"`
@@ -24,6 +26,31 @@ type Art struct {
 	WeeklyStars  int `alias:"Stats.WeeklyStars"`
 	MonthlyStars int `alias:"Stats.MonthlyStars"`
 	YearlyStars  int `alias:"Stats.YearlyStars"`
+}
+
+func (art *Art) FillTags() error {
+	if art.TagIDs == "" {
+		return nil
+	}
+
+	tagIDs := strings.Split(art.TagIDs, ",")
+	tagNames := strings.Split(art.TagNames, ",")
+	art.Tags = make([]model.Tags, len(tagIDs))
+
+	for i := range len(tagIDs) {
+		id, err := strconv.Atoi(tagIDs[i])
+		if err != nil {
+			return err
+		}
+		id32 := int32(id)
+
+		art.Tags[i] = model.Tags{
+			ID:   &id32,
+			Name: tagNames[i],
+		}
+	}
+
+	return nil
 }
 
 type ManyArtsRes struct {

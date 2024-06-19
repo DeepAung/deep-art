@@ -71,6 +71,11 @@ func (r *Router) ArtsRouter() {
 	handler := handlers.NewArtsHandler(svc, r.s.cfg)
 
 	r.s.app.POST("/api/arts", handler.FindManyArts)
+	r.s.app.POST(
+		"/api/arts/:id/toggle-star",
+		handler.ToggleStar,
+		r.mid.OnlyAuthorized(middlewares.SetPayload()),
+	)
 }
 
 func (r *Router) TagsRouter() {

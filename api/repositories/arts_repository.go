@@ -19,6 +19,11 @@ import (
 var (
 	ErrArtsNotFound       = httperror.New("art not found", http.StatusBadRequest)
 	ErrInvalidSortingType = httperror.New("invalid sorting type", http.StatusBadRequest)
+
+	ErrStarNoRowsAffected = httperror.New(
+		"users_starred_arts no rows affected",
+		http.StatusInternalServerError,
+	)
 )
 
 type ArtsRepo struct {
@@ -93,7 +98,8 @@ func (r *ArtsRepo) FindOneArt(id int) (types.Art, error) {
 		creator.AllColumns.Except(creator.Password),
 		COUNT(DISTINCT(Follow.UserIDFollower)).AS("Creator.Followers"),
 		Files.AllColumns,
-		Tags.AllColumns,
+		Raw("group_concat(DISTINCT tags.name)").AS("Temp.TagNames"),
+		Raw("group_concat(DISTINCT tags.id)").AS("Temp.TagIDs"),
 		statsTable.AllColumns().As("Stats.*"),
 	).FROM(
 		Arts.
@@ -116,7 +122,81 @@ func (r *ArtsRepo) FindOneArt(id int) (types.Art, error) {
 		return types.Art{}, err
 	}
 
+	err := dest.FillTags()
+	if err != nil {
+		return types.Art{}, err
+	}
+
 	return dest, nil
+}
+
+func (r *ArtsRepo) HasUsersStarredArts(userId, artId int) (bool, error) {
+	stmt := SELECT(Int(1)).
+		FROM(UsersStarredArts).
+		WHERE(
+			UsersStarredArts.UserID.EQ(Int(int64(userId))).
+				AND(UsersStarredArts.ArtID.EQ(Int(int64(artId)))),
+		)
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	var tmp struct{ int }
+	if err := stmt.QueryContext(ctx, r.db, &tmp); err != nil {
+		if errors.Is(err, qrm.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (r *ArtsRepo) CreateUsersStarredArts(userId, artId int) error {
+	stmt := UsersStarredArts.
+		INSERT(UsersStarredArts.UserID, UsersStarredArts.ArtID).
+		VALUES(userId, artId)
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	result, err := stmt.ExecContext(ctx, r.db)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrStarNoRowsAffected
+	}
+
+	return nil
+}
+
+func (r *ArtsRepo) DeleteUsersStarredArts(userId, artId int) error {
+	stmt := UsersStarredArts.DELETE().WHERE(
+		UsersStarredArts.UserID.EQ(Int(int64(userId))).
+			AND(UsersStarredArts.ArtID.EQ(Int(int64(artId)))),
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	result, err := stmt.ExecContext(ctx, r.db)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrStarNoRowsAffected
+	}
+
+	return nil
 }
 
 // ---------------------------------------------- //
@@ -191,8 +271,8 @@ func (r *ArtsRepo) findManyArtsStmt(
 		Arts.AllColumns,
 		creator.AllColumns.Except(creator.Password),
 		COUNT(DISTINCT(Follow.UserIDFollower)).AS("Creator.Followers"),
-		Raw("group_concat(tags.name)").AS("TagNames"),
-		Raw("group_concat(tags.id)").AS("TagIDs"),
+		Raw("group_concat(DISTINCT tags.name)").AS("TagNames"),
+		Raw("group_concat(DISTINCT tags.id)").AS("TagIDs"),
 		statsTable.AllColumns().As("Stats.*"),
 	).FROM(
 		Arts.
