@@ -1,12 +1,12 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/DeepAung/deep-art/api/services"
 	"github.com/DeepAung/deep-art/api/types"
-	"github.com/DeepAung/deep-art/pkg/httperror"
 	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/DeepAung/deep-art/views/pages"
 	"github.com/labstack/echo/v4"
@@ -39,9 +39,7 @@ func (h *PagesHandler) SignUp(c echo.Context) error {
 func (h *PagesHandler) Home(c echo.Context) error {
 	user, ok := c.Get("user").(types.User)
 	if !ok {
-		status := http.StatusInternalServerError
-		msg := http.StatusText(status)
-		return utils.Render(c, pages.Error(msg), status)
+		return utils.RenderError(c, pages.Error, errors.New("user data from middleware not found"))
 	}
 
 	return utils.Render(c, pages.Home(user), http.StatusOK)
@@ -50,9 +48,7 @@ func (h *PagesHandler) Home(c echo.Context) error {
 func (h *PagesHandler) ArtDetail(c echo.Context) error {
 	user, ok := c.Get("user").(types.User)
 	if !ok {
-		status := http.StatusInternalServerError
-		msg := http.StatusText(status)
-		return utils.Render(c, pages.Error(msg), status)
+		return utils.RenderError(c, pages.Error, errors.New("user data from middleware not found"))
 	}
 
 	artId, err := strconv.Atoi(c.Param("id"))
@@ -62,20 +58,17 @@ func (h *PagesHandler) ArtDetail(c echo.Context) error {
 
 	art, err := h.artsSvc.FindOneArt(artId)
 	if err != nil {
-		msg, status := httperror.Extract(err)
-		return utils.Render(c, pages.Error(msg), status)
+		return utils.RenderError(c, pages.Error, err)
 	}
 
 	isFollowing, err := h.usersSvc.IsFollowing(user.Id, art.Creator.Id)
 	if err != nil {
-		msg, status := httperror.Extract(err)
-		return utils.Render(c, pages.Error(msg), status)
+		return utils.RenderError(c, pages.Error, err)
 	}
 
 	isStarred, err := h.artsSvc.IsStarred(user.Id, artId)
 	if err != nil {
-		msg, status := httperror.Extract(err)
-		return utils.Render(c, pages.Error(msg), status)
+		return utils.RenderError(c, pages.Error, err)
 	}
 
 	return utils.Render(c, pages.ArtDetail(user, art, isFollowing, isStarred), http.StatusOK)

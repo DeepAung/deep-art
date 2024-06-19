@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/DeepAung/deep-art/pkg/storer"
+	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/labstack/echo/v4"
 )
 
@@ -21,7 +22,7 @@ func (h *TestFilesHandler) UploadFiles(c echo.Context) error {
 	dir := c.FormValue("dir")
 	form, err := c.MultipartForm()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err.Error())
+		return utils.JSONError(c, err)
 	}
 
 	files, ok := form.File["files"]

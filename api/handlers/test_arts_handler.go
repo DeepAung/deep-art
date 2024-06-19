@@ -6,7 +6,7 @@ import (
 
 	"github.com/DeepAung/deep-art/api/repositories"
 	"github.com/DeepAung/deep-art/api/types"
-	"github.com/DeepAung/deep-art/pkg/httperror"
+	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/labstack/echo/v4"
 )
 
@@ -28,8 +28,7 @@ func (h *testArtsHandler) FindManyArts(c echo.Context) error {
 
 	arts, err := h.artsRepo.FindManyArts(req)
 	if err != nil {
-		_, status := httperror.Extract(err)
-		return c.String(status, err.Error())
+		return utils.JSONError(c, err)
 	}
 
 	return c.JSON(http.StatusOK, arts)
@@ -38,14 +37,12 @@ func (h *testArtsHandler) FindManyArts(c echo.Context) error {
 func (h *testArtsHandler) FindOneArt(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		_, status := httperror.Extract(err)
-		return c.String(status, err.Error())
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	art, err := h.artsRepo.FindOneArt(id)
 	if err != nil {
-		_, status := httperror.Extract(err)
-		return c.String(status, err.Error())
+		return utils.JSONError(c, err)
 	}
 
 	return c.JSON(http.StatusOK, art)

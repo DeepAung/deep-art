@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/DeepAung/deep-art/api/repositories"
-	"github.com/DeepAung/deep-art/pkg/httperror"
+	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/labstack/echo/v4"
 )
 
@@ -21,8 +21,7 @@ func NewTestTagsHandler(tagsRepo *repositories.TagsRepo) *TestTagsHandler {
 func (h *TestTagsHandler) FindAllTags(c echo.Context) error {
 	tags, err := h.tagsRepo.FindAllTags()
 	if err != nil {
-		msg, status := httperror.Extract(err)
-		return c.JSON(status, msg)
+		return utils.JSONError(c, err)
 	}
 
 	return c.JSON(http.StatusOK, tags)

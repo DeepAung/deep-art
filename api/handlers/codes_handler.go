@@ -1,11 +1,11 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/DeepAung/deep-art/api/services"
 	"github.com/DeepAung/deep-art/pkg/config"
-	"github.com/DeepAung/deep-art/pkg/httperror"
 	"github.com/DeepAung/deep-art/pkg/mytoken"
 	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/DeepAung/deep-art/views/components"
@@ -24,25 +24,25 @@ func NewCodesHandler(codesSvc *services.CodesSvc, cfg *config.Config) *CodesHand
 	}
 }
 
+// TODO: toast error if has error
 func (h *CodesHandler) UseCode(c echo.Context) error {
 	payload, ok := c.Get("payload").(mytoken.Payload)
 	if !ok {
-		// TODO: toast error
-		status := http.StatusInternalServerError
-		msg := http.StatusText(status)
-		return utils.Render(c, components.Error(msg), status)
+		return utils.RenderError(
+			c,
+			components.Error,
+			errors.New("payload from middleware not found"),
+		)
 	}
 
 	name := c.FormValue("name")
 	if name == "" {
-		// TODO: toast error
 		return utils.Render(c, components.Error("code should not be empty"), http.StatusBadRequest)
 	}
 
 	err := h.codesSvc.UseCode(payload.UserId, name)
 	if err != nil {
-		msg, status := httperror.Extract(err)
-		return utils.Render(c, components.Error(msg), status)
+		return utils.RenderError(c, components.Error, err)
 	}
 
 	c.Response().Header().Add("HX-Refresh", "true")
