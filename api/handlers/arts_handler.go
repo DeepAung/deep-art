@@ -57,16 +57,16 @@ func (h *ArtsHandler) BuyArt(c echo.Context) error {
 
 	artId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return utils.RenderError(c, components.Error, err)
+		return utils.RenderError(c, components.ErrToast, err)
 	}
 
 	price, err := strconv.Atoi(c.FormValue("price"))
 	if err != nil {
-		return utils.RenderError(c, components.Error, err)
+		return utils.RenderError(c, components.ErrToast, err)
 	}
 
 	if err := h.artsSvc.BuyArt(payload.UserId, artId, price); err != nil {
-		return utils.RenderError(c, components.Error, err)
+		return utils.RenderError(c, components.ErrToast, err)
 	}
 
 	c.Response().Header().Add("HX-Refresh", "true")

@@ -32,20 +32,20 @@ templ BuyButton(artId int, price int, isBought bool) {
 			Bought
 		</p>
 	} else {
-		<button hx-post={ fmt.Sprintf("/api/arts/%d/buy", artId) } hx-vals={ fmt.Sprintf("{\"price\": \"%d\"}", price) } hx-trigger="click" hx-swap="outerHTML" type="button" class="cursor-pointer py-3 px-4 inline-flex items-center gap-x-2 font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
+		<button hx-confirm="Are you sure you wish to buy this art?" hx-post={ fmt.Sprintf("/api/arts/%d/buy", artId) } hx-vals={ fmt.Sprintf("{\"price\": \"%d\"}", price) } hx-trigger="click" hx-swap="outerHTML" hx-target-error="#toast" type="button" class="cursor-pointer py-3 px-4 inline-flex items-center gap-x-2 font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
 			Buy
 		</button>
 	}
 }
 
 templ FollowButton(creatorId int, isFollowing bool) {
-	<button hx-post={ fmt.Sprintf("/api/creators/%d/toggle-follow", creatorId) } hx-trigger="click" hx-swap="outerHTML" type="button" class="cursor-pointer py-2 px-3 inline-flex items-center gap-x-2 font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
+	<button hx-post={ fmt.Sprintf("/api/creators/%d/toggle-follow", creatorId) } hx-trigger="click" hx-swap="outerHTML" hx-target-error="#toast" type="button" class="cursor-pointer py-2 px-3 inline-flex items-center gap-x-2 font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
 		{ followText(isFollowing) }
 	</button>
 }
 
 templ StarButton(artId int, isStarred bool) {
-	<button hx-post={ fmt.Sprintf("/api/arts/%d/toggle-star", artId) } hx-trigger="click" hx-swap="outerHTML" type="button" class="cursor-pointer py-3 px-4 inline-flex items-center gap-x-2 font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
+	<button hx-post={ fmt.Sprintf("/api/arts/%d/toggle-star", artId) } hx-trigger="click" hx-swap="outerHTML" hx-target-error="#toast" type="button" class="cursor-pointer py-3 px-4 inline-flex items-center gap-x-2 font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
 		<i class="fa-solid fa-star"></i>
 		{ starText(isStarred) }
 	</button>

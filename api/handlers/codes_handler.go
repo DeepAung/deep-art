@@ -24,7 +24,6 @@ func NewCodesHandler(codesSvc *services.CodesSvc, cfg *config.Config) *CodesHand
 	}
 }
 
-// TODO: toast error if has error
 func (h *CodesHandler) UseCode(c echo.Context) error {
 	payload, ok := c.Get("payload").(mytoken.Payload)
 	if !ok {
