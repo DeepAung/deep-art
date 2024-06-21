@@ -1,9 +1,12 @@
 package services
 
 import (
+	"net/http"
+
 	"github.com/DeepAung/deep-art/api/repositories"
 	"github.com/DeepAung/deep-art/api/types"
 	"github.com/DeepAung/deep-art/pkg/config"
+	"github.com/DeepAung/deep-art/pkg/httperror"
 )
 
 var (
@@ -29,6 +32,30 @@ func (s *ArtsSvc) FindManyArts(req types.ManyArtsReq) (types.ManyArtsRes, error)
 
 func (s *ArtsSvc) FindOneArt(id int) (types.Art, error) {
 	return s.artsRepo.FindOneArt(id)
+}
+
+func (s *ArtsSvc) BuyArt(userId, artId, price int) error {
+	bought, err := s.artsRepo.HasUsersBoughtArts(userId, artId)
+	if err != nil {
+		return err
+	}
+	if bought {
+		return httperror.New("user already bought this art", http.StatusBadRequest)
+	}
+
+	coin, err := s.artsRepo.FindUserCoin(userId)
+	if err != nil {
+		return err
+	}
+	if coin < price {
+		return httperror.New("not enough coin to buy this art", http.StatusBadRequest)
+	}
+
+	return s.artsRepo.BuyArt(userId, artId, price)
+}
+
+func (s *ArtsSvc) IsBought(userId, artId int) (bool, error) {
+	return s.artsRepo.HasUsersBoughtArts(userId, artId)
 }
 
 func (s *ArtsSvc) ToggleStar(userId, artId int) (bool, error) {

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/DeepAung/deep-art/.gen/model"
 	. "github.com/DeepAung/deep-art/.gen/table"
 	"github.com/DeepAung/deep-art/api/types"
 	"github.com/DeepAung/deep-art/pkg/httperror"
@@ -23,6 +24,14 @@ var (
 	ErrStarNoRowsAffected = httperror.New(
 		"users_starred_arts no rows affected",
 		http.StatusInternalServerError,
+	)
+	ErrBoughtNoRowsAffected = httperror.New(
+		"users_bought_arts no rows affected",
+		http.StatusInternalServerError,
+	)
+	ErrInvalidPrice = httperror.New(
+		"invalid price, please try again",
+		http.StatusBadRequest,
 	)
 )
 
@@ -128,6 +137,99 @@ func (r *ArtsRepo) FindOneArt(id int) (types.Art, error) {
 	}
 
 	return dest, nil
+}
+
+func (r *ArtsRepo) HasUsersBoughtArts(userId, artId int) (bool, error) {
+	stmt := SELECT(Int(1)).
+		FROM(UsersBoughtArts).
+		WHERE(
+			UsersBoughtArts.UserID.EQ(Int(int64(userId))).
+				AND(UsersBoughtArts.ArtID.EQ(Int(int64(artId)))),
+		)
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	var tmp struct{ int }
+	if err := stmt.QueryContext(ctx, r.db, &tmp); err != nil {
+		if errors.Is(err, qrm.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
+func (r *ArtsRepo) FindUserCoin(userId int) (int, error) {
+	stmt := SELECT(Users.Coin).FROM(Users).WHERE(Users.ID.EQ(Int(int64(userId))))
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	var user model.Users
+	if err := stmt.QueryContext(ctx, r.db, &user); err != nil {
+		if errors.Is(err, qrm.ErrNoRows) {
+			return 0, ErrUserNotFound
+		}
+		return 0, err
+	}
+
+	return int(user.Coin), nil
+}
+
+func (r *ArtsRepo) BuyArt(userId, artId, price int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	stmt1 := UsersBoughtArts.
+		INSERT(UsersBoughtArts.UserID, UsersBoughtArts.ArtID).
+		VALUES(userId, artId)
+	result, err := stmt1.ExecContext(ctx, tx)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrBoughtNoRowsAffected
+	}
+
+	stmt2 := SELECT(Arts.Price).FROM(Arts).WHERE(Arts.ID.EQ(Int(int64(artId))))
+	var art model.Arts
+	if err := stmt2.QueryContext(ctx, tx, &art); err != nil {
+		if errors.Is(err, qrm.ErrNoRows) {
+			return ErrArtsNotFound
+		}
+		return err
+	}
+
+	if art.Price != int32(price) {
+		return ErrInvalidPrice
+	}
+
+	stmt3 := Users.UPDATE(Users.Coin).
+		SET(Users.Coin.SUB(Int(int64(art.Price)))).
+		WHERE(Users.ID.EQ(Int(int64(userId))))
+	result, err = stmt3.ExecContext(ctx, tx)
+	if err != nil {
+		return err
+	}
+	n, err = result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrUserNoRowsAffected
+	}
+
+	return tx.Commit()
 }
 
 func (r *ArtsRepo) HasUsersStarredArts(userId, artId int) (bool, error) {

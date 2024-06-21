@@ -45,6 +45,34 @@ func (h *ArtsHandler) FindManyArts(c echo.Context) error {
 	return utils.Render(c, components.ManyArts(arts), http.StatusOK)
 }
 
+func (h *ArtsHandler) BuyArt(c echo.Context) error {
+	payload, ok := c.Get("payload").(mytoken.Payload)
+	if !ok {
+		return utils.RenderError(
+			c,
+			components.Error,
+			errors.New("payload from middleware not found"),
+		)
+	}
+
+	artId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return utils.RenderError(c, components.Error, err)
+	}
+
+	price, err := strconv.Atoi(c.FormValue("price"))
+	if err != nil {
+		return utils.RenderError(c, components.Error, err)
+	}
+
+	if err := h.artsSvc.BuyArt(payload.UserId, artId, price); err != nil {
+		return utils.RenderError(c, components.Error, err)
+	}
+
+	c.Response().Header().Add("HX-Refresh", "true")
+	return nil
+}
+
 func (h *ArtsHandler) ToggleStar(c echo.Context) error {
 	payload, ok := c.Get("payload").(mytoken.Payload)
 	if !ok {

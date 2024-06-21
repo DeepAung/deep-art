@@ -1,0 +1,10 @@
+<p type=\"button\" class=\"inline-flex items-center gap-x-2 font-semibold italic\">Bought</p>
+<button hx-post=\"
+\" hx-vals=\"
+\" hx-trigger=\"click\" hx-swap=\"outerHTML\" type=\"button\" class=\"cursor-pointer py-3 px-4 inline-flex items-center gap-x-2 font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none\">Buy</button>
+<button hx-post=\"
+\" hx-trigger=\"click\" hx-swap=\"outerHTML\" type=\"button\" class=\"cursor-pointer py-2 px-3 inline-flex items-center gap-x-2 font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none\">
+</button>
+<button hx-post=\"
+\" hx-trigger=\"click\" hx-swap=\"outerHTML\" type=\"button\" class=\"cursor-pointer py-3 px-4 inline-flex items-center gap-x-2 font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none\"><i class=\"fa-solid fa-star\"></i> 
+</button>

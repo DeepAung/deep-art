@@ -70,12 +70,15 @@ func (r *Router) ArtsRouter() {
 	svc := services.NewArtsSvc(repo, r.s.cfg)
 	handler := handlers.NewArtsHandler(svc, r.s.cfg)
 
+	setPayload := middlewares.SetPayload
+
 	r.s.app.POST("/api/arts", handler.FindManyArts)
 	r.s.app.POST(
 		"/api/arts/:id/toggle-star",
 		handler.ToggleStar,
-		r.mid.OnlyAuthorized(middlewares.SetPayload()),
+		r.mid.OnlyAuthorized(setPayload()),
 	)
+	r.s.app.POST("/api/arts/:id/buy", handler.BuyArt, r.mid.OnlyAuthorized(setPayload()))
 }
 
 func (r *Router) TagsRouter() {

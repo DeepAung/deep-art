@@ -71,5 +71,14 @@ func (h *PagesHandler) ArtDetail(c echo.Context) error {
 		return utils.RenderError(c, pages.Error, err)
 	}
 
-	return utils.Render(c, pages.ArtDetail(user, art, isFollowing, isStarred), http.StatusOK)
+	isBought, err := h.artsSvc.IsBought(user.Id, artId)
+	if err != nil {
+		return utils.RenderError(c, pages.Error, err)
+	}
+
+	return utils.Render(
+		c,
+		pages.ArtDetail(user, art, isFollowing, isStarred, isBought),
+		http.StatusOK,
+	)
 }
