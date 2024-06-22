@@ -3,31 +3,17 @@ package repositories
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"net/http"
 	"time"
 
 	"github.com/DeepAung/deep-art/.gen/model"
 	. "github.com/DeepAung/deep-art/.gen/table"
 	"github.com/DeepAung/deep-art/api/types"
-	"github.com/DeepAung/deep-art/pkg/httperror"
-	"github.com/go-jet/jet/v2/qrm"
 	. "github.com/go-jet/jet/v2/sqlite"
 )
 
 var (
-	ErrUserNotFound         = httperror.New("user not found", http.StatusBadRequest)
-	ErrUserNoRowsAffected   = httperror.New("user no rows affected", http.StatusInternalServerError)
-	ErrCreateUserFailed     = httperror.New("create user failed", http.StatusInternalServerError)
-	ErrFollowNoRowsAffected = httperror.New(
-		"follow no rows affected",
-		http.StatusInternalServerError,
-	)
-	ErrTokenNotFound       = httperror.New("token not found", http.StatusBadRequest)
-	ErrTokenNoRowsAffected = httperror.New(
-		"token no rows affected",
-		http.StatusInternalServerError,
-	)
+	ErrUserNotFound  = ErrNotFound("user")
+	ErrTokenNotFound = ErrNotFound("token")
 )
 
 type UsersRepo struct {
@@ -52,10 +38,7 @@ func (r *UsersRepo) FindOneUserById(id int) (types.User, error) {
 	defer cancel()
 
 	var dest model.Users
-	if err := stmt.QueryContext(ctx, r.db, &dest); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return types.User{}, ErrUserNotFound
-		}
+	if err := HandleQueryCtx(stmt, ctx, r.db, &dest, "user"); err != nil {
 		return types.User{}, err
 	}
 
@@ -85,10 +68,7 @@ func (r *UsersRepo) FindOneCreatorById(id int) (types.Creator, error) {
 		model.Users
 		Followers int
 	}
-	if err := stmt.QueryContext(ctx, r.db, &dest); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return types.Creator{}, ErrUserNotFound
-		}
+	if err := HandleQueryCtx(stmt, ctx, r.db, &dest, "user"); err != nil {
 		return types.Creator{}, err
 	}
 
@@ -111,10 +91,7 @@ func (r *UsersRepo) FindOneUserWithPasswordByEmail(email string) (types.UserWith
 	defer cancel()
 
 	var dest model.Users
-	if err := stmt.QueryContext(ctx, r.db, &dest); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return types.UserWithPassword{}, ErrUserNotFound
-		}
+	if err := HandleQueryCtxWithErr(stmt, ctx, r.db, &dest, ErrUserNotFound); err != nil {
 		return types.UserWithPassword{}, err
 	}
 
@@ -138,7 +115,7 @@ func (r *UsersRepo) CreateUser(req types.SignUpReq) (types.User, error) {
 	defer cancel()
 
 	var dest model.Users
-	if err := stmt.QueryContext(ctx, r.db, &dest); err != nil {
+	if err := HandleQueryCtx(stmt, ctx, r.db, &dest, "user"); err != nil {
 		return types.User{}, err
 	}
 
@@ -160,19 +137,7 @@ func (r *UsersRepo) UpdateUser(id int, req types.UpdateReq) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	result, err := stmt.ExecContext(ctx, r.db)
-	if err != nil {
-		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrUserNoRowsAffected
-	}
-
-	return nil
+	return HandleExecCtx(stmt, ctx, r.db, "users")
 }
 
 func (r *UsersRepo) DeleteUser(id int) error {
@@ -182,19 +147,7 @@ func (r *UsersRepo) DeleteUser(id int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	result, err := stmt.ExecContext(ctx, r.db)
-	if err != nil {
-		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrUserNoRowsAffected
-	}
-
-	return nil
+	return HandleExecCtx(stmt, ctx, r.db, "users")
 }
 
 func (r *UsersRepo) HasFollow(followerId, followeeId int) (bool, error) {
@@ -209,14 +162,7 @@ func (r *UsersRepo) HasFollow(followerId, followeeId int) (bool, error) {
 	defer cancel()
 
 	var tmp struct{ int }
-	if err := stmt.QueryContext(ctx, r.db, &tmp); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	return true, nil
+	return HandleHasCtx(stmt, ctx, r.db, &tmp)
 }
 
 func (r *UsersRepo) CreateFollow(followerId, followeeId int) error {
@@ -227,19 +173,7 @@ func (r *UsersRepo) CreateFollow(followerId, followeeId int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	result, err := stmt.ExecContext(ctx, r.db)
-	if err != nil {
-		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrFollowNoRowsAffected
-	}
-
-	return nil
+	return HandleExecCtx(stmt, ctx, r.db, "follow")
 }
 
 func (r *UsersRepo) DeleteFollow(followerId, followeeId int) error {
@@ -251,19 +185,7 @@ func (r *UsersRepo) DeleteFollow(followerId, followeeId int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	result, err := stmt.ExecContext(ctx, r.db)
-	if err != nil {
-		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrFollowNoRowsAffected
-	}
-
-	return nil
+	return HandleExecCtx(stmt, ctx, r.db, "follow")
 }
 
 func (r *UsersRepo) HasAccessToken(userId int, accessToken string) (bool, error) {
@@ -277,14 +199,7 @@ func (r *UsersRepo) HasAccessToken(userId int, accessToken string) (bool, error)
 	defer cancel()
 
 	var tmp struct{ int }
-	if err := stmt.QueryContext(ctx, r.db, &tmp); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	return true, nil
+	return HandleHasCtx(stmt, ctx, r.db, &tmp)
 }
 
 func (r *UsersRepo) HasRefreshToken(userId int, refreshToken string) (bool, error) {
@@ -298,14 +213,7 @@ func (r *UsersRepo) HasRefreshToken(userId int, refreshToken string) (bool, erro
 	defer cancel()
 
 	var tmp struct{ int }
-	if err := stmt.QueryContext(ctx, r.db, &tmp); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	return true, nil
+	return HandleHasCtx(stmt, ctx, r.db, &tmp)
 }
 
 func (r *UsersRepo) FindOneTokenId(userId int, refreshToken string) (int, error) {
@@ -320,10 +228,7 @@ func (r *UsersRepo) FindOneTokenId(userId int, refreshToken string) (int, error)
 	defer cancel()
 
 	var res model.Tokens
-	if err := stmt.QueryContext(ctx, r.db, &res); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return 0, ErrTokenNotFound
-		}
+	if err := HandleQueryCtxWithErr(stmt, ctx, r.db, &res, ErrTokenNotFound); err != nil {
 		return 0, err
 	}
 
@@ -339,7 +244,7 @@ func (r *UsersRepo) CreateToken(userId int, accessToken, refreshToken string) (i
 	defer cancel()
 
 	var res model.Tokens
-	if err = stmt.QueryContext(ctx, r.db, &res); err != nil {
+	if err := HandleQueryCtx(stmt, ctx, r.db, &res, "token"); err != nil {
 		return 0, err
 	}
 
@@ -354,19 +259,7 @@ func (r *UsersRepo) UpdateTokens(tokenId int, newAccessToken, newRefreshToken st
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	result, err := stmt.ExecContext(ctx, r.db)
-	if err != nil {
-		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrTokenNoRowsAffected
-	}
-
-	return nil
+	return HandleExecCtx(stmt, ctx, r.db, "tokens")
 }
 
 func (r *UsersRepo) DeleteToken(userId int, tokenId int) error {
@@ -378,17 +271,5 @@ func (r *UsersRepo) DeleteToken(userId int, tokenId int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	result, err := stmt.ExecContext(ctx, r.db)
-	if err != nil {
-		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrTokenNotFound
-	}
-
-	return nil
+	return HandleExecCtx(stmt, ctx, r.db, "tokens")
 }

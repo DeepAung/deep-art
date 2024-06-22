@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"net/http"
 	"time"
 
@@ -13,23 +12,12 @@ import (
 	"github.com/DeepAung/deep-art/pkg/httperror"
 	"github.com/DeepAung/deep-art/pkg/storer"
 	"github.com/DeepAung/deep-art/pkg/utils"
-	"github.com/go-jet/jet/v2/qrm"
 	. "github.com/go-jet/jet/v2/sqlite"
 )
 
 var (
-	ErrArtsNotFound       = httperror.New("art not found", http.StatusBadRequest)
 	ErrInvalidSortingType = httperror.New("invalid sorting type", http.StatusBadRequest)
-
-	ErrStarNoRowsAffected = httperror.New(
-		"users_starred_arts no rows affected",
-		http.StatusInternalServerError,
-	)
-	ErrBoughtNoRowsAffected = httperror.New(
-		"users_bought_arts no rows affected",
-		http.StatusInternalServerError,
-	)
-	ErrInvalidPrice = httperror.New(
+	ErrInvalidPrice       = httperror.New(
 		"invalid price, please try again",
 		http.StatusBadRequest,
 	)
@@ -68,10 +56,7 @@ func (r *ArtsRepo) FindManyArts(req types.ManyArtsReq) (types.ManyArtsRes, error
 	defer cancel()
 
 	var dest types.ManyArts
-	if err := stmt.QueryContext(ctx, r.db, &dest); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return types.ManyArtsRes{}, ErrArtsNotFound
-		}
+	if err := HandleQueryCtx(stmt, ctx, r.db, &dest, "art"); err != nil {
 		return types.ManyArtsRes{}, err
 	}
 
@@ -82,10 +67,7 @@ func (r *ArtsRepo) FindManyArts(req types.ManyArtsReq) (types.ManyArtsRes, error
 
 	stmt2 := r.findCountManyArtsStmt(cond, statsTable)
 	var dest2 struct{ Count int }
-	if err := stmt2.QueryContext(ctx, r.db, &dest2); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return types.ManyArtsRes{}, ErrArtsNotFound
-		}
+	if err := HandleQueryCtx(stmt2, ctx, r.db, &dest2, "art"); err != nil {
 		return types.ManyArtsRes{}, err
 	}
 
@@ -124,10 +106,7 @@ func (r *ArtsRepo) FindOneArt(id int) (types.Art, error) {
 	defer cancel()
 
 	var dest types.Art
-	if err := stmt.QueryContext(ctx, r.db, &dest); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return types.Art{}, ErrArtsNotFound
-		}
+	if err := HandleQueryCtx(stmt, ctx, r.db, &dest, "art"); err != nil {
 		return types.Art{}, err
 	}
 
@@ -151,14 +130,7 @@ func (r *ArtsRepo) HasUsersBoughtArts(userId, artId int) (bool, error) {
 	defer cancel()
 
 	var tmp struct{ int }
-	if err := stmt.QueryContext(ctx, r.db, &tmp); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	return true, nil
+	return HandleHasCtx(stmt, ctx, r.db, &tmp)
 }
 
 func (r *ArtsRepo) FindUserCoin(userId int) (int, error) {
@@ -167,10 +139,7 @@ func (r *ArtsRepo) FindUserCoin(userId int) (int, error) {
 	defer cancel()
 
 	var user model.Users
-	if err := stmt.QueryContext(ctx, r.db, &user); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return 0, ErrUserNotFound
-		}
+	if err := HandleQueryCtx(stmt, ctx, r.db, &user, "user"); err != nil {
 		return 0, err
 	}
 
@@ -189,24 +158,13 @@ func (r *ArtsRepo) BuyArt(userId, artId, price int) error {
 	stmt1 := UsersBoughtArts.
 		INSERT(UsersBoughtArts.UserID, UsersBoughtArts.ArtID).
 		VALUES(userId, artId)
-	result, err := stmt1.ExecContext(ctx, tx)
-	if err != nil {
+	if err := HandleExecCtx(stmt1, ctx, tx, "users_bought_arts"); err != nil {
 		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrBoughtNoRowsAffected
 	}
 
 	stmt2 := SELECT(Arts.Price).FROM(Arts).WHERE(Arts.ID.EQ(Int(int64(artId))))
 	var art model.Arts
-	if err := stmt2.QueryContext(ctx, tx, &art); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return ErrArtsNotFound
-		}
+	if err := HandleQueryCtx(stmt2, ctx, tx, &art, "art"); err != nil {
 		return err
 	}
 
@@ -217,16 +175,8 @@ func (r *ArtsRepo) BuyArt(userId, artId, price int) error {
 	stmt3 := Users.UPDATE(Users.Coin).
 		SET(Users.Coin.SUB(Int(int64(art.Price)))).
 		WHERE(Users.ID.EQ(Int(int64(userId))))
-	result, err = stmt3.ExecContext(ctx, tx)
-	if err != nil {
+	if err := HandleExecCtx(stmt3, ctx, tx, "users"); err != nil {
 		return err
-	}
-	n, err = result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrUserNoRowsAffected
 	}
 
 	return tx.Commit()
@@ -244,14 +194,7 @@ func (r *ArtsRepo) HasUsersStarredArts(userId, artId int) (bool, error) {
 	defer cancel()
 
 	var tmp struct{ int }
-	if err := stmt.QueryContext(ctx, r.db, &tmp); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	return true, nil
+	return HandleHasCtx(stmt, ctx, r.db, &tmp)
 }
 
 func (r *ArtsRepo) CreateUsersStarredArts(userId, artId int) error {
@@ -262,19 +205,7 @@ func (r *ArtsRepo) CreateUsersStarredArts(userId, artId int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	result, err := stmt.ExecContext(ctx, r.db)
-	if err != nil {
-		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrStarNoRowsAffected
-	}
-
-	return nil
+	return HandleExecCtx(stmt, ctx, r.db, "users_starred_arts")
 }
 
 func (r *ArtsRepo) DeleteUsersStarredArts(userId, artId int) error {
@@ -286,19 +217,7 @@ func (r *ArtsRepo) DeleteUsersStarredArts(userId, artId int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	result, err := stmt.ExecContext(ctx, r.db)
-	if err != nil {
-		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrStarNoRowsAffected
-	}
-
-	return nil
+	return HandleExecCtx(stmt, ctx, r.db, "users_starred_arts")
 }
 
 // ---------------------------------------------- //

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -72,7 +71,7 @@ func (h *UsersHandler) SignOut(c echo.Context) error {
 		return utils.RenderError(
 			c,
 			components.Error,
-			errors.New("payload from middleware not found"),
+			ErrPayloadNotFound,
 		)
 	}
 
@@ -101,7 +100,7 @@ func (h *UsersHandler) ToggleFollow(c echo.Context) error {
 		return utils.RenderError(
 			c,
 			components.Error,
-			errors.New("payload from middleware not found"),
+			ErrPayloadNotFound,
 		)
 	}
 
@@ -124,7 +123,7 @@ func (h *UsersHandler) UpdateTokens(c echo.Context) error {
 		return utils.RenderError(
 			c,
 			components.Error,
-			errors.New("payload from middleware not found"),
+			ErrPayloadNotFound,
 		)
 	}
 

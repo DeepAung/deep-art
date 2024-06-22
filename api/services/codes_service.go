@@ -26,20 +26,19 @@ func NewCodesSvc(codesRepo *repositories.CodesRepo, cfg *config.Config) *CodesSv
 	}
 }
 
-// 1. check if code exist
-// 2. check if code is expired
-// 3. check if code is used
-// 4. use the code
 func (s *CodesSvc) UseCode(userId int, name string) error {
+	// 1. check if code exist
 	code, err := s.codesRepo.FindOneCodeByName(name)
 	if err != nil {
 		return err
 	}
 
+	// 2. check if code is expired
 	if code.ExpTime.Before(time.Now()) {
 		return ErrCodeExpired
 	}
 
+	// 3. check if code is used
 	used, err := s.codesRepo.HasUsedCode(userId, int(*code.ID))
 	if err != nil {
 		return err
@@ -48,5 +47,6 @@ func (s *CodesSvc) UseCode(userId int, name string) error {
 		return ErrCodeUsed
 	}
 
+	// 4. use the code
 	return s.codesRepo.UseCode(userId, int(*code.ID))
 }

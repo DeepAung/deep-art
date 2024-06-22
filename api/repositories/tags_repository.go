@@ -3,20 +3,11 @@ package repositories
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"net/http"
 	"time"
 
 	"github.com/DeepAung/deep-art/.gen/model"
 	. "github.com/DeepAung/deep-art/.gen/table"
-	"github.com/DeepAung/deep-art/pkg/httperror"
-	"github.com/go-jet/jet/v2/qrm"
 	. "github.com/go-jet/jet/v2/sqlite"
-)
-
-var (
-	ErrTagNotFound       = httperror.New("tag not found", http.StatusBadRequest)
-	ErrTagNoRowsAffected = httperror.New("tag no rows affected", http.StatusInternalServerError)
 )
 
 type TagsRepo struct {
@@ -38,11 +29,8 @@ func (r *TagsRepo) FindAllTags() ([]model.Tags, error) {
 	defer cancel()
 
 	var dest []model.Tags
-	if err := stmt.QueryContext(ctx, r.db, &dest); err != nil {
-		return []model.Tags{}, err
-	}
-
-	return dest, nil
+	err := HandleQueryCtx(stmt, ctx, r.db, &dest, "tag")
+	return dest, err
 }
 
 func (r *TagsRepo) FindOneTagById(id int) (model.Tags, error) {
@@ -52,14 +40,8 @@ func (r *TagsRepo) FindOneTagById(id int) (model.Tags, error) {
 	defer cancel()
 
 	var dest model.Tags
-	if err := stmt.QueryContext(ctx, r.db, &dest); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return model.Tags{}, ErrTagNotFound
-		}
-		return model.Tags{}, err
-	}
-
-	return dest, nil
+	err := HandleQueryCtx(stmt, ctx, r.db, &dest, "tag")
+	return dest, err
 }
 
 func (r *TagsRepo) CreateTag(name string) error {
@@ -68,19 +50,7 @@ func (r *TagsRepo) CreateTag(name string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	result, err := stmt.ExecContext(ctx, r.db)
-	if err != nil {
-		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrTagNoRowsAffected
-	}
-
-	return nil
+	return HandleExecCtx(stmt, ctx, r.db, "tags")
 }
 
 func (r *TagsRepo) UpdateTag(id int, name string) error {
@@ -89,19 +59,7 @@ func (r *TagsRepo) UpdateTag(id int, name string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	result, err := stmt.ExecContext(ctx, r.db)
-	if err != nil {
-		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrTagNoRowsAffected
-	}
-
-	return nil
+	return HandleExecCtx(stmt, ctx, r.db, "tags")
 }
 
 func (r *TagsRepo) DeleteTag(id int) error {
@@ -110,17 +68,5 @@ func (r *TagsRepo) DeleteTag(id int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	result, err := stmt.ExecContext(ctx, r.db)
-	if err != nil {
-		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrTagNoRowsAffected
-	}
-
-	return nil
+	return HandleExecCtx(stmt, ctx, r.db, "tags")
 }

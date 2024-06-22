@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/DeepAung/deep-art/api/repositories"
@@ -31,7 +32,7 @@ func NewUsersSvc(usersRepo *repositories.UsersRepo, cfg *config.Config) *UsersSv
 func (s *UsersSvc) SignIn(email string, password string) (types.Passport, error) {
 	user, err := s.usersRepo.FindOneUserWithPasswordByEmail(email)
 	if err != nil {
-		if err == repositories.ErrUserNotFound {
+		if errors.Is(err, repositories.ErrUserNotFound) {
 			return types.Passport{}, ErrInvalidEmailOrPassword
 		}
 		return types.Passport{}, err
@@ -106,7 +107,7 @@ func (s *UsersSvc) SignOut(userId int, tokenId int) error {
 func (s *UsersSvc) UpdateTokens(userId int, refreshToken string) (types.Token, error) {
 	tokenId, err := s.usersRepo.FindOneTokenId(userId, refreshToken)
 	if err != nil {
-		if err == repositories.ErrTokenNotFound {
+		if errors.Is(err, repositories.ErrTokenNotFound) {
 			return types.Token{}, ErrInvalidRefreshToken
 		} else {
 			return types.Token{}, err

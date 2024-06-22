@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/DeepAung/deep-art/api/services"
@@ -30,7 +29,7 @@ func (h *CodesHandler) UseCode(c echo.Context) error {
 		return utils.RenderError(
 			c,
 			components.Error,
-			errors.New("payload from middleware not found"),
+			ErrPayloadNotFound,
 		)
 	}
 

@@ -79,7 +79,7 @@ func (h *ArtsHandler) ToggleStar(c echo.Context) error {
 		return utils.RenderError(
 			c,
 			components.Error,
-			errors.New("payload from middleware not found"),
+			ErrPayloadNotFound,
 		)
 	}
 

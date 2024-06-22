@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 
@@ -39,7 +38,7 @@ func (h *PagesHandler) SignUp(c echo.Context) error {
 func (h *PagesHandler) Home(c echo.Context) error {
 	user, ok := c.Get("user").(types.User)
 	if !ok {
-		return utils.RenderError(c, pages.Error, errors.New("user data from middleware not found"))
+		return utils.RenderError(c, pages.Error, ErrUserDataNotFound)
 	}
 
 	return utils.Render(c, pages.Home(user), http.StatusOK)
@@ -48,7 +47,7 @@ func (h *PagesHandler) Home(c echo.Context) error {
 func (h *PagesHandler) ArtDetail(c echo.Context) error {
 	user, ok := c.Get("user").(types.User)
 	if !ok {
-		return utils.RenderError(c, pages.Error, errors.New("user data from middleware not found"))
+		return utils.RenderError(c, pages.Error, ErrUserDataNotFound)
 	}
 
 	artId, err := strconv.Atoi(c.Param("id"))

@@ -3,28 +3,12 @@ package repositories
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"net/http"
 	"time"
 
 	"github.com/DeepAung/deep-art/.gen/model"
 	. "github.com/DeepAung/deep-art/.gen/table"
 	"github.com/DeepAung/deep-art/api/types"
-	"github.com/DeepAung/deep-art/pkg/httperror"
-	"github.com/go-jet/jet/v2/qrm"
 	. "github.com/go-jet/jet/v2/sqlite"
-)
-
-var (
-	ErrCodeNotFound       = httperror.New("code not found", http.StatusBadRequest)
-	ErrCodeNoRowsAffected = httperror.New(
-		"code no rows affected",
-		http.StatusInternalServerError,
-	)
-	ErrUsersUsedCodesNoRowsAffected = httperror.New(
-		"users_used_codes no rows affected",
-		http.StatusInternalServerError,
-	)
 )
 
 type CodesRepo struct {
@@ -46,11 +30,8 @@ func (r *CodesRepo) FindAllCodes() ([]model.Codes, error) {
 	defer cancel()
 
 	var dest []model.Codes
-	if err := stmt.QueryContext(ctx, r.db, &dest); err != nil {
-		return []model.Codes{}, err
-	}
-
-	return dest, nil
+	err := HandleQueryCtx(stmt, ctx, r.db, &dest, "code")
+	return dest, err
 }
 
 func (r *CodesRepo) FindOneCodeById(id int) (model.Codes, error) {
@@ -60,14 +41,8 @@ func (r *CodesRepo) FindOneCodeById(id int) (model.Codes, error) {
 	defer cancel()
 
 	var dest model.Codes
-	if err := stmt.QueryContext(ctx, r.db, &dest); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return model.Codes{}, ErrCodeNotFound
-		}
-		return model.Codes{}, err
-	}
-
-	return dest, nil
+	err := HandleQueryCtx(stmt, ctx, r.db, &dest, "code")
+	return dest, err
 }
 
 func (r *CodesRepo) FindOneCodeByName(name string) (model.Codes, error) {
@@ -77,14 +52,8 @@ func (r *CodesRepo) FindOneCodeByName(name string) (model.Codes, error) {
 	defer cancel()
 
 	var dest model.Codes
-	if err := stmt.QueryContext(ctx, r.db, &dest); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return model.Codes{}, ErrCodeNotFound
-		}
-		return model.Codes{}, err
-	}
-
-	return dest, nil
+	err := HandleQueryCtx(stmt, ctx, r.db, &dest, "code")
+	return dest, err
 }
 
 func (r *CodesRepo) HasUsedCode(userId, codeId int) (bool, error) {
@@ -100,14 +69,7 @@ func (r *CodesRepo) HasUsedCode(userId, codeId int) (bool, error) {
 	defer cancel()
 
 	var tmp struct{ int }
-	if err := stmt.QueryContext(ctx, r.db, &tmp); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	return true, nil
+	return HandleHasCtx(stmt, ctx, r.db, &tmp)
 }
 
 func (r *CodesRepo) UseCode(userId, codeId int) error {
@@ -122,24 +84,13 @@ func (r *CodesRepo) UseCode(userId, codeId int) error {
 	stmt := UsersUsedCodes.
 		INSERT(UsersUsedCodes.UserID, UsersUsedCodes.CodeID).
 		VALUES(userId, codeId)
-	result, err := stmt.ExecContext(ctx, tx)
-	if err != nil {
+	if err := HandleExecCtx(stmt, ctx, tx, "users_used_codes"); err != nil {
 		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrUsersUsedCodesNoRowsAffected
 	}
 
 	stmt2 := SELECT(Codes.Value).FROM(Codes).WHERE(Codes.ID.EQ(Int(int64(codeId))))
 	var dest2 model.Codes
-	if err := stmt2.QueryContext(ctx, r.db, &dest2); err != nil {
-		if errors.Is(err, qrm.ErrNoRows) {
-			return ErrCodeNotFound
-		}
+	if err := HandleQueryCtx(stmt2, ctx, tx, &dest2, "code"); err != nil {
 		return err
 	}
 
@@ -147,16 +98,8 @@ func (r *CodesRepo) UseCode(userId, codeId int) error {
 		UPDATE(Users.Coin).
 		SET(Users.Coin.ADD(Int(int64(dest2.Value)))).
 		WHERE(Users.ID.EQ(Int(int64(userId))))
-	result, err = stmt3.ExecContext(ctx, tx)
-	if err != nil {
+	if err := HandleExecCtx(stmt3, ctx, tx, "users"); err != nil {
 		return err
-	}
-	n, err = result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrUsersUsedCodesNoRowsAffected
 	}
 
 	return tx.Commit()
@@ -169,19 +112,7 @@ func (r *CodesRepo) CreateCode(req types.CodeReq) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	result, err := stmt.ExecContext(ctx, r.db)
-	if err != nil {
-		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrCodeNoRowsAffected
-	}
-
-	return nil
+	return HandleExecCtx(stmt, ctx, r.db, "codes")
 }
 
 func (r *CodesRepo) UpdateCode(id int, req types.CodeReq) error {
@@ -192,19 +123,7 @@ func (r *CodesRepo) UpdateCode(id int, req types.CodeReq) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	result, err := stmt.ExecContext(ctx, r.db)
-	if err != nil {
-		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrCodeNoRowsAffected
-	}
-
-	return nil
+	return HandleExecCtx(stmt, ctx, r.db, "codes")
 }
 
 func (r *CodesRepo) DeleteCode(id int) error {
@@ -213,17 +132,5 @@ func (r *CodesRepo) DeleteCode(id int) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	result, err := stmt.ExecContext(ctx, r.db)
-	if err != nil {
-		return err
-	}
-	n, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if n == 0 {
-		return ErrCodeNoRowsAffected
-	}
-
-	return nil
+	return HandleExecCtx(stmt, ctx, r.db, "codes")
 }
