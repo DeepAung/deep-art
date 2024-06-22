@@ -33,7 +33,7 @@ vendor
 
 # Customs
 *.env*
-!.env.dev
+!.env.example
 /tmp
 /static/storage
 setup.lua
