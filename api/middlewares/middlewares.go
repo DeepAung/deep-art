@@ -98,16 +98,16 @@ func (m *Middleware) OnlyAuthorized(opts ...AuthorizedOpt) echo.MiddlewareFunc {
 				fmt.Println("firsttry err: ", err.Error())
 				if !errors.Is(err, http.ErrNoCookie) && !errors.Is(err, emptyTokenErr) {
 					fmt.Println("not in the err list: ", err.Error())
-					utils.ClearTokensCookies(c)
-					c.Redirect(http.StatusFound, "/signin")
+					// utils.ClearTokensCookies(c)
+					// c.Redirect(http.StatusFound, "/signin")
 					return nil
 				}
 
 				payload, err = m.tryUpdateToken(c)
 				if err != nil {
 					fmt.Println("tryupdatetoken err: ", err.Error())
-					utils.ClearTokensCookies(c)
-					c.Redirect(http.StatusFound, "/signin")
+					// utils.ClearTokensCookies(c)
+					// c.Redirect(http.StatusFound, "/signin")
 					return nil
 				}
 			}

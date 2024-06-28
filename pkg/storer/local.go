@@ -22,9 +22,6 @@ func NewLocalStorer(cfg *config.Config) *localStorer {
 	}
 }
 
-// read-only variable
-func (s *localStorer) basePath() string { return "./static/storage" }
-
 func (s *localStorer) UploadFiles(files []*multipart.FileHeader, dir string) ([]FileRes, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), s.cfg.App.Timeout)
 	defer cancel()
@@ -146,8 +143,8 @@ func (s *localStorer) uploadFile(
 
 	// Upload an object to storage
 	dest := utils.Join(dir, file.Filename)
-	filePath := utils.Join(s.basePath(), dest)
-	dirPath := utils.Join(s.basePath(), dir)
+	filePath := "." + utils.Join(s.cfg.App.BasePath, dest)
+	dirPath := utils.Join(s.cfg.App.BasePath, dir)
 
 	if err := os.WriteFile(filePath, b, fs.ModePerm); err != nil {
 		if err := os.MkdirAll(dirPath, fs.ModePerm); err != nil {
@@ -161,7 +158,7 @@ func (s *localStorer) uploadFile(
 
 	return FileRes{
 		Filename: file.Filename,
-		Url:      utils.NewLocalUrl(s.basePath(), dest).Url(),
+		Url:      utils.NewUrlInfoByDest(s.cfg.App.BasePath, dest).Url,
 	}, nil
 }
 
@@ -169,7 +166,7 @@ func (s *localStorer) deleteFile(
 	cancel func(),
 	dest string,
 ) error {
-	filePath := utils.Join(s.basePath(), dest)
+	filePath := "." + utils.Join(s.cfg.App.BasePath, dest)
 	if err := os.Remove(filePath); err != nil {
 		cancel()
 		return fmt.Errorf("remove file: \"%s\" failed: %v", dest, err)

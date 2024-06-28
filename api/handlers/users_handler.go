@@ -94,14 +94,41 @@ func (h *UsersHandler) SignOut(c echo.Context) error {
 	return nil
 }
 
+func (h *UsersHandler) UpdateUser(c echo.Context) error {
+	payload, ok := c.Get("payload").(mytoken.Payload)
+	if !ok {
+		return utils.RenderError(c, components.Error, ErrPayloadNotFound)
+	}
+
+	var req types.UpdateUserReq
+	if err := c.Bind(&req); err != nil {
+		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
+	}
+	if err := utils.Validate(&req); err != nil {
+		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
+	}
+
+	form, err := c.MultipartForm()
+	if err != nil {
+		return utils.RenderError(c, components.Error, err)
+	}
+	files, ok := form.File["avatar"]
+	if !ok {
+		return utils.Render(c, components.Error("no \"avatar\" field"), http.StatusBadRequest)
+	}
+
+	if err = h.usersSvc.UpdateUser(payload.UserId, files[0], req); err != nil {
+		return utils.RenderError(c, components.Error, err)
+	}
+
+	c.Response().Header().Set("HX-Refresh", "true")
+	return nil
+}
+
 func (h *UsersHandler) ToggleFollow(c echo.Context) error {
 	payload, ok := c.Get("payload").(mytoken.Payload)
 	if !ok {
-		return utils.RenderError(
-			c,
-			components.Error,
-			ErrPayloadNotFound,
-		)
+		return utils.RenderError(c, components.Error, ErrPayloadNotFound)
 	}
 
 	creatorId, err := strconv.Atoi(c.Param("id"))
@@ -138,6 +165,7 @@ func (h *UsersHandler) UpdateTokens(c echo.Context) error {
 	}
 
 	utils.SetTokensCookies(c, token, h.cfg.Jwt)
+	c.Response().Header().Set("HX-Trigger-After-Settle", "ready")
 
 	return nil
 }

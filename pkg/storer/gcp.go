@@ -21,9 +21,6 @@ func NewGCPStorer(cfg *config.Config) Storer {
 	}
 }
 
-// read-only variable
-func (s *GCPStorer) Website() string { return "https://storage.googleapis.com" }
-
 func (s *GCPStorer) UploadFiles(files []*multipart.FileHeader, dir string) ([]FileRes, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), s.cfg.App.Timeout)
 	defer cancel()
@@ -168,7 +165,7 @@ func (s *GCPStorer) uploadFile(
 	fmt.Printf("Blob %v uploaded.\n", dest)
 	return FileRes{
 		Filename: file.Filename,
-		Url:      utils.NewGcpUrl(s.Website(), bucket, dest).Url(),
+		Url:      utils.NewUrlInfoByDest(s.cfg.App.BasePath, dest).Url,
 	}, nil
 }
 

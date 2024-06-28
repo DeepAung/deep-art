@@ -38,7 +38,7 @@ func Avatar(url string, alt string, sizePx int) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if url != "" {
-			var templ_7745c5c3_Var2 = []any{"inline-block flex-shrink-0 rounded-full", size(sizePx)}
+			var templ_7745c5c3_Var2 = []any{"inline-block flex-shrink-0 rounded-full object-cover", size(sizePx)}
 			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var2...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

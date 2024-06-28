@@ -9,7 +9,7 @@ css size(sizePx int) {
 
 templ Avatar(url string, alt string, sizePx int) {
 	if url != "" {
-		<img src={ url } alt={ alt } class={ "inline-block flex-shrink-0 rounded-full", size(sizePx) }/>
+		<img src={ url } alt={ alt } class={ "inline-block flex-shrink-0 rounded-full object-cover", size(sizePx) }/>
 	} else {
 		<span class={ "inline-block bg-gray-100 rounded-full overflow-hidden", size(sizePx) }>
 			<svg class="size-full text-gray-300" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">

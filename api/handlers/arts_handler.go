@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -45,14 +44,79 @@ func (h *ArtsHandler) FindManyArts(c echo.Context) error {
 	return utils.Render(c, components.ManyArts(arts), http.StatusOK)
 }
 
+func (h *ArtsHandler) FindManyStarredArts(c echo.Context) error {
+	payload, ok := c.Get("payload").(mytoken.Payload)
+	if !ok {
+		return utils.RenderError(c, components.Error, ErrPayloadNotFound)
+	}
+
+	var req types.ManyArtsReq
+	if err := c.Bind(&req); err != nil {
+		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
+	}
+	if err := utils.Validate(&req); err != nil {
+		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
+	}
+
+	arts, err := h.artsSvc.FindManyStarredArts(payload.UserId, req)
+	if err != nil {
+		return utils.RenderError(c, components.Error, err)
+	}
+
+	time.Sleep(300 * time.Millisecond)
+	return utils.Render(c, components.ManyArts(arts), http.StatusOK)
+}
+
+func (h *ArtsHandler) FindManyBoughtArts(c echo.Context) error {
+	payload, ok := c.Get("payload").(mytoken.Payload)
+	if !ok {
+		return utils.RenderError(c, components.Error, ErrPayloadNotFound)
+	}
+
+	var req types.ManyArtsReq
+	if err := c.Bind(&req); err != nil {
+		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
+	}
+	if err := utils.Validate(&req); err != nil {
+		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
+	}
+
+	arts, err := h.artsSvc.FindManyBoughtArts(payload.UserId, req)
+	if err != nil {
+		return utils.RenderError(c, components.Error, err)
+	}
+
+	time.Sleep(300 * time.Millisecond)
+	return utils.Render(c, components.ManyArts(arts), http.StatusOK)
+}
+
+func (h *ArtsHandler) FindManyCreatedArts(c echo.Context) error {
+	payload, ok := c.Get("payload").(mytoken.Payload)
+	if !ok {
+		return utils.RenderError(c, components.Error, ErrPayloadNotFound)
+	}
+
+	var req types.ManyArtsReq
+	if err := c.Bind(&req); err != nil {
+		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
+	}
+	if err := utils.Validate(&req); err != nil {
+		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
+	}
+
+	arts, err := h.artsSvc.FindManyCreatedArts(payload.UserId, req)
+	if err != nil {
+		return utils.RenderError(c, components.Error, err)
+	}
+
+	time.Sleep(300 * time.Millisecond)
+	return utils.Render(c, components.ManyArts(arts), http.StatusOK)
+}
+
 func (h *ArtsHandler) BuyArt(c echo.Context) error {
 	payload, ok := c.Get("payload").(mytoken.Payload)
 	if !ok {
-		return utils.RenderError(
-			c,
-			components.Error,
-			errors.New("payload from middleware not found"),
-		)
+		return utils.RenderError(c, components.Error, ErrPayloadNotFound)
 	}
 
 	artId, err := strconv.Atoi(c.Param("id"))

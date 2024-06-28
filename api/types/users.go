@@ -37,10 +37,9 @@ type SignUpReq struct {
 	AvatarUrl       string `form:"avatar_url"`
 }
 
-type UpdateReq struct {
-	Username  string `form:"username"   validate:"required"`
-	Email     string `form:"email"      validate:"required,email"`
-	AvatarUrl string `form:"avatar_url" validate:"required"`
+type UpdateUserReq struct {
+	Username  string `form:"username" validate:"required"`
+	AvatarUrl string
 }
 
 type Token struct {

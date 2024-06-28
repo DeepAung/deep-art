@@ -1,65 +1,64 @@
 package utils
 
 import (
-	"path/filepath"
+	"net/url"
 	"strings"
 )
 
 func Join(elem ...string) string {
-	return strings.ReplaceAll(filepath.Join(elem...), "\\", "/")
+	joined, _ := url.JoinPath(elem[0], elem[1:]...)
+	return strings.ReplaceAll(joined, "\\", "/")
 }
 
 // url      = https://storage.googleapis.com/deep-art-bucket-dev/users/1/profile.jpg
-// website  = https://storage.googleapis.com
+// basePath = https://storage.googleapis.com/deep-art-bucket-dev
 // bucket   = deep-art-bucket-dev
 // dest     = users/1/profile.jpg
+// dir      = users/1
 // filename = profile.jpg
-type GcpUrl struct {
-	website string
-	bucket  string
-	dest    string
-}
-
-func NewGcpUrl(website string, bucket string, dest string) GcpUrl {
-	return GcpUrl{
-		website: website,
-		bucket:  bucket,
-		dest:    dest,
-	}
-}
-
-func (u GcpUrl) Filename() string {
-	idx := strings.LastIndex(u.dest, "/")
-	return u.dest[idx+1:]
-}
-
-func (u GcpUrl) Url() string {
-	url := Join(u.website, u.bucket, u.dest)
-	return strings.ReplaceAll(url, " ", "%20")
-}
-
-type LocalUrl struct {
-	basePath string
-	dest     string
-}
-
-// url      = ./static/storage/users/1/profile.jpg
-// basePath  = ./static/storage
+//
+// url      = /static/storage/users/1/profile.jpg
+// basePath = /static/storage
 // dest     = users/1/profile.jpg
+// dir      = users/1
 // filename = profile.jpg
-func NewLocalUrl(basePath string, dest string) LocalUrl {
-	return LocalUrl{
-		basePath: basePath,
-		dest:     dest,
+type UrlInfo struct {
+	Url      string
+	BasePath string
+	Dest     string
+	Dir      string
+	Filename string
+}
+
+func NewUrlInfoByDest(basePath string, dest string) UrlInfo {
+	u := UrlInfo{
+		BasePath: basePath,
+		Dest:     dest,
 	}
+
+	idx := strings.LastIndex(u.Dest, "/")
+	u.Filename = u.Dest[idx+1:]
+
+	url := Join(u.BasePath, u.Dest)
+	u.Url = strings.ReplaceAll(url, " ", "%20")
+
+	u.Dir = dest[0 : len(dest)-len(u.Filename)]
+
+	return u
 }
 
-func (u LocalUrl) Filename() string {
-	idx := strings.LastIndex(u.dest, "/")
-	return u.dest[idx+1:]
-}
+func NewUrlInfoByURL(basePath string, url string) UrlInfo {
+	u := UrlInfo{
+		BasePath: basePath,
+		Url:      url,
+	}
 
-func (u LocalUrl) Url() string {
-	url := Join(u.basePath, u.dest)
-	return strings.ReplaceAll(url, " ", "%20")
+	u.Dest = u.Url[len(u.BasePath)+1:]
+
+	idx := strings.LastIndex(u.Dest, "/")
+	u.Filename = u.Dest[idx+1:]
+
+	u.Dir = u.Dest[0 : len(u.Dest)-len(u.Filename)]
+
+	return u
 }

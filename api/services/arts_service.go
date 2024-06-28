@@ -30,6 +30,27 @@ func (s *ArtsSvc) FindManyArts(req types.ManyArtsReq) (types.ManyArtsRes, error)
 	return s.artsRepo.FindManyArts(req)
 }
 
+func (s *ArtsSvc) FindManyStarredArts(
+	userId int,
+	req types.ManyArtsReq,
+) (types.ManyArtsRes, error) {
+	return s.artsRepo.FindManyStarredArts(userId, req)
+}
+
+func (s *ArtsSvc) FindManyBoughtArts(
+	userId int,
+	req types.ManyArtsReq,
+) (types.ManyArtsRes, error) {
+	return s.artsRepo.FindManyBoughtArts(userId, req)
+}
+
+func (s *ArtsSvc) FindManyCreatedArts(
+	userId int,
+	req types.ManyArtsReq,
+) (types.ManyArtsRes, error) {
+	return s.artsRepo.FindManyCreatedArts(userId, req)
+}
+
 func (s *ArtsSvc) FindOneArt(id int) (types.Art, error) {
 	return s.artsRepo.FindOneArt(id)
 }

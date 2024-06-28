@@ -32,24 +32,24 @@ func NewRouter(
 
 func (r *Router) PagesRouter() {
 	usersRepo := repositories.NewUsersRepo(r.s.db, r.s.cfg.App.Timeout)
-	usersSvc := services.NewUsersSvc(usersRepo, r.s.cfg)
+	usersSvc := services.NewUsersSvc(usersRepo, r.storer, r.s.cfg)
 	artsRepo := repositories.NewArtsRepo(r.storer, r.s.db, r.s.cfg.App.Timeout)
 	artsSvc := services.NewArtsSvc(artsRepo, r.s.cfg)
 	handler := handlers.NewPagesHandler(usersSvc, artsSvc)
 
-	setPayload := middlewares.SetPayload
 	setUserData := middlewares.SetUserData
 
 	r.s.app.GET("/", handler.Welcome)
 	r.s.app.GET("/signin", handler.SignIn)
 	r.s.app.GET("/signup", handler.SignUp)
-	r.s.app.GET("/home", handler.Home, r.mid.OnlyAuthorized(setPayload(), setUserData()))
-	r.s.app.GET("/arts/:id", handler.ArtDetail, r.mid.OnlyAuthorized(setPayload(), setUserData()))
+	r.s.app.GET("/home", handler.Home, r.mid.OnlyAuthorized(setUserData()))
+	r.s.app.GET("/arts/:id", handler.ArtDetail, r.mid.OnlyAuthorized(setUserData()))
+	r.s.app.GET("/me", handler.MyProfile, r.mid.OnlyAuthorized(setUserData()))
 }
 
 func (r *Router) UsersRouter() {
 	repo := repositories.NewUsersRepo(r.s.db, r.s.cfg.App.Timeout)
-	svc := services.NewUsersSvc(repo, r.s.cfg)
+	svc := services.NewUsersSvc(repo, r.storer, r.s.cfg)
 	handler := handlers.NewUsersHandler(svc, r.s.cfg)
 
 	setPayload := middlewares.SetPayload
@@ -57,6 +57,9 @@ func (r *Router) UsersRouter() {
 	r.s.app.POST("/api/signin", handler.SignIn)
 	r.s.app.POST("/api/signup", handler.SignUp)
 	r.s.app.POST("/api/signout", handler.SignOut, r.mid.OnlyAuthorized(setPayload()))
+
+	r.s.app.PUT("/api/users", handler.UpdateUser, r.mid.OnlyAuthorized(setPayload()))
+
 	r.s.app.POST(
 		"/api/creators/:id/toggle-follow",
 		handler.ToggleFollow,
@@ -73,6 +76,22 @@ func (r *Router) ArtsRouter() {
 	setPayload := middlewares.SetPayload
 
 	r.s.app.POST("/api/arts", handler.FindManyArts)
+	r.s.app.POST(
+		"/api/arts/starred",
+		handler.FindManyStarredArts,
+		r.mid.OnlyAuthorized(setPayload()),
+	)
+	r.s.app.POST(
+		"/api/arts/bought",
+		handler.FindManyBoughtArts,
+		r.mid.OnlyAuthorized(setPayload()),
+	)
+	r.s.app.POST(
+		"/api/arts/created",
+		handler.FindManyCreatedArts,
+		r.mid.OnlyAuthorized(setPayload()),
+	)
+
 	r.s.app.POST(
 		"/api/arts/:id/toggle-star",
 		handler.ToggleStar,
@@ -154,6 +173,9 @@ func (r *Router) testArtsRouter(testGroup *echo.Group) {
 
 	artsGroup := testGroup.Group("/arts")
 	artsGroup.GET("", handler.FindManyArts)
+	artsGroup.GET("/starred", handler.FindManyStarredArts)
+	artsGroup.GET("/bought", handler.FindManyBoughtArts)
+	artsGroup.GET("/created", handler.FindManyCreatedArts)
 	artsGroup.GET("/:id", handler.FindOneArt)
 }
 

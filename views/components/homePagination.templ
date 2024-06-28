@@ -6,7 +6,7 @@ const pageLimit = 20
 
 func maxPage(total int) int {
 	maxPage := total / pageLimit
-	if total%pageLimit == 0 {
+	if total%pageLimit != 0 {
 		maxPage += 1
 	}
 	return maxPage

@@ -2,6 +2,8 @@ package services
 
 import (
 	"errors"
+	"fmt"
+	"mime/multipart"
 	"net/http"
 
 	"github.com/DeepAung/deep-art/api/repositories"
@@ -9,6 +11,7 @@ import (
 	"github.com/DeepAung/deep-art/pkg/config"
 	"github.com/DeepAung/deep-art/pkg/httperror"
 	"github.com/DeepAung/deep-art/pkg/mytoken"
+	"github.com/DeepAung/deep-art/pkg/storer"
 	"github.com/DeepAung/deep-art/pkg/utils"
 )
 
@@ -19,12 +22,18 @@ var (
 
 type UsersSvc struct {
 	usersRepo *repositories.UsersRepo
+	storer    storer.Storer
 	cfg       *config.Config
 }
 
-func NewUsersSvc(usersRepo *repositories.UsersRepo, cfg *config.Config) *UsersSvc {
+func NewUsersSvc(
+	usersRepo *repositories.UsersRepo,
+	storer storer.Storer,
+	cfg *config.Config,
+) *UsersSvc {
 	return &UsersSvc{
 		usersRepo: usersRepo,
+		storer:    storer,
 		cfg:       cfg,
 	}
 }
@@ -167,8 +176,37 @@ func (s *UsersSvc) GetCreator(id int) (types.Creator, error) {
 	return s.usersRepo.FindOneCreatorById(id)
 }
 
-func (s *UsersSvc) UpdateUser(id int, req types.UpdateReq) error {
-	return s.usersRepo.UpdateUser(id, req)
+func (s *UsersSvc) UpdateUser(id int, avatar *multipart.FileHeader, req types.UpdateUserReq) error {
+	// TODO: find one avatar url by id
+	user, err := s.usersRepo.FindOneUserById(id)
+	if err != nil {
+		return err
+	}
+
+	// delete old avatar
+	if user.AvatarUrl != "" {
+		dest := utils.NewUrlInfoByURL(s.cfg.App.BasePath, user.AvatarUrl).Dest
+		if err := s.storer.DeleteFiles([]string{dest}); err != nil {
+			return err
+		}
+	}
+
+	// upload new avatar
+	dir := fmt.Sprint("/users/", id)
+	res, err := s.storer.UploadFiles([]*multipart.FileHeader{avatar}, dir)
+	if err != nil {
+		return err
+	}
+
+	// update user field (username, avatarUrl)
+	req.AvatarUrl = res[0].Url
+	if err = s.usersRepo.UpdateUser(id, req); err != nil {
+		dest := fmt.Sprint("/users/", id, "/", res[0].Filename)
+		_ = s.storer.DeleteFiles([]string{dest})
+		return err
+	}
+
+	return nil
 }
 
 func (s *UsersSvc) DeleteUser(id int) error {

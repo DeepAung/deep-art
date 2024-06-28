@@ -1,17 +1,18 @@
 meta {
-  name: find many arts
+  name: find many created arts
   type: http
   seq: 1
 }
 
 get {
-  url: {{url}}/test/arts
+  url: {{url}}/test/arts/created
   body: json
   auth: none
 }
 
 body:json {
   {
+    "userId": 1,
     "search": "",
     "pagination": {
       "limit": 20,

@@ -129,9 +129,9 @@ func (r *UsersRepo) CreateUser(req types.SignUpReq) (types.User, error) {
 	}, nil
 }
 
-func (r *UsersRepo) UpdateUser(id int, req types.UpdateReq) error {
-	stmt := Users.UPDATE(Users.Username, Users.Email, Users.AvatarURL).
-		SET(req.Username, req.Email, req.AvatarUrl).
+func (r *UsersRepo) UpdateUser(id int, req types.UpdateUserReq) error {
+	stmt := Users.UPDATE(Users.Username, Users.AvatarURL).
+		SET(req.Username, req.AvatarUrl).
 		WHERE(Users.ID.EQ(Int(int64(id))))
 
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)

@@ -28,6 +28,8 @@ func (c *Config) Print() {
 	fmt.Println("- FileLimit: ", c.App.FileLimit)
 	fmt.Println("- CorsOrigins: ", c.App.CorsOrigins)
 	fmt.Println("- GcpBucket: ", c.App.GcpBucket)
+	fmt.Println("- StorerType: ", c.App.StorerType)
+	fmt.Println("- BasePath: ", c.App.BasePath)
 
 	fmt.Println("Db")
 	fmt.Println("- Url: ", c.Db.Url)
@@ -46,6 +48,21 @@ func (c *Config) Print() {
 	fmt.Println("===========================================")
 }
 
+type StorerType string
+
+func AsStorerType(s string) StorerType {
+	if s != "local" && s != "gcp" {
+		log.Fatal("invalid storer type. could be either local or gcp.")
+	}
+
+	return StorerType(s)
+}
+
+const (
+	LocalType = "local"
+	GcpType   = "gcp"
+)
+
 type AppConfig struct {
 	Address     string
 	Timeout     time.Duration
@@ -53,6 +70,8 @@ type AppConfig struct {
 	FileLimit   string
 	CorsOrigins []string
 	GcpBucket   string
+	StorerType  StorerType
+	BasePath    string
 }
 
 type DbConfig struct {
@@ -88,6 +107,14 @@ func NewConfig() *Config {
 		}
 	}
 
+	storerType := AsStorerType(os.Getenv("APP_STORER"))
+	var basePath string
+	if storerType == "local" {
+		basePath = os.Getenv("APP_LOCAL_BASE_PATH")
+	} else {
+		basePath = os.Getenv("APP_GCP_BASE_PATH")
+	}
+
 	return &Config{
 		App: &AppConfig{
 			Address:     os.Getenv("APP_ADDRESS"),
@@ -96,6 +123,8 @@ func NewConfig() *Config {
 			FileLimit:   os.Getenv("APP_FILE_LIMIT"),
 			CorsOrigins: strings.Split(os.Getenv("APP_CORS_ORIGINS"), " "),
 			GcpBucket:   os.Getenv("APP_GCP_BUCKET"),
+			StorerType:  storerType,
+			BasePath:    basePath,
 		},
 		Db: &DbConfig{
 			Url: os.Getenv("DB_URL"),

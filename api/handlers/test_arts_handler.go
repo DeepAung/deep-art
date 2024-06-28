@@ -34,6 +34,57 @@ func (h *testArtsHandler) FindManyArts(c echo.Context) error {
 	return c.JSON(http.StatusOK, arts)
 }
 
+func (h *testArtsHandler) FindManyStarredArts(c echo.Context) error {
+	var req struct {
+		types.ManyArtsReq
+		UserId int `json:"userId" form:"userId"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	arts, err := h.artsRepo.FindManyStarredArts(req.UserId, req.ManyArtsReq)
+	if err != nil {
+		return utils.JSONError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, arts)
+}
+
+func (h *testArtsHandler) FindManyBoughtArts(c echo.Context) error {
+	var req struct {
+		types.ManyArtsReq
+		UserId int `json:"userId" form:"userId"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	arts, err := h.artsRepo.FindManyBoughtArts(req.UserId, req.ManyArtsReq)
+	if err != nil {
+		return utils.JSONError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, arts)
+}
+
+func (h *testArtsHandler) FindManyCreatedArts(c echo.Context) error {
+	var req struct {
+		types.ManyArtsReq
+		UserId int `json:"userId" form:"userId"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, err.Error())
+	}
+
+	arts, err := h.artsRepo.FindManyCreatedArts(req.UserId, req.ManyArtsReq)
+	if err != nil {
+		return utils.JSONError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, arts)
+}
+
 func (h *testArtsHandler) FindOneArt(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

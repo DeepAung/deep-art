@@ -34,20 +34,25 @@ func NewServer(
 }
 
 func (s *Server) Start() {
-	storer := storer.NewLocalStorer(s.cfg)
-	mid := s.InitMiddleware()
+	var myStorer storer.Storer
+	if s.cfg.App.StorerType == "local" {
+		myStorer = storer.NewLocalStorer(s.cfg)
+	} else {
+		myStorer = storer.NewGCPStorer(s.cfg)
+	}
+	mid := s.InitMiddleware(myStorer)
 
 	s.app.Static("/static", "static")
 	s.app.Static("/node_modules", "node_modules")
 
-	s.InitRouter(mid, storer)
+	s.InitRouter(mid, myStorer)
 
 	s.app.Start(":3000")
 }
 
-func (s *Server) InitMiddleware() *middlewares.Middleware {
+func (s *Server) InitMiddleware(storer storer.Storer) *middlewares.Middleware {
 	usersRepo := repositories.NewUsersRepo(s.db, s.cfg.App.Timeout)
-	usersSvc := services.NewUsersSvc(usersRepo, s.cfg)
+	usersSvc := services.NewUsersSvc(usersRepo, storer, s.cfg)
 	mid := middlewares.NewMiddleware(usersSvc, s.cfg)
 
 	s.app.Use(mid.Logger())

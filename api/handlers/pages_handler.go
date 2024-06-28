@@ -81,3 +81,12 @@ func (h *PagesHandler) ArtDetail(c echo.Context) error {
 		http.StatusOK,
 	)
 }
+
+func (h *PagesHandler) MyProfile(c echo.Context) error {
+	me, ok := c.Get("user").(types.User)
+	if !ok {
+		return utils.RenderError(c, pages.Error, ErrUserDataNotFound)
+	}
+
+	return utils.Render(c, pages.MyProfile(me), http.StatusOK)
+}

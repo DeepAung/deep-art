@@ -38,34 +38,299 @@ func NewArtsRepo(storer storer.Storer, db *sql.DB, timeout time.Duration) *ArtsR
 }
 
 func (r *ArtsRepo) FindManyArts(req types.ManyArtsReq) (types.ManyArtsRes, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
 	statsTable := r.statsTable().AsTable("Stats")
 	stats := r.statsColumn(statsTable)
+	creator := Users.AS("Creator")
 
-	var cond BoolExpression = Arts.ID.EQ(Arts.ID)
+	var cond BoolExpression = Int(1).EQ(Int(1))
 	cond = r.withFilterCond(cond, req.Filter)
 	cond = r.withSearchCond(cond, req.Search)
 
-	stmt := r.findManyArtsStmt(cond, statsTable)
+	// stmt
+	stmt := SELECT(
+		Arts.AllColumns,
+		creator.AllColumns.Except(creator.Password),
+		COUNT(DISTINCT(Follow.UserIDFollower)).AS("Creator.Followers"),
+		Raw("group_concat(DISTINCT tags.name)").AS("TagNames"),
+		Raw("group_concat(DISTINCT tags.id)").AS("TagIDs"),
+		statsTable.AllColumns().As("Stats.*"),
+	).FROM(
+		Arts.
+			LEFT_JOIN(creator, creator.ID.EQ(Arts.CreatorID)).
+			LEFT_JOIN(Follow, Follow.UserIDFollowee.EQ(creator.ID)).
+			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
+			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
+			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),
+	).WHERE(cond).GROUP_BY(Arts.ID)
 	stmt, err := r.withSortStmt(stmt, req.Sort, stats)
 	if err != nil {
 		return types.ManyArtsRes{}, err
 	}
 	stmt = r.withPaginationStmt(stmt, req.Pagination)
 
-	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
-	defer cancel()
+	// stmt2
+	stmt2 := SELECT(
+		COUNT(DISTINCT(Arts.ID)).AS("Count"),
+	).FROM(
+		Arts.
+			LEFT_JOIN(creator, creator.ID.EQ(Arts.CreatorID)).
+			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
+			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
+			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),
+	).WHERE(cond)
 
+	// query stmt
 	var dest types.ManyArts
 	if err := HandleQueryCtx(stmt, ctx, r.db, &dest, "art"); err != nil {
 		return types.ManyArtsRes{}, err
 	}
-
 	err = dest.FillTags()
 	if err != nil {
 		return types.ManyArtsRes{}, err
 	}
 
-	stmt2 := r.findCountManyArtsStmt(cond, statsTable)
+	// query stmt2
+	var dest2 struct{ Count int }
+	if err := HandleQueryCtx(stmt2, ctx, r.db, &dest2, "art"); err != nil {
+		return types.ManyArtsRes{}, err
+	}
+
+	return types.ManyArtsRes{
+		Arts:  dest,
+		Total: dest2.Count,
+	}, nil
+}
+
+func (r *ArtsRepo) FindManyStarredArts(
+	userId int,
+	req types.ManyArtsReq,
+) (types.ManyArtsRes, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	statsTable := r.statsTable().AsTable("Stats")
+	stats := r.statsColumn(statsTable)
+	creator := Users.AS("Creator")
+
+	var cond BoolExpression = Int(1).EQ(Int(1))
+	cond = r.withFilterCond(cond, req.Filter)
+	cond = r.withSearchCond(cond, req.Search)
+
+	// starred arts stmt
+	stmt := SELECT(
+		Arts.AllColumns,
+		creator.AllColumns.Except(creator.Password),
+		COUNT(DISTINCT(Follow.UserIDFollower)).AS("Creator.Followers"),
+		Raw("group_concat(DISTINCT tags.name)").AS("TagNames"),
+		Raw("group_concat(DISTINCT tags.id)").AS("TagIDs"),
+		statsTable.AllColumns().As("Stats.*"),
+	).FROM(
+		Arts.
+			INNER_JOIN(
+				UsersStarredArts,
+				UsersStarredArts.ArtID.EQ(Arts.ID).
+					AND(UsersStarredArts.UserID.EQ(Int(int64(userId)))),
+			).
+			LEFT_JOIN(creator, creator.ID.EQ(Arts.CreatorID)).
+			LEFT_JOIN(Follow, Follow.UserIDFollowee.EQ(creator.ID)).
+			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
+			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
+			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),
+	).WHERE(cond).GROUP_BY(Arts.ID)
+	stmt, err := r.withSortStmt(stmt, req.Sort, stats)
+	if err != nil {
+		return types.ManyArtsRes{}, err
+	}
+	stmt = r.withPaginationStmt(stmt, req.Pagination)
+
+	// starred arts stmt2
+	stmt2 := SELECT(
+		COUNT(DISTINCT(Arts.ID)).AS("Count"),
+	).FROM(
+		Arts.
+			INNER_JOIN(
+				UsersStarredArts,
+				UsersStarredArts.ArtID.EQ(Arts.ID).
+					AND(UsersStarredArts.UserID.EQ(Int(int64(userId)))),
+			).
+			LEFT_JOIN(creator, creator.ID.EQ(Arts.CreatorID)).
+			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
+			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
+			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),
+	).WHERE(cond)
+
+	// query stmt
+	var dest types.ManyArts
+	if err := HandleQueryCtx(stmt, ctx, r.db, &dest, "art"); err != nil {
+		return types.ManyArtsRes{}, err
+	}
+	err = dest.FillTags()
+	if err != nil {
+		return types.ManyArtsRes{}, err
+	}
+
+	// query stmt2
+	var dest2 struct{ Count int }
+	if err := HandleQueryCtx(stmt2, ctx, r.db, &dest2, "art"); err != nil {
+		return types.ManyArtsRes{}, err
+	}
+
+	return types.ManyArtsRes{
+		Arts:  dest,
+		Total: dest2.Count,
+	}, nil
+}
+
+func (r *ArtsRepo) FindManyBoughtArts(
+	userId int,
+	req types.ManyArtsReq,
+) (types.ManyArtsRes, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	statsTable := r.statsTable().AsTable("Stats")
+	stats := r.statsColumn(statsTable)
+	creator := Users.AS("Creator")
+
+	var cond BoolExpression = Int(1).EQ(Int(1))
+	cond = r.withFilterCond(cond, req.Filter)
+	cond = r.withSearchCond(cond, req.Search)
+
+	// bought arts stmt
+	stmt := SELECT(
+		Arts.AllColumns,
+		creator.AllColumns.Except(creator.Password),
+		COUNT(DISTINCT(Follow.UserIDFollower)).AS("Creator.Followers"),
+		Raw("group_concat(DISTINCT tags.name)").AS("TagNames"),
+		Raw("group_concat(DISTINCT tags.id)").AS("TagIDs"),
+		statsTable.AllColumns().As("Stats.*"),
+	).FROM(
+		Arts.
+			INNER_JOIN(
+				UsersBoughtArts,
+				UsersBoughtArts.ArtID.EQ(Arts.ID).
+					AND(UsersBoughtArts.UserID.EQ(Int(int64(userId)))),
+			).
+			LEFT_JOIN(creator, creator.ID.EQ(Arts.CreatorID)).
+			LEFT_JOIN(Follow, Follow.UserIDFollowee.EQ(creator.ID)).
+			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
+			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
+			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),
+	).WHERE(cond).GROUP_BY(Arts.ID)
+	stmt, err := r.withSortStmt(stmt, req.Sort, stats)
+	if err != nil {
+		return types.ManyArtsRes{}, err
+	}
+	stmt = r.withPaginationStmt(stmt, req.Pagination)
+
+	// bought arts stmt2
+	stmt2 := SELECT(
+		COUNT(DISTINCT(Arts.ID)).AS("Count"),
+	).FROM(
+		Arts.
+			INNER_JOIN(
+				UsersBoughtArts,
+				UsersBoughtArts.ArtID.EQ(Arts.ID).
+					AND(UsersBoughtArts.UserID.EQ(Int(int64(userId)))),
+			).
+			LEFT_JOIN(creator, creator.ID.EQ(Arts.CreatorID)).
+			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
+			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
+			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),
+	).WHERE(cond)
+
+	// query stmt
+	var dest types.ManyArts
+	if err := HandleQueryCtx(stmt, ctx, r.db, &dest, "art"); err != nil {
+		return types.ManyArtsRes{}, err
+	}
+	err = dest.FillTags()
+	if err != nil {
+		return types.ManyArtsRes{}, err
+	}
+
+	// query stmt2
+	var dest2 struct{ Count int }
+	if err := HandleQueryCtx(stmt2, ctx, r.db, &dest2, "art"); err != nil {
+		return types.ManyArtsRes{}, err
+	}
+
+	return types.ManyArtsRes{
+		Arts:  dest,
+		Total: dest2.Count,
+	}, nil
+}
+
+func (r *ArtsRepo) FindManyCreatedArts(
+	userId int,
+	req types.ManyArtsReq,
+) (types.ManyArtsRes, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	statsTable := r.statsTable().AsTable("Stats")
+	stats := r.statsColumn(statsTable)
+	creator := Users.AS("Creator")
+
+	var cond BoolExpression = Int(1).EQ(Int(1))
+	cond = r.withFilterCond(cond, req.Filter)
+	cond = r.withSearchCond(cond, req.Search)
+
+	// created arts stmt
+	stmt := SELECT(
+		Arts.AllColumns,
+		creator.AllColumns.Except(creator.Password),
+		COUNT(DISTINCT(Follow.UserIDFollower)).AS("Creator.Followers"),
+		Raw("group_concat(DISTINCT tags.name)").AS("TagNames"),
+		Raw("group_concat(DISTINCT tags.id)").AS("TagIDs"),
+		statsTable.AllColumns().As("Stats.*"),
+	).FROM(
+		Arts.
+			INNER_JOIN(
+				creator,
+				creator.ID.EQ(Arts.CreatorID).
+					AND(creator.ID.EQ(Int(int64(userId)))),
+			).
+			LEFT_JOIN(Follow, Follow.UserIDFollowee.EQ(creator.ID)).
+			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
+			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
+			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),
+	).WHERE(cond).GROUP_BY(Arts.ID)
+	stmt, err := r.withSortStmt(stmt, req.Sort, stats)
+	if err != nil {
+		return types.ManyArtsRes{}, err
+	}
+	stmt = r.withPaginationStmt(stmt, req.Pagination)
+
+	// created arts stmt2
+	stmt2 := SELECT(
+		COUNT(DISTINCT(Arts.ID)).AS("Count"),
+	).FROM(
+		Arts.
+			INNER_JOIN(
+				creator,
+				creator.ID.EQ(Arts.CreatorID).
+					AND(creator.ID.EQ(Int(int64(userId)))),
+			).
+			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
+			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
+			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),
+	).WHERE(cond)
+
+	// query stmt
+	var dest types.ManyArts
+	if err := HandleQueryCtx(stmt, ctx, r.db, &dest, "art"); err != nil {
+		return types.ManyArtsRes{}, err
+	}
+	err = dest.FillTags()
+	if err != nil {
+		return types.ManyArtsRes{}, err
+	}
+
+	// query stmt2
 	var dest2 struct{ Count int }
 	if err := HandleQueryCtx(stmt2, ctx, r.db, &dest2, "art"); err != nil {
 		return types.ManyArtsRes{}, err
@@ -282,6 +547,40 @@ func (r *ArtsRepo) statsColumn(statsTable SelectTable) statsColumn {
 	}
 }
 
+func (r *ArtsRepo) findManyArtsColumns(statsTable SelectTable) []Projection {
+	creator := Users.AS("Creator")
+
+	return []Projection{
+		Arts.AllColumns,
+		creator.AllColumns.Except(creator.Password),
+		COUNT(DISTINCT(Follow.UserIDFollower)).AS("Creator.Followers"),
+		Raw("group_concat(DISTINCT tags.name)").AS("TagNames"),
+		Raw("group_concat(DISTINCT tags.id)").AS("TagIDs"),
+		statsTable.AllColumns().As("Stats.*"),
+	}
+}
+
+func (r *ArtsRepo) findManyArtsTable(statsTable SelectTable) ReadableTable {
+	creator := Users.AS("Creator")
+
+	return Arts.
+		LEFT_JOIN(creator, creator.ID.EQ(Arts.CreatorID)).
+		LEFT_JOIN(Follow, Follow.UserIDFollowee.EQ(creator.ID)).
+		LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
+		LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
+		LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID))
+}
+
+func (r *ArtsRepo) countManyArtsTable(statsTable SelectTable) ReadableTable {
+	creator := Users.AS("Creator")
+
+	return Arts.
+		LEFT_JOIN(creator, creator.ID.EQ(Arts.CreatorID)).
+		LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
+		LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
+		LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID))
+}
+
 func (r *ArtsRepo) findManyArtsStmt(
 	cond BoolExpression,
 	statsTable SelectTable,
@@ -298,9 +597,9 @@ func (r *ArtsRepo) findManyArtsStmt(
 	).FROM(
 		Arts.
 			LEFT_JOIN(creator, creator.ID.EQ(Arts.CreatorID)).
-			LEFT_JOIN(Follow, Follow.UserIDFollowee.EQ(creator.ID)).
 			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
 			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
+			LEFT_JOIN(Follow, Follow.UserIDFollowee.EQ(creator.ID)).
 			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),
 	).WHERE(cond).GROUP_BY(Arts.ID)
 }
@@ -370,6 +669,10 @@ func (r *ArtsRepo) withSearchCond(cond BoolExpression, search string) BoolExpres
 			OR(creator.Username.LIKE(String("%" + search + "%"))),
 	)
 }
+
+// func (r *ArtsRepo) withStarredArtsCond(cond BoolExpression) BoolExpression {
+// 	return cond.AND(Arts.ID.BETWEEN)
+// }
 
 func (r *ArtsRepo) withSortStmt(
 	stmt SelectStatement,
