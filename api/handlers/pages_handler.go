@@ -90,3 +90,21 @@ func (h *PagesHandler) MyProfile(c echo.Context) error {
 
 	return utils.Render(c, pages.MyProfile(me), http.StatusOK)
 }
+
+func (h *PagesHandler) CreatorPage(c echo.Context) error {
+	user, ok := c.Get("user").(types.User)
+	if !ok {
+		return utils.RenderError(c, pages.Error, ErrUserDataNotFound)
+	}
+
+	return utils.Render(c, pages.Creator(user), http.StatusOK)
+}
+
+func (h *PagesHandler) AdminPage(c echo.Context) error {
+	user, ok := c.Get("user").(types.User)
+	if !ok {
+		return utils.RenderError(c, pages.Error, ErrUserDataNotFound)
+	}
+
+	return utils.Render(c, pages.Admin(user), http.StatusOK)
+}

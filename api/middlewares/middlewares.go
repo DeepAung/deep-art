@@ -106,8 +106,8 @@ func (m *Middleware) OnlyAuthorized(opts ...AuthorizedOpt) echo.MiddlewareFunc {
 				payload, err = m.tryUpdateToken(c)
 				if err != nil {
 					fmt.Println("tryupdatetoken err: ", err.Error())
-					// utils.ClearTokensCookies(c)
-					// c.Redirect(http.StatusFound, "/signin")
+					utils.ClearTokensCookies(c)
+					c.Redirect(http.StatusFound, "/signin")
 					return nil
 				}
 			}

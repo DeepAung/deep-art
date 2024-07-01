@@ -42,9 +42,14 @@ func (r *Router) PagesRouter() {
 	r.s.app.GET("/", handler.Welcome)
 	r.s.app.GET("/signin", handler.SignIn)
 	r.s.app.GET("/signup", handler.SignUp)
+
 	r.s.app.GET("/home", handler.Home, r.mid.OnlyAuthorized(setUserData()))
 	r.s.app.GET("/arts/:id", handler.ArtDetail, r.mid.OnlyAuthorized(setUserData()))
+
 	r.s.app.GET("/me", handler.MyProfile, r.mid.OnlyAuthorized(setUserData()))
+
+	r.s.app.GET("/creator", handler.CreatorPage, r.mid.OnlyAuthorized(setUserData()))
+	r.s.app.GET("/admin", handler.AdminPage, r.mid.OnlyAuthorized(setUserData()))
 }
 
 func (r *Router) UsersRouter() {
@@ -77,18 +82,8 @@ func (r *Router) ArtsRouter() {
 
 	r.s.app.POST("/api/arts", handler.FindManyArts)
 	r.s.app.POST(
-		"/api/arts/starred",
-		handler.FindManyStarredArts,
-		r.mid.OnlyAuthorized(setPayload()),
-	)
-	r.s.app.POST(
-		"/api/arts/bought",
-		handler.FindManyBoughtArts,
-		r.mid.OnlyAuthorized(setPayload()),
-	)
-	r.s.app.POST(
-		"/api/arts/created",
-		handler.FindManyCreatedArts,
+		"/api/arts-with-art-type",
+		handler.FindManyArtsWithArtType,
 		r.mid.OnlyAuthorized(setPayload()),
 	)
 

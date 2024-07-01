@@ -41,10 +41,10 @@ func (h *ArtsHandler) FindManyArts(c echo.Context) error {
 	}
 
 	time.Sleep(300 * time.Millisecond)
-	return utils.Render(c, components.ManyArts(arts), http.StatusOK)
+	return utils.Render(c, components.ManyArts(arts, false), http.StatusOK)
 }
 
-func (h *ArtsHandler) FindManyStarredArts(c echo.Context) error {
+func (h *ArtsHandler) FindManyArtsWithArtType(c echo.Context) error {
 	payload, ok := c.Get("payload").(mytoken.Payload)
 	if !ok {
 		return utils.RenderError(c, components.Error, ErrPayloadNotFound)
@@ -58,59 +58,30 @@ func (h *ArtsHandler) FindManyStarredArts(c echo.Context) error {
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
 	}
 
-	arts, err := h.artsSvc.FindManyStarredArts(payload.UserId, req)
+	artType := c.QueryParam("artType")
+	withEdit := false
+	if c.QueryParam("withEdit") == "true" {
+		withEdit = true
+	}
+
+	var arts types.ManyArtsRes
+	var err error
+	switch artType {
+	case "starred":
+		arts, err = h.artsSvc.FindManyStarredArts(payload.UserId, req)
+	case "bought":
+		arts, err = h.artsSvc.FindManyBoughtArts(payload.UserId, req)
+	case "created":
+		arts, err = h.artsSvc.FindManyCreatedArts(payload.UserId, req)
+	default:
+		return utils.Render(c, components.Error("invalid arts type"), http.StatusBadRequest)
+	}
 	if err != nil {
 		return utils.RenderError(c, components.Error, err)
 	}
 
 	time.Sleep(300 * time.Millisecond)
-	return utils.Render(c, components.ManyArts(arts), http.StatusOK)
-}
-
-func (h *ArtsHandler) FindManyBoughtArts(c echo.Context) error {
-	payload, ok := c.Get("payload").(mytoken.Payload)
-	if !ok {
-		return utils.RenderError(c, components.Error, ErrPayloadNotFound)
-	}
-
-	var req types.ManyArtsReq
-	if err := c.Bind(&req); err != nil {
-		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
-	}
-	if err := utils.Validate(&req); err != nil {
-		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
-	}
-
-	arts, err := h.artsSvc.FindManyBoughtArts(payload.UserId, req)
-	if err != nil {
-		return utils.RenderError(c, components.Error, err)
-	}
-
-	time.Sleep(300 * time.Millisecond)
-	return utils.Render(c, components.ManyArts(arts), http.StatusOK)
-}
-
-func (h *ArtsHandler) FindManyCreatedArts(c echo.Context) error {
-	payload, ok := c.Get("payload").(mytoken.Payload)
-	if !ok {
-		return utils.RenderError(c, components.Error, ErrPayloadNotFound)
-	}
-
-	var req types.ManyArtsReq
-	if err := c.Bind(&req); err != nil {
-		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
-	}
-	if err := utils.Validate(&req); err != nil {
-		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
-	}
-
-	arts, err := h.artsSvc.FindManyCreatedArts(payload.UserId, req)
-	if err != nil {
-		return utils.RenderError(c, components.Error, err)
-	}
-
-	time.Sleep(300 * time.Millisecond)
-	return utils.Render(c, components.ManyArts(arts), http.StatusOK)
+	return utils.Render(c, components.ManyArts(arts, withEdit), http.StatusOK)
 }
 
 func (h *ArtsHandler) BuyArt(c echo.Context) error {

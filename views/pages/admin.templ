@@ -1,0 +1,10 @@
+package pages
+
+import "github.com/DeepAung/deep-art/api/types"
+import "github.com/DeepAung/deep-art/views/layouts"
+
+templ Admin(user types.User) {
+	@layouts.WithNav(layouts.Admin, user) {
+		<h1>Admin Page</h1>
+	}
+}

@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -164,7 +166,39 @@ func (h *UsersHandler) UpdateTokens(c echo.Context) error {
 		return utils.RenderError(c, components.Error, err)
 	}
 
+	oldAccessCookie, _ := c.Cookie("accessToken")
+	oldRefreshCookie, _ := c.Cookie("refreshToken")
+	fmt.Printf("old cookies %s | %s\n", oldAccessCookie.Value, oldRefreshCookie.Value)
+
 	utils.SetTokensCookies(c, token, h.cfg.Jwt)
+	fmt.Printf("set new cookies to %+v\n", token)
+
+	// test SetTokensCookies function
+	accessCookie, _ := c.Cookie("accessToken")
+	refreshCookie, _ := c.Cookie("refreshToken")
+	if accessCookie.Value != token.AccessToken {
+		return utils.RenderError(
+			c,
+			components.Error,
+			errors.New(fmt.Sprintf(
+				"accessCookie not equal: cookie=%s | expect=%s",
+				accessCookie.Value,
+				token.AccessToken,
+			)),
+		)
+	}
+	if refreshCookie.Value != token.RefreshToken {
+		return utils.RenderError(
+			c,
+			components.Error,
+			errors.New(fmt.Sprintf(
+				"refreshCookie not equal: cookie=%s | expect=%s",
+				refreshCookie.Value,
+				token.RefreshToken,
+			)),
+		)
+	}
+
 	c.Response().Header().Set("HX-Trigger-After-Settle", "ready")
 
 	return nil
