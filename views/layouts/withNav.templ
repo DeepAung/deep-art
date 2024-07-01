@@ -22,12 +22,12 @@ templ WithNav(navType navType, user types.User) {
 						<a class="flex-none text-xl font-semibold dark:text-white text-blue-600" href="/home">DeepArt</a>
 					case Creator:
 						<div class="flex flex-col md:flex-row gap-3 items-center">
-							<a class="flex-none text-xl font-semibold dark:text-white" href="/home">DeepArt <span class="text-green-600">Creator Page</span></a>
+							<a class="flex-none text-xl font-semibold dark:text-white" href="/creator">DeepArt <span class="text-green-600">Creator Page</span></a>
 							<a class="flex-none text-md font-semibold hover:text-green-600 transition-colors" href="/creator/arts/create">Create New Art</a>
 							<a class="flex-none text-md font-semibold hover:text-green-600 transition-colors" href="/creator/dashboard">View Dashboard</a>
 						</div>
 					case Admin:
-						<a class="flex-none text-xl font-semibold dark:text-white" href="/home">DeepArt <span class="text-purple-600">Admin Page</span></a>
+						<a class="flex-none text-xl font-semibold dark:text-white" href="/admin">DeepArt <span class="text-purple-600">Admin Page</span></a>
 				}
 				<div class="flex items-center justify-center gap-5 mt-5 md:justify-end md:mt-0 md:ps-5">
 					@components.CodesModal(user.Coin)
