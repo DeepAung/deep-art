@@ -27,6 +27,8 @@ type UserWithPassword struct {
 type SignInReq struct {
 	Email    string `form:"email"    validate:"required,email"`
 	Password string `form:"password" validate:"required"`
+
+	RedirectTo string `form:"redirect_to"`
 }
 
 type SignUpReq struct {
@@ -35,6 +37,8 @@ type SignUpReq struct {
 	Password        string `form:"password"         validate:"required,eqfield=ConfirmPassword"`
 	ConfirmPassword string `form:"confirm_password" validate:"required"`
 	AvatarUrl       string `form:"avatar_url"`
+
+	RedirectTo string `form:"redirect_to"`
 }
 
 type UpdateUserReq struct {

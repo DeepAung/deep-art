@@ -41,7 +41,13 @@ templ SignIn() {
 							</div>
 							<div id="error-text"></div>
 							<!-- Form -->
-							<form hx-post="/api/signin" hx-target-error="#error-text">
+							<script>
+							function redirectParam(){
+								let params = new URLSearchParams(window.location.search)
+								return params.get("redirect_to")
+							}
+							</script>
+							<form hx-post="/api/signin" hx-vals="js:{redirect_to: redirectParam()}" hx-target-error="#error-text">
 								<div class="grid gap-y-4">
 									<!-- Form Group -->
 									<div>

@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -32,9 +30,11 @@ func (h *UsersHandler) SignIn(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
 	}
-
 	if err := utils.Validate(&req); err != nil {
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
+	}
+	if req.RedirectTo == "" {
+		req.RedirectTo = "/home"
 	}
 
 	passport, err := h.usersSvc.SignIn(req.Email, req.Password)
@@ -44,7 +44,7 @@ func (h *UsersHandler) SignIn(c echo.Context) error {
 
 	utils.SetTokensCookies(c, passport.Token, h.cfg.Jwt)
 
-	c.Response().Header().Add("HX-Redirect", "/home")
+	c.Response().Header().Add("HX-Redirect", req.RedirectTo)
 	return nil
 }
 
@@ -53,9 +53,11 @@ func (h *UsersHandler) SignUp(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
 	}
-
 	if err := utils.Validate(&req); err != nil {
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
+	}
+	if req.RedirectTo == "" {
+		req.RedirectTo = "/signin"
 	}
 
 	_, err := h.usersSvc.SignUp(req)
@@ -63,7 +65,7 @@ func (h *UsersHandler) SignUp(c echo.Context) error {
 		return utils.RenderError(c, components.Error, err)
 	}
 
-	c.Response().Header().Add("HX-Redirect", "/signin")
+	c.Response().Header().Add("HX-Redirect", req.RedirectTo)
 	return nil
 }
 
@@ -166,38 +168,38 @@ func (h *UsersHandler) UpdateTokens(c echo.Context) error {
 		return utils.RenderError(c, components.Error, err)
 	}
 
-	oldAccessCookie, _ := c.Cookie("accessToken")
-	oldRefreshCookie, _ := c.Cookie("refreshToken")
-	fmt.Printf("old cookies %s | %s\n", oldAccessCookie.Value, oldRefreshCookie.Value)
+	// oldAccessCookie, _ := c.Cookie("accessToken")
+	// oldRefreshCookie, _ := c.Cookie("refreshToken")
+	// fmt.Printf("old cookies %s | %s\n", oldAccessCookie.Value, oldRefreshCookie.Value)
 
 	utils.SetTokensCookies(c, token, h.cfg.Jwt)
-	fmt.Printf("set new cookies to %+v\n", token)
+	// fmt.Printf("set new cookies to %+v\n", token)
 
-	// test SetTokensCookies function
-	accessCookie, _ := c.Cookie("accessToken")
-	refreshCookie, _ := c.Cookie("refreshToken")
-	if accessCookie.Value != token.AccessToken {
-		return utils.RenderError(
-			c,
-			components.Error,
-			errors.New(fmt.Sprintf(
-				"accessCookie not equal: cookie=%s | expect=%s",
-				accessCookie.Value,
-				token.AccessToken,
-			)),
-		)
-	}
-	if refreshCookie.Value != token.RefreshToken {
-		return utils.RenderError(
-			c,
-			components.Error,
-			errors.New(fmt.Sprintf(
-				"refreshCookie not equal: cookie=%s | expect=%s",
-				refreshCookie.Value,
-				token.RefreshToken,
-			)),
-		)
-	}
+	// // test SetTokensCookies function
+	// accessCookie, _ := c.Cookie("accessToken")
+	// refreshCookie, _ := c.Cookie("refreshToken")
+	// if accessCookie.Value != token.AccessToken {
+	// 	return utils.RenderError(
+	// 		c,
+	// 		components.Error,
+	// 		errors.New(fmt.Sprintf(
+	// 			"accessCookie not equal: cookie=%s | expect=%s",
+	// 			accessCookie.Value,
+	// 			token.AccessToken,
+	// 		)),
+	// 	)
+	// }
+	// if refreshCookie.Value != token.RefreshToken {
+	// 	return utils.RenderError(
+	// 		c,
+	// 		components.Error,
+	// 		errors.New(fmt.Sprintf(
+	// 			"refreshCookie not equal: cookie=%s | expect=%s",
+	// 			refreshCookie.Value,
+	// 			token.RefreshToken,
+	// 		)),
+	// 	)
+	// }
 
 	c.Response().Header().Set("HX-Trigger-After-Settle", "ready")
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 
 	"github.com/DeepAung/deep-art/api/services"
@@ -90,6 +91,23 @@ func SetUserData() AuthorizedOpt {
 	}
 }
 
+func clearCookieAndRedirect(c echo.Context) error {
+	utils.ClearTokensCookies(c)
+
+	myUrl, err := url.Parse("/signin")
+	if err != nil {
+		return err
+	}
+
+	q := myUrl.Query()
+	q.Add("redirect_to", c.Request().URL.String())
+	myUrl.RawQuery = q.Encode()
+
+	c.Redirect(http.StatusFound, myUrl.String())
+
+	return nil
+}
+
 func (m *Middleware) OnlyAuthorized(opts ...AuthorizedOpt) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -97,18 +115,13 @@ func (m *Middleware) OnlyAuthorized(opts ...AuthorizedOpt) echo.MiddlewareFunc {
 			if err != nil {
 				fmt.Println("firsttry err: ", err.Error())
 				if !errors.Is(err, http.ErrNoCookie) && !errors.Is(err, emptyTokenErr) {
-					fmt.Println("not in the err list: ", err.Error())
-					// utils.ClearTokensCookies(c)
-					// c.Redirect(http.StatusFound, "/signin")
-					return nil
+					return clearCookieAndRedirect(c)
 				}
 
 				payload, err = m.tryUpdateToken(c)
 				if err != nil {
 					fmt.Println("tryupdatetoken err: ", err.Error())
-					utils.ClearTokensCookies(c)
-					c.Redirect(http.StatusFound, "/signin")
-					return nil
+					return clearCookieAndRedirect(c)
 				}
 			}
 
@@ -121,9 +134,7 @@ func (m *Middleware) OnlyAuthorized(opts ...AuthorizedOpt) echo.MiddlewareFunc {
 			for _, o := range opts {
 				err := o(a)
 				if err != nil {
-					utils.ClearTokensCookies(c)
-					c.Redirect(http.StatusFound, "/signin")
-					return nil
+					return clearCookieAndRedirect(c)
 				}
 			}
 
@@ -137,9 +148,7 @@ func (m *Middleware) JwtRefreshToken(opts ...AuthorizedOpt) echo.MiddlewareFunc 
 		return func(c echo.Context) error {
 			_, payload, err := m.jwtRefreshToken(c)
 			if err != nil {
-				utils.ClearTokensCookies(c)
-				c.Redirect(http.StatusFound, "/signin")
-				return nil
+				return clearCookieAndRedirect(c)
 			}
 
 			a := &Authorized{
@@ -151,9 +160,7 @@ func (m *Middleware) JwtRefreshToken(opts ...AuthorizedOpt) echo.MiddlewareFunc 
 			for _, o := range opts {
 				err := o(a)
 				if err != nil {
-					utils.ClearTokensCookies(c)
-					c.Redirect(http.StatusFound, "/signin")
-					return nil
+					return clearCookieAndRedirect(c)
 				}
 			}
 
