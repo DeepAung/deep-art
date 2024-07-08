@@ -5,6 +5,7 @@ templ ManyArtsContainer() {
 	<!-- "/dynamicManyArts" will be catch by htmx:configRequest event and change to Alpine.store("manyArtsURL") -->
 	<form
 		x-data
+		x-init="$watch('$store.req', pushHistory)"
 		hx-post="/dynamicManyArts"
 		:hx-vals="requestBody()"
 		hx-indicator="#arts-spinner"
