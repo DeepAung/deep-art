@@ -114,7 +114,7 @@ func (h *UsersHandler) UpdateUser(c echo.Context) error {
 
 	form, err := c.MultipartForm()
 	if err != nil {
-		return utils.RenderError(c, components.Error, err)
+		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
 	}
 	files, ok := form.File["avatar"]
 	if !ok {
@@ -202,6 +202,7 @@ func (h *UsersHandler) UpdateTokens(c echo.Context) error {
 	// }
 
 	c.Response().Header().Set("HX-Trigger-After-Settle", "ready")
+	// c.Response().Header().Set("HX-Trigger", "ready")
 
 	return nil
 }

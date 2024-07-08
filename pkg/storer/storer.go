@@ -12,7 +12,10 @@ type FileReq struct {
 	dir  string
 }
 
-type FileRes struct {
-	Filename string `json:"filename" form:"filename"`
-	Url      string `json:"url"      form:"url"`
+type FileRes interface {
+	Url() string
+	BasePath() string
+	Dest() string
+	Dir() string
+	Filename() string
 }

@@ -23,42 +23,48 @@ func Join(elem ...string) string {
 // dir      = users/1
 // filename = profile.jpg
 type UrlInfo struct {
-	Url      string
-	BasePath string
-	Dest     string
-	Dir      string
-	Filename string
+	url      string
+	basePath string
+	dest     string
+	dir      string
+	filename string
 }
+
+func (u UrlInfo) Url() string      { return u.url }
+func (u UrlInfo) BasePath() string { return u.basePath }
+func (u UrlInfo) Dest() string     { return u.dest }
+func (u UrlInfo) Dir() string      { return u.dir }
+func (u UrlInfo) Filename() string { return u.filename }
 
 func NewUrlInfoByDest(basePath string, dest string) UrlInfo {
 	u := UrlInfo{
-		BasePath: basePath,
-		Dest:     dest,
+		basePath: basePath,
+		dest:     dest,
 	}
 
-	idx := strings.LastIndex(u.Dest, "/")
-	u.Filename = u.Dest[idx+1:]
+	idx := strings.LastIndex(u.dest, "/")
+	u.filename = u.dest[idx+1:]
 
-	url := Join(u.BasePath, u.Dest)
-	u.Url = strings.ReplaceAll(url, " ", "%20")
+	url := Join(u.basePath, u.dest)
+	u.url = strings.ReplaceAll(url, " ", "%20")
 
-	u.Dir = dest[0 : len(dest)-len(u.Filename)]
+	u.dir = dest[0 : len(dest)-len(u.filename)]
 
 	return u
 }
 
 func NewUrlInfoByURL(basePath string, url string) UrlInfo {
 	u := UrlInfo{
-		BasePath: basePath,
-		Url:      url,
+		basePath: basePath,
+		url:      url,
 	}
 
-	u.Dest = u.Url[len(u.BasePath)+1:]
+	u.dest = u.url[len(u.basePath)+1:]
 
-	idx := strings.LastIndex(u.Dest, "/")
-	u.Filename = u.Dest[idx+1:]
+	idx := strings.LastIndex(u.dest, "/")
+	u.filename = u.dest[idx+1:]
 
-	u.Dir = u.Dest[0 : len(u.Dest)-len(u.Filename)]
+	u.dir = u.dest[0 : len(u.dest)-len(u.filename)]
 
 	return u
 }

@@ -1,11 +1,35 @@
 package types
 
 import (
+	"mime/multipart"
 	"strconv"
 	"strings"
 
 	"github.com/DeepAung/deep-art/.gen/model"
 )
+
+type ArtDTO struct {
+	Name        string `form:"name"        validate:"required"`
+	Description string `form:"description"`
+	Price       int    `form:"price"`
+	TagsID      []int  `form:"tags"`
+
+	Cover *multipart.FileHeader
+	Files []*multipart.FileHeader
+}
+
+type CreateArtReq struct {
+	ArtDTO
+	CreatorId int
+}
+
+type UpdateArtReq struct {
+	ArtDTO
+
+	ArtID    int
+	CoverURL string
+	FilesURL []string
+}
 
 type Art struct {
 	model.Arts

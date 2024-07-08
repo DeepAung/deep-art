@@ -1,0 +1,36 @@
+package pages
+
+import "github.com/DeepAung/deep-art/views/layouts"
+import "github.com/DeepAung/deep-art/api/types"
+
+templ CreatorCreateArt(user types.User) {
+	@layouts.WithNav(layouts.Creator, user) {
+		<form hx-post="/api/arts/create" hx-encoding="multipart/form-data" class="max-w-xl mx-auto px-4 pt-4 flex flex-col gap-4">
+			<div class="flex items-center justify-between">
+				<span class="font-bold text-2xl">Create Art</span>
+				<input type="submit" value="Create" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:pointer-events-none"/>
+			</div>
+			<div>
+				<label for="name" class="block text-sm font-medium mb-2 dark:text-white">Name</label>
+				<input required type="text" name="name" id="name" class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"/>
+			</div>
+			<div>
+				<label for="description" class="block text-sm font-medium mb-2 dark:text-white">Description</label>
+				<textarea name="description" id="description" class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600" rows="3"></textarea>
+			</div>
+			<div>
+				<label for="price" class="block text-sm font-medium mb-2 dark:text-white">Price</label>
+				<input required type="number" name="price" id="price" class="py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"/>
+			</div>
+			<div hx-get="/api/tags/options" hx-trigger="ready from:body"></div>
+			<div>
+				<label for="cover" class="block text-sm font-medium mb-2 dark:text-white">Cover</label>
+				<input required type="file" name="cover" id="cover" class="block w-full border border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 file:bg-gray-50 file:border-0 file:me-4 file:py-3 file:px-4 dark:file:bg-neutral-700 dark:file:text-neutral-400"/>
+			</div>
+			<div>
+				<label for="files" class="block text-sm font-medium mb-2 dark:text-white">Files</label>
+				<input required multiple type="file" name="files" id="files" class="block w-full border border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 file:bg-gray-50 file:border-0 file:me-4 file:py-3 file:px-4 dark:file:bg-neutral-700 dark:file:text-neutral-400"/>
+			</div>
+		</form>
+	}
+}

@@ -185,7 +185,7 @@ func (s *UsersSvc) UpdateUser(id int, avatar *multipart.FileHeader, req types.Up
 
 	// delete old avatar
 	if user.AvatarUrl != "" {
-		dest := utils.NewUrlInfoByURL(s.cfg.App.BasePath, user.AvatarUrl).Dest
+		dest := utils.NewUrlInfoByURL(s.cfg.App.BasePath, user.AvatarUrl).Dest()
 		if err := s.storer.DeleteFiles([]string{dest}); err != nil {
 			return err
 		}
@@ -199,9 +199,9 @@ func (s *UsersSvc) UpdateUser(id int, avatar *multipart.FileHeader, req types.Up
 	}
 
 	// update user field (username, avatarUrl)
-	req.AvatarUrl = res[0].Url
+	req.AvatarUrl = res[0].Url()
 	if err = s.usersRepo.UpdateUser(id, req); err != nil {
-		dest := fmt.Sprint("/users/", id, "/", res[0].Filename)
+		dest := fmt.Sprint("/users/", id, "/", res[0].Filename())
 		_ = s.storer.DeleteFiles([]string{dest})
 		return err
 	}

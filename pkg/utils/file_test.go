@@ -10,14 +10,14 @@ import (
 
 var answers = []utils.UrlInfo{
 	{
-		Url:      "/static/storage/users/1/profile.jpg",
+		Ur:       "/static/storage/users/1/profile.jpg",
 		BasePath: "/static/storage",
 		Dest:     "users/1/profile.jpg",
 		Dir:      "users/1/",
 		Filename: "profile.jpg",
 	},
 	{
-		Url:      "https://storage.googleapis.com/deep-art-bucket-dev/users/1/profile.jpg",
+		Ur:       "https://storage.googleapis.com/deep-art-bucket-dev/users/1/profile.jpg",
 		BasePath: "https://storage.googleapis.com/deep-art-bucket-dev",
 		Dest:     "users/1/profile.jpg",
 		Dir:      "users/1/",
@@ -38,7 +38,7 @@ func TestNewUrlInfoByDest(t *testing.T) {
 func TestNewUrlInfoByUrl(t *testing.T) {
 	for i, ans := range answers {
 		basePath := ans.BasePath
-		url := ans.Url
+		url := ans.Ur
 		u := utils.NewUrlInfoByURL(basePath, url)
 
 		checkEqual(i, u, ans)

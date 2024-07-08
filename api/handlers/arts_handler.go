@@ -26,6 +26,42 @@ func NewArtsHandler(artsSvc *services.ArtsSvc, cfg *config.Config) *ArtsHandler 
 	}
 }
 
+func (h *ArtsHandler) CreateArt(c echo.Context) error {
+	payload, ok := c.Get("payload").(mytoken.Payload)
+	if !ok {
+		return utils.RenderError(c, components.Error, ErrPayloadNotFound)
+	}
+
+	var dto types.ArtDTO
+	if err := c.Bind(&dto); err != nil {
+		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
+	}
+	if err := utils.Validate(&dto); err != nil {
+		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
+	}
+
+	form, err := c.MultipartForm()
+	if err != nil {
+		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
+	}
+	covers, ok := form.File["cover"]
+	if !ok || len(covers) == 0 {
+		return utils.Render(c, components.Error("no \"cover\" field"), http.StatusBadRequest)
+	}
+	dto.Cover = covers[0]
+	dto.Files, ok = form.File["files"]
+	if !ok || len(dto.Files) == 0 {
+		return utils.Render(c, components.Error("no \"files\" field"), http.StatusBadRequest)
+	}
+
+	if err := h.artsSvc.CreateArt(payload.UserId, dto); err != nil {
+		return utils.RenderError(c, components.Error, err)
+	}
+
+	c.Response().Header().Add("HX-Redirect", "/creator")
+	return nil
+}
+
 func (h *ArtsHandler) FindManyArts(c echo.Context) error {
 	var req types.ManyArtsReq
 	if err := c.Bind(&req); err != nil {

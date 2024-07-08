@@ -144,7 +144,7 @@ func (s *GCPStorer) uploadFile(
 	f, err := file.Open()
 	if err != nil {
 		cancel()
-		return FileRes{}, fmt.Errorf("file.Open: %w", err)
+		return nil, fmt.Errorf("file.Open: %w", err)
 	}
 	defer f.Close()
 
@@ -155,18 +155,15 @@ func (s *GCPStorer) uploadFile(
 	wc := o.NewWriter(ctx)
 	if _, err = io.Copy(wc, f); err != nil {
 		cancel()
-		return FileRes{}, fmt.Errorf("io.Copy: %w", err)
+		return nil, fmt.Errorf("io.Copy: %w", err)
 	}
 	if err := wc.Close(); err != nil {
 		cancel()
-		return FileRes{}, fmt.Errorf("Writer.Close: %w", err)
+		return nil, fmt.Errorf("Writer.Close: %w", err)
 	}
 
 	fmt.Printf("Blob %v uploaded.\n", dest)
-	return FileRes{
-		Filename: file.Filename,
-		Url:      utils.NewUrlInfoByDest(s.cfg.App.BasePath, dest).Url,
-	}, nil
+	return utils.NewUrlInfoByDest(s.cfg.App.BasePath, dest), nil
 }
 
 func (s *GCPStorer) deleteFile(

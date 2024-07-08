@@ -34,7 +34,7 @@ func (r *Router) PagesRouter() {
 	usersRepo := repositories.NewUsersRepo(r.s.db, r.s.cfg.App.Timeout)
 	usersSvc := services.NewUsersSvc(usersRepo, r.storer, r.s.cfg)
 	artsRepo := repositories.NewArtsRepo(r.storer, r.s.db, r.s.cfg.App.Timeout)
-	artsSvc := services.NewArtsSvc(artsRepo, r.s.cfg)
+	artsSvc := services.NewArtsSvc(artsRepo, r.storer, r.s.cfg)
 	handler := handlers.NewPagesHandler(usersSvc, artsSvc)
 
 	setUserData := middlewares.SetUserData
@@ -42,14 +42,18 @@ func (r *Router) PagesRouter() {
 	r.s.app.GET("/", handler.Welcome)
 	r.s.app.GET("/signin", handler.SignIn)
 	r.s.app.GET("/signup", handler.SignUp)
-
 	r.s.app.GET("/home", handler.Home, r.mid.OnlyAuthorized(setUserData()))
 	r.s.app.GET("/arts/:id", handler.ArtDetail, r.mid.OnlyAuthorized(setUserData()))
-
 	r.s.app.GET("/me", handler.MyProfile, r.mid.OnlyAuthorized(setUserData()))
 
-	r.s.app.GET("/creator", handler.CreatorPage, r.mid.OnlyAuthorized(setUserData()))
-	r.s.app.GET("/admin", handler.AdminPage, r.mid.OnlyAuthorized(setUserData()))
+	r.s.app.GET("/creator", handler.CreatorHomePage, r.mid.OnlyAuthorized(setUserData()))
+	r.s.app.GET(
+		"/creator/arts/create",
+		handler.CreatorCreateArt,
+		r.mid.OnlyAuthorized(setUserData()),
+	)
+
+	r.s.app.GET("/admin", handler.AdminHomePage, r.mid.OnlyAuthorized(setUserData()))
 }
 
 func (r *Router) UsersRouter() {
@@ -75,11 +79,12 @@ func (r *Router) UsersRouter() {
 
 func (r *Router) ArtsRouter() {
 	repo := repositories.NewArtsRepo(r.storer, r.s.db, r.s.cfg.App.Timeout)
-	svc := services.NewArtsSvc(repo, r.s.cfg)
+	svc := services.NewArtsSvc(repo, r.storer, r.s.cfg)
 	handler := handlers.NewArtsHandler(svc, r.s.cfg)
 
 	setPayload := middlewares.SetPayload
 
+	r.s.app.POST("/api/arts/create", handler.CreateArt, r.mid.OnlyAuthorized(setPayload()))
 	r.s.app.POST("/api/arts", handler.FindManyArts)
 	r.s.app.POST(
 		"/api/arts-with-art-type",
@@ -101,6 +106,7 @@ func (r *Router) TagsRouter() {
 	handler := handlers.NewTagsHandler(svc)
 
 	r.s.app.GET("/api/tags/filter", handler.TagsFilter)
+	r.s.app.GET("/api/tags/options", handler.TagsOptions)
 }
 
 func (r *Router) CodesRouter() {

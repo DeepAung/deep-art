@@ -1,12 +1,16 @@
 package services
 
 import (
+	"fmt"
+	"mime/multipart"
 	"net/http"
 
 	"github.com/DeepAung/deep-art/api/repositories"
 	"github.com/DeepAung/deep-art/api/types"
 	"github.com/DeepAung/deep-art/pkg/config"
 	"github.com/DeepAung/deep-art/pkg/httperror"
+	"github.com/DeepAung/deep-art/pkg/storer"
+	"github.com/DeepAung/deep-art/pkg/utils"
 )
 
 var (
@@ -16,14 +20,76 @@ var (
 
 type ArtsSvc struct {
 	artsRepo *repositories.ArtsRepo
+	storer   storer.Storer
 	cfg      *config.Config
 }
 
-func NewArtsSvc(artsRepo *repositories.ArtsRepo, cfg *config.Config) *ArtsSvc {
+func NewArtsSvc(
+	artsRepo *repositories.ArtsRepo,
+	storer storer.Storer,
+	cfg *config.Config,
+) *ArtsSvc {
 	return &ArtsSvc{
 		artsRepo: artsRepo,
+		storer:   storer,
 		cfg:      cfg,
 	}
+}
+
+// create art
+// get art id
+// upload cover & files
+// update art coverURL & filesURL
+func (s *ArtsSvc) CreateArt(creatorId int, dto types.ArtDTO) error {
+	ctx, cancel, tx, err := s.artsRepo.BeginTx()
+	defer cancel()
+	if err != nil {
+		return err
+	}
+
+	// create art
+	createReq := types.CreateArtReq{
+		ArtDTO:    dto,
+		CreatorId: creatorId,
+	}
+	artId, err := s.artsRepo.CreateArtWithDB(ctx, tx, createReq)
+	if err != nil {
+		return err
+	}
+
+	// upload cover
+	coverDir := fmt.Sprint("/arts/cover/", artId)
+	coverRes, err := s.storer.UploadFiles([]*multipart.FileHeader{dto.Cover}, coverDir)
+	if err != nil {
+		return err
+	}
+	coverDest := []string{coverRes[0].Dest()}
+
+	// upload files
+	filesDir := fmt.Sprint("/arts/files/", artId)
+	filesRes, err := s.storer.UploadFiles(dto.Files, filesDir)
+	if err != nil {
+		_ = s.storer.DeleteFiles(coverDest) // rollback process
+		return err
+	}
+	filesDest := utils.Map(filesRes, func(t storer.FileRes) string { return t.Dest() })
+
+	coverURL := coverRes[0].Url()
+	filesURL := utils.Map(filesRes, func(t storer.FileRes) string { return t.Url() })
+
+	// update art
+	updateReq := types.UpdateArtReq{
+		ArtDTO:   dto,
+		ArtID:    artId,
+		CoverURL: coverURL,
+		FilesURL: filesURL,
+	}
+	if err := s.artsRepo.UpdateArtWithDB(ctx, tx, updateReq); err != nil {
+		_ = s.storer.DeleteFiles(append(filesDest, coverDest...)) // rollback process
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func (s *ArtsSvc) FindManyArts(req types.ManyArtsReq) (types.ManyArtsRes, error) {

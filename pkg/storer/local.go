@@ -132,34 +132,31 @@ func (s *localStorer) uploadFile(
 	f, err := file.Open()
 	if err != nil {
 		cancel()
-		return FileRes{}, fmt.Errorf("file.Open: %w", err)
+		return nil, fmt.Errorf("file.Open: %w", err)
 	}
 
 	b, err := io.ReadAll(f)
 	if err != nil {
 		cancel()
-		return FileRes{}, fmt.Errorf("io.ReadAll: %w", err)
+		return nil, fmt.Errorf("io.ReadAll: %w", err)
 	}
 
 	// Upload an object to storage
 	dest := utils.Join(dir, file.Filename)
 	filePath := "." + utils.Join(s.cfg.App.BasePath, dest)
-	dirPath := utils.Join(s.cfg.App.BasePath, dir)
+	dirPath := "." + utils.Join(s.cfg.App.BasePath, dir)
 
 	if err := os.WriteFile(filePath, b, fs.ModePerm); err != nil {
 		if err := os.MkdirAll(dirPath, fs.ModePerm); err != nil {
-			return FileRes{}, fmt.Errorf("mkdir \"%s\" failed: %v", dirPath, err)
+			return nil, fmt.Errorf("mkdir \"%s\" failed: %v", dirPath, err)
 		}
 
 		if err := os.WriteFile(filePath, b, fs.ModePerm); err != nil {
-			return FileRes{}, fmt.Errorf("write file failed: %v", err)
+			return nil, fmt.Errorf("write file failed: %v", err)
 		}
 	}
 
-	return FileRes{
-		Filename: file.Filename,
-		Url:      utils.NewUrlInfoByDest(s.cfg.App.BasePath, dest).Url,
-	}, nil
+	return utils.NewUrlInfoByDest(s.cfg.App.BasePath, dest), nil
 }
 
 func (s *localStorer) deleteFile(

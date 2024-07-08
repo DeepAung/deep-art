@@ -3,7 +3,10 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 	"net/http"
+	"path/filepath"
 	"time"
 
 	"github.com/DeepAung/deep-art/.gen/model"
@@ -12,6 +15,7 @@ import (
 	"github.com/DeepAung/deep-art/pkg/httperror"
 	"github.com/DeepAung/deep-art/pkg/storer"
 	"github.com/DeepAung/deep-art/pkg/utils"
+	"github.com/go-jet/jet/v2/qrm"
 	. "github.com/go-jet/jet/v2/sqlite"
 )
 
@@ -21,6 +25,8 @@ var (
 		"invalid price, please try again",
 		http.StatusBadRequest,
 	)
+	ErrArtsTagsNoRowsAffected = ErrNoRowsAffected("arts_tags")
+	ErrFilesNoRowsAffected    = ErrNoRowsAffected("files")
 )
 
 type ArtsRepo struct {
@@ -35,6 +41,129 @@ func NewArtsRepo(storer storer.Storer, db *sql.DB, timeout time.Duration) *ArtsR
 		db:      db,
 		timeout: timeout,
 	}
+}
+
+func (r *ArtsRepo) BeginTx() (context.Context, context.CancelFunc, *sql.Tx, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+
+	tx, err := r.db.BeginTx(ctx, nil)
+
+	return ctx, cancel, tx, err
+}
+
+func (r *ArtsRepo) CreateArt(req types.CreateArtReq) (artId int, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return
+	}
+
+	artId, err = r.CreateArtWithDB(ctx, tx, req)
+	if err != nil {
+		return
+	}
+
+	err = tx.Commit()
+	return
+}
+
+func (r *ArtsRepo) CreateArtWithDB(
+	ctx context.Context,
+	db qrm.DB,
+	req types.CreateArtReq,
+) (artId int, err error) {
+	var art struct {
+		ID int `alias:"Arts.ID"`
+	}
+	// insert arts
+	stmt1 := Arts.
+		INSERT(Arts.Name, Arts.Description, Arts.CreatorID, Arts.Price, Arts.CoverURL).
+		VALUES(req.Name, req.Description, req.CreatorId, req.Price, "unset").
+		RETURNING(Arts.ID)
+	if err = HandleQueryCtx(stmt1, ctx, db, &art, "art"); err != nil {
+		return
+	}
+
+	fmt.Println("artId: ", art.ID)
+
+	// insert tags
+	if req.TagsID != nil && len(req.TagsID) > 0 {
+		fmt.Println("insert tags")
+		stmt2 := ArtsTags.INSERT(ArtsTags.ArtID, ArtsTags.TagID)
+		for _, tagID := range req.TagsID {
+			stmt2 = stmt2.VALUES(art.ID, tagID)
+		}
+		if err = HandleExecCtx(stmt2, ctx, db, "arts_tags"); err != nil {
+			return
+		}
+	}
+
+	artId = art.ID
+	return
+}
+
+func (r *ArtsRepo) UpdateArt(req types.UpdateArtReq) error {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+
+	if err = r.UpdateArtWithDB(ctx, tx, req); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (r *ArtsRepo) UpdateArtWithDB(ctx context.Context, db qrm.DB, req types.UpdateArtReq) error {
+	stmt1 := Arts.
+		UPDATE(Arts.Name, Arts.Description, Arts.Price, Arts.CoverURL).
+		SET(req.Name, req.Description, req.Price, req.CoverURL).
+		WHERE(Arts.ID.EQ(Int(int64(req.ArtID))))
+	if err := HandleExecCtx(stmt1, ctx, db, "arts"); err != nil {
+		return err
+	}
+
+	stmt2 := ArtsTags.DELETE().WHERE(ArtsTags.ArtID.EQ(Int(int64(req.ArtID))))
+	if err := HandleExecCtxWithErr(stmt2, ctx, db, ErrArtsTagsNoRowsAffected); err != nil &&
+		!errors.Is(err, ErrArtsTagsNoRowsAffected) {
+		return err
+	}
+
+	if req.TagsID != nil && len(req.TagsID) > 0 {
+		stmt3 := ArtsTags.INSERT(ArtsTags.ArtID, ArtsTags.TagID)
+		for _, tagID := range req.TagsID {
+			stmt3 = stmt3.VALUES(req.ArtID, tagID)
+		}
+		if err := HandleExecCtx(stmt3, ctx, db, "arts_tags"); err != nil {
+			return err
+		}
+	}
+
+	stmt4 := Files.DELETE().WHERE(Files.ArtID.EQ(Int(int64(req.ArtID))))
+	if err := HandleExecCtxWithErr(stmt4, ctx, db, ErrFilesNoRowsAffected); err != nil &&
+		!errors.Is(err, ErrFilesNoRowsAffected) {
+		return err
+	}
+
+	stmt5 := Files.INSERT(Files.ArtID, Files.Filename, Files.Filetype, Files.URL)
+	for i := range req.FilesURL {
+		file := req.Files[i]
+		ext := filepath.Ext(file.Filename)
+		fileUrl := req.FilesURL[i]
+
+		stmt5 = stmt5.VALUES(req.ArtID, file.Filename, ext, fileUrl)
+	}
+	if err := HandleExecCtx(stmt5, ctx, db, "files"); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (r *ArtsRepo) FindManyArts(req types.ManyArtsReq) (types.ManyArtsRes, error) {
