@@ -5,6 +5,8 @@ air:
 	air -c .air.toml
 tailwind:
 	npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --watch
+tailwind.reset:
+	npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css
 templ:
 	templ generate --watch --proxy="http://localhost:3000"
 tidy:

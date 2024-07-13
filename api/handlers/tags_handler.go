@@ -34,5 +34,5 @@ func (h *TagsHandler) TagsOptions(c echo.Context) error {
 		return utils.RenderError(c, components.Error, err)
 	}
 
-	return utils.Render(c, components.CreatorTagsOptions(tags), http.StatusOK)
+	return utils.Render(c, components.TagsOptions(tags), http.StatusOK)
 }

@@ -6,15 +6,15 @@ import (
 )
 
 type TagsSvc struct {
-	usersRepo *repositories.TagsRepo
+	tagsRepo *repositories.TagsRepo
 }
 
-func NewTagsSvc(usersRepo *repositories.TagsRepo) *TagsSvc {
+func NewTagsSvc(tagsRepo *repositories.TagsRepo) *TagsSvc {
 	return &TagsSvc{
-		usersRepo: usersRepo,
+		tagsRepo: tagsRepo,
 	}
 }
 
 func (s *TagsSvc) FindAllTags() ([]model.Tags, error) {
-	return s.usersRepo.FindAllTags()
+	return s.tagsRepo.FindAllTags()
 }

@@ -14,12 +14,18 @@ import (
 type PagesHandler struct {
 	usersSvc *services.UsersSvc
 	artsSvc  *services.ArtsSvc
+	tagsSvc  *services.TagsSvc
 }
 
-func NewPagesHandler(usersSvc *services.UsersSvc, artsSvc *services.ArtsSvc) *PagesHandler {
+func NewPagesHandler(
+	usersSvc *services.UsersSvc,
+	artsSvc *services.ArtsSvc,
+	tagsSvc *services.TagsSvc,
+) *PagesHandler {
 	return &PagesHandler{
 		usersSvc: usersSvc,
 		artsSvc:  artsSvc,
+		tagsSvc:  tagsSvc,
 	}
 }
 

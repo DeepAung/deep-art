@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -165,4 +166,20 @@ func (h *ArtsHandler) ToggleStar(c echo.Context) error {
 	}
 
 	return utils.Render(c, components.StarButton(artId, isStarred), http.StatusOK)
+}
+
+func (h *ArtsHandler) UpdateArt(c echo.Context) error {
+	return errors.New("not implemented yet")
+}
+
+func (h *ArtsHandler) UploadFile(c echo.Context) error {
+	return errors.New("not implemented yet")
+}
+
+func (h *ArtsHandler) DeleteFile(c echo.Context) error {
+	return errors.New("not implemented yet")
+}
+
+func (h *ArtsHandler) ReplaceCover(c echo.Context) error {
+	return errors.New("not implemented yet")
 }

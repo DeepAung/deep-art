@@ -53,7 +53,9 @@ func (s *Server) Start() {
 func (s *Server) InitMiddleware(storer storer.Storer) *middlewares.Middleware {
 	usersRepo := repositories.NewUsersRepo(s.db, s.cfg.App.Timeout)
 	usersSvc := services.NewUsersSvc(usersRepo, storer, s.cfg)
-	mid := middlewares.NewMiddleware(usersSvc, s.cfg)
+	artsRepo := repositories.NewArtsRepo(storer, s.db, s.cfg.App.Timeout)
+	artsSvc := services.NewArtsSvc(artsRepo, storer, s.cfg)
+	mid := middlewares.NewMiddleware(usersSvc, artsSvc, s.cfg)
 
 	s.app.Use(mid.Logger())
 	s.app.Use(middleware.Recover())

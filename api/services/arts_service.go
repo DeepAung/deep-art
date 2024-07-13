@@ -13,11 +13,6 @@ import (
 	"github.com/DeepAung/deep-art/pkg/utils"
 )
 
-var (
-// ErrInvalidEmailOrPassword = httperror.New("invalid email or password", http.StatusBadRequest)
-// ErrInvalidRefreshToken    = httperror.New("invalid refresh token", http.StatusBadRequest)
-)
-
 type ArtsSvc struct {
 	artsRepo *repositories.ArtsRepo
 	storer   storer.Storer
@@ -174,4 +169,13 @@ func (s *ArtsSvc) Star(userId, artId int) error {
 
 func (s *ArtsSvc) UnStar(userId, artId int) error {
 	return s.artsRepo.DeleteUsersStarredArts(userId, artId)
+}
+
+func (s *ArtsSvc) Owned(userId, artId int) (bool, error) {
+	creatorId, err := s.artsRepo.FindCreatorID(artId)
+	if err != nil {
+		return false, err
+	}
+
+	return creatorId == userId, nil
 }

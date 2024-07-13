@@ -614,6 +614,19 @@ func (r *ArtsRepo) DeleteUsersStarredArts(userId, artId int) error {
 	return HandleExecCtx(stmt, ctx, r.db, "users_starred_arts")
 }
 
+func (r *ArtsRepo) FindCreatorID(artId int) (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	stmt := SELECT(Arts.CreatorID).FROM(Arts).WHERE(Arts.ID.EQ(Int(int64(artId))))
+	var art model.Arts
+	if err := HandleQueryCtx(stmt, ctx, r.db, &art, "art"); err != nil {
+		return 0, err
+	}
+
+	return int(art.CreatorID), nil
+}
+
 // ---------------------------------------------- //
 
 type statsColumn struct {

@@ -35,7 +35,9 @@ func (r *Router) PagesRouter() {
 	usersSvc := services.NewUsersSvc(usersRepo, r.storer, r.s.cfg)
 	artsRepo := repositories.NewArtsRepo(r.storer, r.s.db, r.s.cfg.App.Timeout)
 	artsSvc := services.NewArtsSvc(artsRepo, r.storer, r.s.cfg)
-	handler := handlers.NewPagesHandler(usersSvc, artsSvc)
+	tagsRepo := repositories.NewTagsRepo(r.s.db, r.s.cfg.App.Timeout)
+	tagsSvc := services.NewTagsSvc(tagsRepo)
+	handler := handlers.NewPagesHandler(usersSvc, artsSvc, tagsSvc)
 
 	setUserData := middlewares.SetUserData
 
@@ -51,6 +53,12 @@ func (r *Router) PagesRouter() {
 		"/creator/arts/create",
 		handler.CreatorCreateArt,
 		r.mid.OnlyAuthorized(setUserData()),
+	)
+	r.s.app.GET(
+		"/creator/arts/:id",
+		handler.CreatorArtDetail,
+		r.mid.OnlyAuthorized(setUserData()),
+		r.mid.OwnedArt("id"),
 	)
 
 	r.s.app.GET("/admin", handler.AdminHomePage, r.mid.OnlyAuthorized(setUserData()))
@@ -98,6 +106,31 @@ func (r *Router) ArtsRouter() {
 		r.mid.OnlyAuthorized(setPayload()),
 	)
 	r.s.app.POST("/api/arts/:id/buy", handler.BuyArt, r.mid.OnlyAuthorized(setPayload()))
+
+	r.s.app.PUT(
+		"/api/arts/:id",
+		handler.UpdateArt,
+		r.mid.OnlyAuthorized(setPayload()),
+		r.mid.OwnedArt("id"),
+	)
+	r.s.app.POST(
+		"/api/arts/:id/files",
+		handler.UploadFile,
+		r.mid.OnlyAuthorized(setPayload()),
+		r.mid.OwnedArt("id"),
+	)
+	r.s.app.DELETE(
+		"/api/arts/:id/files",
+		handler.DeleteFile,
+		r.mid.OnlyAuthorized(setPayload()),
+		r.mid.OwnedArt("id"),
+	)
+	r.s.app.PUT(
+		"/api/arts/:id/cover",
+		handler.ReplaceCover,
+		r.mid.OnlyAuthorized(setPayload()),
+		r.mid.OwnedArt("id"),
+	)
 }
 
 func (r *Router) TagsRouter() {

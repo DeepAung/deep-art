@@ -8,13 +8,16 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 
 	"github.com/DeepAung/deep-art/api/services"
+	"github.com/DeepAung/deep-art/api/types"
 	"github.com/DeepAung/deep-art/pkg/config"
 	"github.com/DeepAung/deep-art/pkg/httperror"
 	"github.com/DeepAung/deep-art/pkg/mytoken"
 	"github.com/DeepAung/deep-art/pkg/prettylog"
 	"github.com/DeepAung/deep-art/pkg/utils"
+	"github.com/DeepAung/deep-art/views/components"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -26,12 +29,18 @@ var (
 
 type Middleware struct {
 	usersSvc *services.UsersSvc
+	artsSvc  *services.ArtsSvc
 	cfg      *config.Config
 }
 
-func NewMiddleware(usersSvc *services.UsersSvc, cfg *config.Config) *Middleware {
+func NewMiddleware(
+	usersSvc *services.UsersSvc,
+	artsSvc *services.ArtsSvc,
+	cfg *config.Config,
+) *Middleware {
 	return &Middleware{
 		usersSvc: usersSvc,
+		artsSvc:  artsSvc,
 		cfg:      cfg,
 	}
 }
@@ -169,6 +178,47 @@ func (m *Middleware) JwtRefreshToken(opts ...AuthorizedOpt) echo.MiddlewareFunc 
 	}
 }
 
+func (m *Middleware) OwnedArt(artIdParam string) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			var userId int
+			var ok bool
+			userId, ok = m.getUserIdByPayload(c)
+			if !ok {
+				userId, ok = m.getUserIdByUserData(c)
+				if !ok {
+					return utils.Render(
+						c,
+						components.Error("payload or user data from middleware not found"),
+						http.StatusBadRequest,
+					)
+				}
+			}
+
+			artId, err := strconv.Atoi(c.Param(artIdParam))
+			if err != nil {
+				return utils.Render(c, components.Error("invalid art id"), http.StatusBadRequest)
+			}
+
+			owned, err := m.artsSvc.Owned(userId, artId)
+			if err != nil {
+				return utils.RenderError(c, components.Error, err)
+			}
+			if !owned {
+				return utils.Render(
+					c,
+					components.Error("you are not the creator of this art"),
+					http.StatusBadRequest,
+				)
+			}
+
+			return next(c)
+		}
+	}
+}
+
+// --------------------------------------------------- //
+
 func (m *Middleware) jwtAccessToken(c echo.Context) (string, mytoken.Payload, error) {
 	cookie, err := c.Cookie("accessToken")
 	if err != nil {
@@ -241,4 +291,20 @@ func (m *Middleware) tryUpdateToken(c echo.Context) (mytoken.Payload, error) {
 
 	utils.SetTokensCookies(c, token, m.cfg.Jwt)
 	return payload, nil
+}
+
+func (m *Middleware) getUserIdByPayload(c echo.Context) (int, bool) {
+	payload, ok := c.Get("payload").(mytoken.Payload)
+	if !ok {
+		return 0, false
+	}
+	return payload.UserId, true
+}
+
+func (m *Middleware) getUserIdByUserData(c echo.Context) (int, bool) {
+	user, ok := c.Get("user").(types.User)
+	if !ok {
+		return 0, false
+	}
+	return user.Id, true
 }
