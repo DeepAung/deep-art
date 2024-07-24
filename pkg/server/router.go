@@ -92,7 +92,6 @@ func (r *Router) ArtsRouter() {
 
 	setPayload := middlewares.SetPayload
 
-	r.s.app.POST("/api/arts", handler.CreateArt, r.mid.OnlyAuthorized(setPayload()))
 	r.s.app.GET("/api/arts", handler.FindManyArts)
 	r.s.app.GET(
 		"/api/arts-with-art-type",
@@ -100,16 +99,16 @@ func (r *Router) ArtsRouter() {
 		r.mid.OnlyAuthorized(setPayload()),
 	)
 
-	r.s.app.POST(
-		"/api/arts/:id/toggle-star",
-		handler.ToggleStar,
-		r.mid.OnlyAuthorized(setPayload()),
-	)
-	r.s.app.POST("/api/arts/:id/buy", handler.BuyArt, r.mid.OnlyAuthorized(setPayload()))
-
+	r.s.app.POST("/api/arts", handler.CreateArt, r.mid.OnlyAuthorized(setPayload()))
 	r.s.app.PUT(
 		"/api/arts/:id",
 		handler.UpdateArt,
+		r.mid.OnlyAuthorized(setPayload()),
+		r.mid.OwnedArt("id"),
+	)
+	r.s.app.DELETE(
+		"/api/arts/:id",
+		handler.DeleteArt,
 		r.mid.OnlyAuthorized(setPayload()),
 		r.mid.OwnedArt("id"),
 	)
@@ -131,6 +130,13 @@ func (r *Router) ArtsRouter() {
 		r.mid.OnlyAuthorized(setPayload()),
 		r.mid.OwnedArt("id"),
 	)
+
+	r.s.app.POST(
+		"/api/arts/:id/toggle-star",
+		handler.ToggleStar,
+		r.mid.OnlyAuthorized(setPayload()),
+	)
+	r.s.app.POST("/api/arts/:id/buy", handler.BuyArt, r.mid.OnlyAuthorized(setPayload()))
 }
 
 func (r *Router) TagsRouter() {

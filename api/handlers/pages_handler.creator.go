@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -41,11 +42,13 @@ func (h *PagesHandler) CreatorArtDetail(c echo.Context) error {
 
 	art, err := h.artsSvc.FindOneArt(artId)
 	if err != nil {
+		fmt.Println("err: ", err.Error())
 		return utils.RenderError(c, pages.Error, err)
 	}
 
 	tags, err := h.tagsSvc.FindAllTags()
 	if err != nil {
+		fmt.Println("err2: ", err.Error())
 		return utils.RenderError(c, pages.Error, err)
 	}
 

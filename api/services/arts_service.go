@@ -95,6 +95,46 @@ func (s *ArtsSvc) UpdateArtInfo(req types.UpdateArtInfoReq) error {
 	return s.artsRepo.UpdateArtInfo(req)
 }
 
+func (s *ArtsSvc) DeleteArt(artId int) error {
+	ctx, cancel, tx, err := s.artsRepo.BeginTx()
+	if err != nil {
+		return err
+	}
+	defer cancel()
+
+	// delete art
+	if err := s.artsRepo.DeleteArtWithDB(ctx, tx, artId); err != nil {
+		return err
+	}
+
+	// delete files
+	files, err := s.artsRepo.FindManyFilesByArtId(artId)
+	if err != nil {
+		return err
+	}
+
+	var filesDest []string
+	for _, file := range files {
+		fileInfo := utils.NewUrlInfoByURL(s.cfg.App.BasePath, file.URL)
+		filesDest = append(filesDest, fileInfo.Dest())
+	}
+	if err := s.storer.DeleteFiles(filesDest); err != nil {
+		return err
+	}
+
+	// delete cover
+	coverURL, err := s.artsRepo.FindOneCoverURL(artId)
+	if err != nil {
+		return err
+	}
+	coverInfo := utils.NewUrlInfoByURL(s.cfg.App.BasePath, coverURL)
+	if err := s.storer.DeleteFiles([]string{coverInfo.Dest()}); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
 func (s *ArtsSvc) UploadFiles(artId int, files []*multipart.FileHeader) error {
 	ctx, cancel, tx, err := s.artsRepo.BeginTx()
 	defer cancel()

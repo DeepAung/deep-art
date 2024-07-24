@@ -12,6 +12,17 @@ import (
 	. "github.com/go-jet/jet/v2/sqlite"
 )
 
+func (r *ArtsRepo) FindManyFilesByArtId(artId int) ([]model.Files, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	stmt := SELECT(Files.AllColumns).FROM(Files).WHERE(Files.ArtID.EQ(Int(int64(artId))))
+
+	var res []model.Files
+	err := HandleQueryCtx(stmt, ctx, r.db, &res, "file")
+	return res, err
+}
+
 func (r *ArtsRepo) FindOneFile(id int) (model.Files, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()

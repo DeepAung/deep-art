@@ -92,6 +92,23 @@ func (h *ArtsHandler) UpdateArt(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
+func (h *ArtsHandler) DeleteArt(c echo.Context) error {
+	artId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return utils.RenderError(c, components.Error, err)
+	}
+
+	// delete art
+	// delete files
+	// delete cover
+	if err := h.artsSvc.DeleteArt(artId); err != nil {
+		return utils.RenderError(c, components.Error, err)
+	}
+
+	c.Response().Header().Add("HX-Redirect", "/creator")
+	return c.NoContent(http.StatusOK)
+}
+
 func (h *ArtsHandler) UploadFiles(c echo.Context) error {
 	artId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

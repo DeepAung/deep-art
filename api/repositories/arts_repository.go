@@ -132,6 +132,12 @@ func (r *ArtsRepo) UpdateArtInfoWithDB(
 	return nil
 }
 
+func (r *ArtsRepo) DeleteArtWithDB(ctx context.Context, db qrm.DB, artId int) error {
+	stmt := Arts.DELETE().WHERE(Arts.ID.EQ(Int(int64(artId))))
+
+	return HandleExecCtx(stmt, ctx, db, "arts")
+}
+
 func (r *ArtsRepo) FindManyArts(req types.ManyArtsReq) (types.ManyArtsRes, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
