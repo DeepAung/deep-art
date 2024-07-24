@@ -8,7 +8,11 @@ import (
 	"github.com/DeepAung/deep-art/.gen/model"
 )
 
-type ArtDTO struct {
+/*
+- Update art info
+- Update art Files&Cover (case create art)
+*/
+type FullArtDTO struct {
 	Name        string `form:"name"        validate:"required"`
 	Description string `form:"description"`
 	Price       int    `form:"price"`
@@ -18,17 +22,37 @@ type ArtDTO struct {
 	Files []*multipart.FileHeader
 }
 
-type CreateArtReq struct {
-	ArtDTO
-	CreatorId int
+type ArtDTO struct {
+	Name        string `form:"name"        validate:"required"`
+	Description string `form:"description"`
+	Price       int    `form:"price"`
+	TagsID      []int  `form:"tags"`
 }
 
-type UpdateArtReq struct {
-	ArtDTO
+type CreateArtReq struct {
+	CreatorId   int
+	Name        string
+	Description string
+	Price       int
+	TagsID      []int
+}
 
-	ArtID    int
+type UpdateArtInfoReq struct {
+	ArtId int
+
+	Name        string
+	Description string
+	Price       int
+	TagsID      []int
+}
+
+type UpdateArtFilesReq struct {
+	ArtId int
+
 	CoverURL string
 	FilesURL []string
+
+	FilesName []string
 }
 
 type Art struct {
@@ -128,28 +152,35 @@ func (arts ManyArts) FillTags() error {
 	return nil
 }
 
+type ManyArtsDTO struct {
+	Search     string `query:"search"     json:"search"`
+	Filter     string `query:"filter"     json:"filter"`
+	Sort       string `query:"sort"       json:"sort"`
+	Pagination string `query:"pagination" json:"pagination"`
+}
+
 type ManyArtsReq struct {
-	Search     string     `json:"search"     form:"search"`
-	Filter     Filter     `json:"filter"`
-	Sort       Sort       `json:"sort"`
-	Pagination Pagination `json:"pagination"`
+	Search     string     `query:"search"     json:"search"`
+	Filter     Filter     `query:"filter"     json:"filter"`
+	Sort       Sort       `query:"sort"       json:"sort"`
+	Pagination Pagination `query:"pagination" json:"pagination"`
 }
 
 type Filter struct {
-	Tags      []string `json:"tags"      form:"filter.tags"`
-	MinPrice  int      `json:"minPrice"  form:"filter.minPrice"  validate:"gte=-1"`
-	MaxPrice  int      `json:"maxPrice"  form:"filter.maxPrice"  validate:"gte=-1"`
-	ImageExts []string `json:"imageExts" form:"filter.imageExts"`
+	Tags      []string `query:"tags"      json:"tags"`
+	MinPrice  int      `query:"minPrice"  json:"minPrice"  validate:"gte=-1"`
+	MaxPrice  int      `query:"maxPrice"  json:"maxPrice"  validate:"gte=-1"`
+	ImageExts []string `query:"imageExts" json:"imageExts"`
 }
 
 type Sort struct {
-	By  string `json:"by"  form:"sort.by"`
-	Asc bool   `json:"asc" form:"sort.asc"`
+	By  string `query:"by"  json:"by"`
+	Asc bool   `query:"asc" json:"asc"`
 }
 
 type Pagination struct {
-	Page  int `json:"page"  form:"pagination.page"  validate:"gte=1"`
-	Limit int `json:"limit" form:"pagination.limit" validate:"gte=1"`
+	Page  int `query:"page"  json:"page"  validate:"gte=1"`
+	Limit int `query:"limit" json:"limit" validate:"gte=1"`
 }
 
 type By string

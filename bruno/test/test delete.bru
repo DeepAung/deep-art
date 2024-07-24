@@ -1,0 +1,21 @@
+meta {
+  name: test delete
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{url}}/test
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "hello": "world"
+  }
+}
+
+body:form-urlencoded {
+  hello: world
+}

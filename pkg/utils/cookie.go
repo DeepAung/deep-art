@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/DeepAung/deep-art/api/types"
 	"github.com/DeepAung/deep-art/pkg/config"
 	"github.com/labstack/echo/v4"
 )
@@ -41,10 +40,16 @@ func DeleteCookie(c echo.Context, name string) {
 	})
 }
 
-func SetTokensCookies(c echo.Context, token types.Token, cfg *config.JwtConfig) {
-	SetCookie(c, "accessToken", token.AccessToken, cfg.AccessExpires)
-	SetCookie(c, "refreshToken", token.RefreshToken, cfg.RefreshExpires)
-	SetCookie(c, "tokenId", strconv.Itoa(token.Id), 0)
+func SetTokensCookies(
+	c echo.Context,
+	tokenId int,
+	accessToken string,
+	refreshToken string,
+	cfg *config.JwtConfig,
+) {
+	SetCookie(c, "accessToken", accessToken, cfg.AccessExpires)
+	SetCookie(c, "refreshToken", refreshToken, cfg.RefreshExpires)
+	SetCookie(c, "tokenId", strconv.Itoa(tokenId), 0)
 }
 
 func ClearTokensCookies(c echo.Context) {

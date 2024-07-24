@@ -5,7 +5,7 @@ import "github.com/DeepAung/deep-art/api/types"
 
 templ CreatorCreateArt(user types.User) {
 	@layouts.WithNav(layouts.Creator, user) {
-		<form hx-post="/api/arts/create" hx-encoding="multipart/form-data" class="max-w-xl mx-auto px-4 pt-4 flex flex-col gap-4">
+		<form hx-post="/api/arts" hx-encoding="multipart/form-data" class="max-w-xl mx-auto px-4 pt-4 flex flex-col gap-4">
 			<div class="flex items-center justify-between">
 				<span class="font-bold text-2xl">Create Art</span>
 				<input type="submit" value="Create" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:pointer-events-none"/>

@@ -42,7 +42,13 @@ func (h *UsersHandler) SignIn(c echo.Context) error {
 		return utils.RenderError(c, components.Error, err)
 	}
 
-	utils.SetTokensCookies(c, passport.Token, h.cfg.Jwt)
+	utils.SetTokensCookies(
+		c,
+		passport.Token.Id,
+		passport.Token.AccessToken,
+		passport.Token.RefreshToken,
+		h.cfg.Jwt,
+	)
 
 	c.Response().Header().Add("HX-Redirect", req.RedirectTo)
 	return nil
@@ -125,7 +131,7 @@ func (h *UsersHandler) UpdateUser(c echo.Context) error {
 		return utils.RenderError(c, components.Error, err)
 	}
 
-	c.Response().Header().Set("HX-Refresh", "true")
+	c.Response().Header().Add("HX-Refresh", "true")
 	return nil
 }
 
@@ -172,7 +178,7 @@ func (h *UsersHandler) UpdateTokens(c echo.Context) error {
 	// oldRefreshCookie, _ := c.Cookie("refreshToken")
 	// fmt.Printf("old cookies %s | %s\n", oldAccessCookie.Value, oldRefreshCookie.Value)
 
-	utils.SetTokensCookies(c, token, h.cfg.Jwt)
+	utils.SetTokensCookies(c, token.Id, token.AccessToken, token.RefreshToken, h.cfg.Jwt)
 	// fmt.Printf("set new cookies to %+v\n", token)
 
 	// // test SetTokensCookies function

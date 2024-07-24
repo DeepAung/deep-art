@@ -35,7 +35,7 @@ func NewArtsSvc(
 // get art id
 // upload cover & files
 // update art coverURL & filesURL
-func (s *ArtsSvc) CreateArt(creatorId int, dto types.ArtDTO) error {
+func (s *ArtsSvc) CreateArt(creatorId int, dto types.FullArtDTO) error {
 	ctx, cancel, tx, err := s.artsRepo.BeginTx()
 	defer cancel()
 	if err != nil {
@@ -44,8 +44,11 @@ func (s *ArtsSvc) CreateArt(creatorId int, dto types.ArtDTO) error {
 
 	// create art
 	createReq := types.CreateArtReq{
-		ArtDTO:    dto,
-		CreatorId: creatorId,
+		CreatorId:   creatorId,
+		Name:        dto.Name,
+		Description: dto.Description,
+		Price:       dto.Price,
+		TagsID:      dto.TagsID,
 	}
 	artId, err := s.artsRepo.CreateArtWithDB(ctx, tx, createReq)
 	if err != nil {
@@ -71,16 +74,105 @@ func (s *ArtsSvc) CreateArt(creatorId int, dto types.ArtDTO) error {
 
 	coverURL := coverRes[0].Url()
 	filesURL := utils.Map(filesRes, func(t storer.FileRes) string { return t.Url() })
+	filesname := utils.Map(filesRes, func(t storer.FileRes) string { return t.Filename() })
 
 	// update art
-	updateReq := types.UpdateArtReq{
-		ArtDTO:   dto,
-		ArtID:    artId,
-		CoverURL: coverURL,
-		FilesURL: filesURL,
+	updateReq := types.UpdateArtFilesReq{
+		ArtId:     artId,
+		CoverURL:  coverURL,
+		FilesURL:  filesURL,
+		FilesName: filesname,
 	}
-	if err := s.artsRepo.UpdateArtWithDB(ctx, tx, updateReq); err != nil {
+	if err := s.artsRepo.UpdateArtCoverAndFilesWithDB(ctx, tx, updateReq); err != nil {
 		_ = s.storer.DeleteFiles(append(filesDest, coverDest...)) // rollback process
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (s *ArtsSvc) UpdateArtInfo(req types.UpdateArtInfoReq) error {
+	return s.artsRepo.UpdateArtInfo(req)
+}
+
+func (s *ArtsSvc) UploadFiles(artId int, files []*multipart.FileHeader) error {
+	ctx, cancel, tx, err := s.artsRepo.BeginTx()
+	defer cancel()
+	if err != nil {
+		return err
+	}
+
+	filesDir := fmt.Sprint("/arts/files/", artId)
+	filesInfo := utils.Map(files, func(file *multipart.FileHeader) storer.FileRes {
+		return utils.NewUrlInfoByDest(s.cfg.App.BasePath, filesDir+"/"+file.Filename)
+	})
+	filesURL := utils.Map(filesInfo, func(file storer.FileRes) string { return file.Url() })
+	filesName := utils.Map(filesInfo, func(file storer.FileRes) string { return file.Filename() })
+
+	fmt.Println("artId: ", artId)
+	fmt.Println("filesURL: ", filesURL)
+	fmt.Println("filesName: ", filesName)
+
+	if err := s.artsRepo.InsertArtFilesWithDB(ctx, tx, artId, filesURL, filesName); err != nil {
+		return err
+	}
+
+	if _, err := s.storer.UploadFiles(files, filesDir); err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (s *ArtsSvc) DeleteFile(artId, fileId int) error {
+	ctx, cancel, tx, err := s.artsRepo.BeginTx()
+	defer cancel()
+	if err != nil {
+		return err
+	}
+
+	if err := s.artsRepo.DeleteArtFilesWithDB(ctx, tx, fileId); err != nil {
+		return err
+	}
+
+	file, err := s.artsRepo.FindOneFile(fileId)
+	if err != nil {
+		return err
+	}
+
+	fileInfo := utils.NewUrlInfoByURL(s.cfg.App.BasePath, file.URL)
+	if err := s.storer.DeleteFiles([]string{fileInfo.Dest()}); err != nil {
+		// there is no image but we want to delete it. so just do nothing
+		return tx.Commit()
+	}
+
+	return tx.Commit()
+}
+
+func (s *ArtsSvc) ReplaceCover(artId int, cover *multipart.FileHeader) error {
+	ctx, cancel, tx, err := s.artsRepo.BeginTx()
+	defer cancel()
+	if err != nil {
+		return err
+	}
+
+	oldCoverURL, err := s.artsRepo.FindOneCoverURL(artId)
+	if err != nil {
+		return err
+	}
+	oldCoverInfo := utils.NewUrlInfoByURL(s.cfg.App.BasePath, oldCoverURL)
+
+	newCoverDest := fmt.Sprintf("/arts/cover/%d/%s", artId, cover.Filename)
+	newCoverInfo := utils.NewUrlInfoByDest(s.cfg.App.BasePath, newCoverDest)
+
+	if err := s.artsRepo.UpdateArtCoverWithDB(ctx, tx, artId, newCoverInfo.Url()); err != nil {
+		return err
+	}
+
+	if err := s.storer.DeleteFiles([]string{oldCoverInfo.Dest()}); err != nil {
+		return err
+	}
+	if _, err := s.storer.UploadFiles([]*multipart.FileHeader{cover}, newCoverInfo.Dir()); err != nil {
 		return err
 	}
 

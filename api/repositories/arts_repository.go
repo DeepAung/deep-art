@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"path/filepath"
 	"time"
 
 	"github.com/DeepAung/deep-art/.gen/model"
@@ -55,17 +54,7 @@ func (r *ArtsRepo) CreateArt(req types.CreateArtReq) (artId int, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return
-	}
-
-	artId, err = r.CreateArtWithDB(ctx, tx, req)
-	if err != nil {
-		return
-	}
-
-	err = tx.Commit()
+	artId, err = r.CreateArtWithDB(ctx, r.db, req)
 	return
 }
 
@@ -104,32 +93,27 @@ func (r *ArtsRepo) CreateArtWithDB(
 	return
 }
 
-func (r *ArtsRepo) UpdateArt(req types.UpdateArtReq) error {
+func (r *ArtsRepo) UpdateArtInfo(req types.UpdateArtInfoReq) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-
-	if err = r.UpdateArtWithDB(ctx, tx, req); err != nil {
-		return err
-	}
-
-	return tx.Commit()
+	return r.UpdateArtInfoWithDB(ctx, r.db, req)
 }
 
-func (r *ArtsRepo) UpdateArtWithDB(ctx context.Context, db qrm.DB, req types.UpdateArtReq) error {
+func (r *ArtsRepo) UpdateArtInfoWithDB(
+	ctx context.Context,
+	db qrm.DB,
+	req types.UpdateArtInfoReq,
+) error {
 	stmt1 := Arts.
-		UPDATE(Arts.Name, Arts.Description, Arts.Price, Arts.CoverURL).
-		SET(req.Name, req.Description, req.Price, req.CoverURL).
-		WHERE(Arts.ID.EQ(Int(int64(req.ArtID))))
+		UPDATE(Arts.Name, Arts.Description, Arts.Price).
+		SET(req.Name, req.Description, req.Price).
+		WHERE(Arts.ID.EQ(Int(int64(req.ArtId))))
 	if err := HandleExecCtx(stmt1, ctx, db, "arts"); err != nil {
 		return err
 	}
 
-	stmt2 := ArtsTags.DELETE().WHERE(ArtsTags.ArtID.EQ(Int(int64(req.ArtID))))
+	stmt2 := ArtsTags.DELETE().WHERE(ArtsTags.ArtID.EQ(Int(int64(req.ArtId))))
 	if err := HandleExecCtxWithErr(stmt2, ctx, db, ErrArtsTagsNoRowsAffected); err != nil &&
 		!errors.Is(err, ErrArtsTagsNoRowsAffected) {
 		return err
@@ -138,29 +122,11 @@ func (r *ArtsRepo) UpdateArtWithDB(ctx context.Context, db qrm.DB, req types.Upd
 	if req.TagsID != nil && len(req.TagsID) > 0 {
 		stmt3 := ArtsTags.INSERT(ArtsTags.ArtID, ArtsTags.TagID)
 		for _, tagID := range req.TagsID {
-			stmt3 = stmt3.VALUES(req.ArtID, tagID)
+			stmt3 = stmt3.VALUES(req.ArtId, tagID)
 		}
 		if err := HandleExecCtx(stmt3, ctx, db, "arts_tags"); err != nil {
 			return err
 		}
-	}
-
-	stmt4 := Files.DELETE().WHERE(Files.ArtID.EQ(Int(int64(req.ArtID))))
-	if err := HandleExecCtxWithErr(stmt4, ctx, db, ErrFilesNoRowsAffected); err != nil &&
-		!errors.Is(err, ErrFilesNoRowsAffected) {
-		return err
-	}
-
-	stmt5 := Files.INSERT(Files.ArtID, Files.Filename, Files.Filetype, Files.URL)
-	for i := range req.FilesURL {
-		file := req.Files[i]
-		ext := filepath.Ext(file.Filename)
-		fileUrl := req.FilesURL[i]
-
-		stmt5 = stmt5.VALUES(req.ArtID, file.Filename, ext, fileUrl)
-	}
-	if err := HandleExecCtx(stmt5, ctx, db, "files"); err != nil {
-		return err
 	}
 
 	return nil
@@ -472,17 +438,19 @@ func (r *ArtsRepo) FindManyCreatedArts(
 }
 
 func (r *ArtsRepo) FindOneArt(id int) (types.Art, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
 	statsTable := r.statsTable().
 		WHERE(Arts.ID.EQ(Int(int64(id)))).
 		AsTable("Stats")
 
 	creator := Users.AS("Creator")
 
-	stmt := SELECT(
+	stmt1 := SELECT(
 		Arts.AllColumns,
 		creator.AllColumns.Except(creator.Password),
 		COUNT(DISTINCT(Follow.UserIDFollower)).AS("Creator.Followers"),
-		Files.AllColumns,
 		Raw("group_concat(DISTINCT tags.name)").AS("Temp.TagNames"),
 		Raw("group_concat(DISTINCT tags.id)").AS("Temp.TagIDs"),
 		statsTable.AllColumns().As("Stats.*"),
@@ -490,20 +458,26 @@ func (r *ArtsRepo) FindOneArt(id int) (types.Art, error) {
 		Arts.
 			LEFT_JOIN(creator, creator.ID.EQ(Arts.CreatorID)).
 			LEFT_JOIN(Follow, Follow.UserIDFollowee.EQ(creator.ID)).
-			LEFT_JOIN(Files, Files.ArtID.EQ(Arts.ID)).
 			LEFT_JOIN(ArtsTags, ArtsTags.ArtID.EQ(Arts.ID)).
 			LEFT_JOIN(Tags, Tags.ID.EQ(ArtsTags.TagID)).
 			LEFT_JOIN(statsTable, Arts.ID.From(statsTable).EQ(Arts.ID)),
 	).WHERE(Arts.ID.EQ(Int(int64(id))))
 
-	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
-	defer cancel()
-
 	var dest types.Art
-	if err := HandleQueryCtx(stmt, ctx, r.db, &dest, "art"); err != nil {
+	if err := HandleQueryCtx(stmt1, ctx, r.db, &dest, "art"); err != nil {
 		return types.Art{}, err
 	}
 
+	stmt2 := SELECT(Arts.ID, Files.AllColumns).
+		FROM(Arts.LEFT_JOIN(Files, Files.ArtID.EQ(Arts.ID))).
+		WHERE(Arts.ID.EQ(Int(int64(id))))
+
+	var filesDest types.Art
+	if err := HandleQueryCtx(stmt2, ctx, r.db, &filesDest, "art"); err != nil {
+		return types.Art{}, err
+	}
+
+	dest.Files = filesDest.Files
 	err := dest.FillTags()
 	if err != nil {
 		return types.Art{}, err

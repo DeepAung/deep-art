@@ -6,13 +6,13 @@ templ ManyArtsContainer() {
 	<form
 		x-data
 		x-init="$watch('$store.req', pushHistory)"
-		hx-post="/dynamicManyArts"
+		hx-get="/dynamicManyArts"
 		:hx-vals="requestBody()"
 		hx-indicator="#arts-spinner"
 		hx-target="#arts"
 		hx-target-error="#arts-error"
 		hx-trigger="ready from:body, keyup[keyCode==13], findManyArts from:body"
-		hx-ext="json-enc,response-targets"
+		hx-ext="response-targets"
 		class="flex gap-3 justify-center items-center"
 	>
 		<div id="arts-spinner" class="htmx-indicator animate-spin inline-block size-6 border-[3px] border-current border-t-transparent text-blue-600 rounded-full dark:text-blue-500" role="status" aria-label="loading">

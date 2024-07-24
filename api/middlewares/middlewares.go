@@ -289,7 +289,7 @@ func (m *Middleware) tryUpdateToken(c echo.Context) (mytoken.Payload, error) {
 		return mytoken.Payload{}, err
 	}
 
-	utils.SetTokensCookies(c, token, m.cfg.Jwt)
+	utils.SetTokensCookies(c, token.Id, token.AccessToken, token.RefreshToken, m.cfg.Jwt)
 	return payload, nil
 }
 

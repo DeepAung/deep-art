@@ -850,6 +850,10 @@ video {
   height: 100%;
 }
 
+.max-h-\[50vh\]{
+  max-height: 50vh;
+}
+
 .min-h-\[38px\]{
   min-height: 38px;
 }

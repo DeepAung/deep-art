@@ -92,9 +92,9 @@ func (r *Router) ArtsRouter() {
 
 	setPayload := middlewares.SetPayload
 
-	r.s.app.POST("/api/arts/create", handler.CreateArt, r.mid.OnlyAuthorized(setPayload()))
-	r.s.app.POST("/api/arts", handler.FindManyArts)
-	r.s.app.POST(
+	r.s.app.POST("/api/arts", handler.CreateArt, r.mid.OnlyAuthorized(setPayload()))
+	r.s.app.GET("/api/arts", handler.FindManyArts)
+	r.s.app.GET(
 		"/api/arts-with-art-type",
 		handler.FindManyArtsWithArtType,
 		r.mid.OnlyAuthorized(setPayload()),
@@ -115,15 +115,15 @@ func (r *Router) ArtsRouter() {
 	)
 	r.s.app.POST(
 		"/api/arts/:id/files",
-		handler.UploadFile,
+		handler.UploadFiles,
 		r.mid.OnlyAuthorized(setPayload()),
 		r.mid.OwnedArt("id"),
 	)
 	r.s.app.DELETE(
-		"/api/arts/:id/files",
+		"/api/arts/:artId/files/:fileId",
 		handler.DeleteFile,
 		r.mid.OnlyAuthorized(setPayload()),
-		r.mid.OwnedArt("id"),
+		r.mid.OwnedArt("artId"),
 	)
 	r.s.app.PUT(
 		"/api/arts/:id/cover",

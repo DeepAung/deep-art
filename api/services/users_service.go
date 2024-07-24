@@ -177,7 +177,6 @@ func (s *UsersSvc) GetCreator(id int) (types.Creator, error) {
 }
 
 func (s *UsersSvc) UpdateUser(id int, avatar *multipart.FileHeader, req types.UpdateUserReq) error {
-	// TODO: find one avatar url by id
 	user, err := s.usersRepo.FindOneUserById(id)
 	if err != nil {
 		return err

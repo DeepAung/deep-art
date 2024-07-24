@@ -1,5 +1,5 @@
 window.addEventListener("htmx:configRequest", (evt) => {
-  if (evt.detail.verb == "post" && evt.detail.path == "/dynamicManyArts") {
+  if (evt.detail.verb == "get" && evt.detail.path == "/dynamicManyArts") {
     evt.detail.path = Alpine.store("manyArtsURL");
   }
 });
