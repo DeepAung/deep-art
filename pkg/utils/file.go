@@ -1,7 +1,13 @@
 package utils
 
 import (
+	"archive/zip"
+	"errors"
+	"io"
+	"net/http"
 	"net/url"
+	"os"
+	fb "path/filepath"
 	"strings"
 )
 
@@ -67,4 +73,83 @@ func NewUrlInfoByURL(basePath string, url string) UrlInfo {
 	u.dir = u.dest[0 : len(u.dest)-len(u.filename)]
 
 	return u
+}
+
+func DownloadFiles(filespath, urls []string) (error, []string) {
+	for i := range len(filespath) {
+		err := DownloadFile(filespath[i], urls[i])
+		if err != nil {
+			return err, filespath[:i]
+		}
+	}
+
+	return nil, filespath
+}
+
+func DeleteFiles(filespath []string) error {
+	errorsMsg := make([]string, 0)
+	for _, filepath := range filespath {
+		if err := os.Remove(filepath); err != nil {
+			errorsMsg = append(errorsMsg, err.Error())
+		}
+	}
+
+	if len(errorsMsg) == 0 {
+		return nil
+	}
+
+	return errors.New(strings.Join(errorsMsg, " "))
+}
+
+func DownloadFile(filepath, url string) error {
+	// Get the data
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Create the file
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	// Write the body to file
+	_, err = io.Copy(out, resp.Body)
+	return err
+}
+
+func CreateZipFile(filespath []string, zipname string) (zipDest string, zipName string, err error) {
+	zipDest = "tmp/" + zipname + ".zip"
+	zipName = zipname + ".zip"
+
+	var archive *os.File
+	if archive, err = os.Create(zipDest); err != nil {
+		return
+	}
+	defer archive.Close()
+
+	zipWriter := zip.NewWriter(archive)
+	for _, filepath := range filespath {
+		var f *os.File
+		if f, err = os.Open(filepath); err != nil {
+			return
+		}
+		defer f.Close()
+
+		var w io.Writer
+		zipFilename := zipname + "/" + fb.Base(filepath)
+		if w, err = zipWriter.Create(zipFilename); err != nil {
+			return
+		}
+
+		if _, err = io.Copy(w, f); err != nil {
+			return
+		}
+	}
+	zipWriter.Close()
+
+	return zipDest, zipName, nil
 }

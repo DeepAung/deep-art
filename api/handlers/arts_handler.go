@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -98,15 +99,69 @@ func (h *ArtsHandler) DeleteArt(c echo.Context) error {
 		return utils.RenderError(c, components.Error, err)
 	}
 
-	// delete art
-	// delete files
-	// delete cover
 	if err := h.artsSvc.DeleteArt(artId); err != nil {
 		return utils.RenderError(c, components.Error, err)
 	}
 
 	c.Response().Header().Add("HX-Redirect", "/creator")
 	return c.NoContent(http.StatusOK)
+}
+
+func (h *ArtsHandler) DownloadArt(c echo.Context) error {
+	renderWentWrongError := func() error {
+		return utils.Render(
+			c,
+			components.Error("something went wrong. please try again."),
+			http.StatusInternalServerError,
+		)
+	}
+
+	artId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return utils.RenderError(c, components.Error, err)
+	}
+
+	art, err := h.artsSvc.FindOneArt(artId)
+	if err != nil {
+		return utils.RenderError(c, components.Error, err)
+	}
+
+	dests := make([]string, len(art.Files))
+	urls := make([]string, len(art.Files))
+	for i, file := range art.Files {
+		dests[i] = "tmp/" + file.Filename
+		urls[i] = file.URL
+		if h.cfg.App.StorerType == config.LocalType {
+			urls[i] = "http://" + c.Request().Host + urls[i]
+		}
+	}
+
+	err, filespath := utils.DownloadFiles(dests, urls)
+	if err != nil {
+		tryDeleteFiles(err, filespath) // Rollback stuff
+		return renderWentWrongError()
+	}
+
+	var zipDest, zipName string
+	if zipDest, zipName, err = utils.CreateZipFile(dests, art.Name); err != nil {
+		tryDeleteFiles(err, append(filespath, zipDest))
+		return renderWentWrongError()
+	}
+
+	if err := c.Attachment(zipDest, zipName); err != nil {
+		tryDeleteFiles(err, append(filespath, zipDest))
+		return renderWentWrongError()
+	}
+
+	return utils.DeleteFiles(append(filespath, zipDest))
+}
+
+func tryDeleteFiles(causeErr error, files []string) {
+	if err := utils.DeleteFiles(files); err != nil {
+		slog.Error(causeErr.Error() + " " + err.Error())
+	} else {
+		slog.Error(causeErr.Error())
+	}
 }
 
 func (h *ArtsHandler) UploadFiles(c echo.Context) error {

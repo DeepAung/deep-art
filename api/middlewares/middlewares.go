@@ -217,6 +217,50 @@ func (m *Middleware) OwnedArt(artIdParam string) echo.MiddlewareFunc {
 	}
 }
 
+func (m *Middleware) CanDownload(artIdParam string) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			var userId int
+			var ok bool
+			userId, ok = m.getUserIdByPayload(c)
+			if !ok {
+				userId, ok = m.getUserIdByUserData(c)
+				if !ok {
+					return utils.Render(
+						c,
+						components.Error("payload or user data from middleware not found"),
+						http.StatusBadRequest,
+					)
+				}
+			}
+
+			artId, err := strconv.Atoi(c.Param(artIdParam))
+			if err != nil {
+				return utils.Render(c, components.Error("invalid art id"), http.StatusBadRequest)
+			}
+
+			bought, err := m.artsSvc.IsBought(userId, artId)
+			if err != nil {
+				return utils.RenderError(c, components.Error, err)
+			}
+			owned, err := m.artsSvc.Owned(userId, artId)
+			if err != nil {
+				return utils.RenderError(c, components.Error, err)
+			}
+
+			if !owned && !bought {
+				return utils.Render(
+					c,
+					components.Error("you cannot download this art"),
+					http.StatusBadRequest,
+				)
+			}
+
+			return next(c)
+		}
+	}
+}
+
 // --------------------------------------------------- //
 
 func (m *Middleware) jwtAccessToken(c echo.Context) (string, mytoken.Payload, error) {

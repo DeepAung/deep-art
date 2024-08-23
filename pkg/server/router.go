@@ -112,6 +112,12 @@ func (r *Router) ArtsRouter() {
 		r.mid.OnlyAuthorized(setPayload()),
 		r.mid.OwnedArt("id"),
 	)
+	r.s.app.GET(
+		"/api/arts/:id/download",
+		handler.DownloadArt,
+		r.mid.OnlyAuthorized(setPayload()),
+		r.mid.CanDownload("id"),
+	)
 	r.s.app.POST(
 		"/api/arts/:id/files",
 		handler.UploadFiles,
