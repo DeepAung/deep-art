@@ -239,24 +239,38 @@ func (m *Middleware) CanDownload(artIdParam string) echo.MiddlewareFunc {
 				return utils.Render(c, components.Error("invalid art id"), http.StatusBadRequest)
 			}
 
+			// Free
+			art, err := m.artsSvc.FindOneArt(artId)
+			if err != nil {
+				return utils.RenderError(c, components.Error, err)
+			}
+			if art.Price == 0 {
+				return next(c)
+			}
+
+			// Bought
 			bought, err := m.artsSvc.IsBought(userId, artId)
 			if err != nil {
 				return utils.RenderError(c, components.Error, err)
 			}
+			if bought {
+				return next(c)
+			}
+
+			// Owned
 			owned, err := m.artsSvc.Owned(userId, artId)
 			if err != nil {
 				return utils.RenderError(c, components.Error, err)
 			}
-
-			if !owned && !bought {
-				return utils.Render(
-					c,
-					components.Error("you cannot download this art"),
-					http.StatusBadRequest,
-				)
+			if owned {
+				return next(c)
 			}
 
-			return next(c)
+			return utils.Render(
+				c,
+				components.Error("you cannot download this art"),
+				http.StatusBadRequest,
+			)
 		}
 	}
 }
