@@ -54,3 +54,22 @@ func (h *PagesHandler) CreatorArtDetail(c echo.Context) error {
 
 	return utils.Render(c, pages.CreatorArtDetail(user, art, tags), http.StatusOK)
 }
+
+func (h *PagesHandler) CreatorProfile(c echo.Context) error {
+	me, ok := c.Get("user").(types.User)
+	if !ok {
+		return utils.RenderError(c, pages.Error, ErrUserDataNotFound)
+	}
+
+	creatorId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		return utils.Render(c, pages.Error("Page Not Found"), http.StatusNotFound)
+	}
+
+	creator, err := h.usersSvc.GetCreator(creatorId)
+	if err != nil {
+		return utils.RenderError(c, pages.Error, err)
+	}
+
+	return utils.Render(c, pages.CreatorProfile(me, creator), http.StatusOK)
+}

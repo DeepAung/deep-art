@@ -149,6 +149,7 @@ func (r *ArtsRepo) FindManyArts(req types.ManyArtsReq) (types.ManyArtsRes, error
 	var cond BoolExpression = Int(1).EQ(Int(1))
 	cond = r.withFilterCond(cond, req.Filter)
 	cond = r.withSearchCond(cond, req.Search)
+	cond = r.withCreatorIdCond(cond, req.CreatorId)
 
 	// stmt
 	stmt := SELECT(
@@ -790,6 +791,14 @@ func (r *ArtsRepo) withSearchCond(cond BoolExpression, search string) BoolExpres
 			OR(Arts.Description.LIKE(String("%" + search + "%"))).
 			OR(creator.Username.LIKE(String("%" + search + "%"))),
 	)
+}
+
+func (r *ArtsRepo) withCreatorIdCond(cond BoolExpression, creatorId int) BoolExpression {
+	if creatorId == 0 {
+		return cond
+	}
+
+	return cond.AND(Arts.CreatorID.EQ(Int(int64(creatorId))))
 }
 
 // func (r *ArtsRepo) withStarredArtsCond(cond BoolExpression) BoolExpression {

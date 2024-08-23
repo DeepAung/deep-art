@@ -157,6 +157,7 @@ type ManyArtsDTO struct {
 	Filter     string `query:"filter"     json:"filter"`
 	Sort       string `query:"sort"       json:"sort"`
 	Pagination string `query:"pagination" json:"pagination"`
+	CreatorId  string `query:"creatorId"  json:"creatorId"`
 }
 
 type ManyArtsReq struct {
@@ -164,6 +165,7 @@ type ManyArtsReq struct {
 	Filter     Filter     `query:"filter"     json:"filter"`
 	Sort       Sort       `query:"sort"       json:"sort"`
 	Pagination Pagination `query:"pagination" json:"pagination"`
+	CreatorId  int        `query:"creatorId"  json:"creatorId"  validate:"gte=0"`
 }
 
 type Filter struct {

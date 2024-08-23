@@ -771,6 +771,10 @@ video {
   margin-top: 1.25rem;
 }
 
+.mb-4{
+  margin-bottom: 1rem;
+}
+
 .block{
   display: block;
 }
@@ -946,6 +950,10 @@ video {
 
 .grid-cols-\[repeat\(auto-fill\2c minmax\(16rem\2c 1fr\)\)\]{
   grid-template-columns: repeat(auto-fill,minmax(16rem,1fr));
+}
+
+.flex-row{
+  flex-direction: row;
 }
 
 .flex-col{
@@ -1954,6 +1962,14 @@ video {
     margin-top: 0px;
   }
 
+  .md\:block{
+    display: block;
+  }
+
+  .md\:inline{
+    display: inline;
+  }
+
   .md\:flex{
     display: flex;
   }
@@ -1968,6 +1984,10 @@ video {
 
   .md\:flex-row{
     flex-direction: row;
+  }
+
+  .md\:flex-col{
+    flex-direction: column;
   }
 
   .md\:flex-nowrap{

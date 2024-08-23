@@ -19,7 +19,7 @@ templ WithNav(navType navType, user types.User) {
 			<nav class="max-w-[85rem] w-full mx-auto px-4 md:flex md:items-center md:justify-between" aria-label="Global">
 				switch navType {
 					case Buyer:
-						<a class="flex-none text-xl font-semibold dark:text-white text-blue-600" href="/home">DeepArt</a>
+						<a class="block text-center md:inline flex-none text-xl font-semibold dark:text-white text-blue-600" href="/home">DeepArt</a>
 					case Creator:
 						<div class="flex flex-col md:flex-row gap-3 items-center">
 							<a class="flex-none text-xl font-semibold dark:text-white" href="/creator">DeepArt <span class="text-green-600">Creator Page</span></a>

@@ -293,6 +293,7 @@ func (h *ArtsHandler) getValidatedManyArtsReq(c echo.Context) (types.ManyArtsReq
 		filter     types.Filter
 		sort       types.Sort
 		pagination types.Pagination
+		creatorId  int
 	)
 
 	err := json.Unmarshal([]byte(dto.Filter), &filter)
@@ -319,11 +320,22 @@ func (h *ArtsHandler) getValidatedManyArtsReq(c echo.Context) (types.ManyArtsReq
 		)
 	}
 
+	if dto.CreatorId != "" {
+		creatorId, err = strconv.Atoi(dto.CreatorId)
+		if err != nil {
+			return types.ManyArtsReq{}, httperror.New(
+				"invalid creator id body request",
+				http.StatusBadRequest,
+			)
+		}
+	}
+
 	req := types.ManyArtsReq{
 		Search:     dto.Search,
 		Filter:     filter,
 		Sort:       sort,
 		Pagination: pagination,
+		CreatorId:  creatorId,
 	}
 
 	if err := utils.Validate(&req); err != nil {

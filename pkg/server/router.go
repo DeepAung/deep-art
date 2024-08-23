@@ -47,6 +47,7 @@ func (r *Router) PagesRouter() {
 	r.s.app.GET("/home", handler.Home, r.mid.OnlyAuthorized(setUserData()))
 	r.s.app.GET("/arts/:id", handler.ArtDetail, r.mid.OnlyAuthorized(setUserData()))
 	r.s.app.GET("/me", handler.MyProfile, r.mid.OnlyAuthorized(setUserData()))
+	r.s.app.GET("/creators/:id", handler.CreatorProfile, r.mid.OnlyAuthorized(setUserData()))
 
 	r.s.app.GET("/creator", handler.CreatorHomePage, r.mid.OnlyAuthorized(setUserData()))
 	r.s.app.GET(
