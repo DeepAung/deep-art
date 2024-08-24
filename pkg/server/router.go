@@ -62,7 +62,12 @@ func (r *Router) PagesRouter() {
 		r.mid.OwnedArt("id"),
 	)
 
-	r.s.app.GET("/admin", handler.AdminHomePage, r.mid.OnlyAuthorized(setUserData()))
+	r.s.app.GET(
+		"/admin",
+		handler.AdminHomePage,
+		r.mid.OnlyAuthorized(setUserData()),
+		r.mid.OnlyAdmin,
+	)
 }
 
 func (r *Router) UsersRouter() {
