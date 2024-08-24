@@ -3,11 +3,13 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"net/http"
 	"time"
 
 	"github.com/DeepAung/deep-art/.gen/model"
 	. "github.com/DeepAung/deep-art/.gen/table"
 	"github.com/DeepAung/deep-art/api/types"
+	"github.com/DeepAung/deep-art/pkg/httperror"
 	. "github.com/go-jet/jet/v2/sqlite"
 )
 
@@ -105,14 +107,20 @@ func (r *CodesRepo) UseCode(userId, codeId int) error {
 	return tx.Commit()
 }
 
-func (r *CodesRepo) CreateCode(req types.CodeReq) error {
+func (r *CodesRepo) CreateCode(req types.CodeReq) (model.Codes, error) {
 	stmt := Codes.INSERT(Codes.Name, Codes.Value, Codes.ExpTime).
-		VALUES(req.Name, req.Value, req.ExpTime.Time)
+		VALUES(req.Name, req.Value, req.ExpTime.Time).
+		RETURNING(Codes.AllColumns)
 
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	return HandleExecCtx(stmt, ctx, r.db, "codes")
+	var dest model.Codes
+	err := HandleQueryCtx(stmt, ctx, r.db, &dest, "code")
+	if err != nil && err.Error() == "jet: UNIQUE constraint failed: codes.name" {
+		return model.Codes{}, httperror.New("Code name should be unique", http.StatusBadRequest)
+	}
+	return dest, err
 }
 
 func (r *CodesRepo) UpdateCode(id int, req types.CodeReq) error {

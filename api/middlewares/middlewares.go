@@ -178,21 +178,35 @@ func (m *Middleware) JwtRefreshToken(opts ...AuthorizedOpt) echo.MiddlewareFunc 
 	}
 }
 
+func (m *Middleware) OnlyAdmin(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		user, ok := c.Get("user").(types.User)
+		if !ok {
+			return utils.Render(
+				c,
+				components.Error("user data from middleware not found"),
+				http.StatusBadRequest,
+			)
+		}
+
+		if !user.IsAdmin {
+			return utils.Render(c, components.Error("you are not the admin"), http.StatusBadRequest)
+		}
+
+		return next(c)
+	}
+}
+
 func (m *Middleware) OwnedArt(artIdParam string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			var userId int
-			var ok bool
-			userId, ok = m.getUserIdByPayload(c)
+			userId, ok := m.getUserId(c)
 			if !ok {
-				userId, ok = m.getUserIdByUserData(c)
-				if !ok {
-					return utils.Render(
-						c,
-						components.Error("payload or user data from middleware not found"),
-						http.StatusBadRequest,
-					)
-				}
+				return utils.Render(
+					c,
+					components.Error("payload or user data from middleware not found"),
+					http.StatusBadRequest,
+				)
 			}
 
 			artId, err := strconv.Atoi(c.Param(artIdParam))
@@ -220,18 +234,13 @@ func (m *Middleware) OwnedArt(artIdParam string) echo.MiddlewareFunc {
 func (m *Middleware) CanDownload(artIdParam string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			var userId int
-			var ok bool
-			userId, ok = m.getUserIdByPayload(c)
+			userId, ok := m.getUserId(c)
 			if !ok {
-				userId, ok = m.getUserIdByUserData(c)
-				if !ok {
-					return utils.Render(
-						c,
-						components.Error("payload or user data from middleware not found"),
-						http.StatusBadRequest,
-					)
-				}
+				return utils.Render(
+					c,
+					components.Error("payload or user data from middleware not found"),
+					http.StatusBadRequest,
+				)
 			}
 
 			artId, err := strconv.Atoi(c.Param(artIdParam))
@@ -349,6 +358,17 @@ func (m *Middleware) tryUpdateToken(c echo.Context) (mytoken.Payload, error) {
 
 	utils.SetTokensCookies(c, token.Id, token.AccessToken, token.RefreshToken, m.cfg.Jwt)
 	return payload, nil
+}
+
+func (m *Middleware) getUserId(c echo.Context) (int, bool) {
+	var userId int
+	var ok bool
+	userId, ok = m.getUserIdByPayload(c)
+	if !ok {
+		userId, ok = m.getUserIdByUserData(c)
+	}
+
+	return userId, ok
 }
 
 func (m *Middleware) getUserIdByPayload(c echo.Context) (int, bool) {

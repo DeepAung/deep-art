@@ -1,8 +1,9 @@
-INSERT INTO "users" ("username", "email", "password")
-  VALUES ('DeepAung', 'i.deepaung@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi'),
-  ('user1', 'user1@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi'),
-  ('user2', 'user2@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi'),
-  ('user3', 'user3@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi');
+INSERT INTO "users" ("username", "email", "password", "is_admin")
+  VALUES ('DeepAung', 'i.deepaung@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi', 0),
+  ('admin', 'admin@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi', 1),
+  ('user1', 'user1@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi', 0),
+  ('user2', 'user2@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi', 0),
+  ('user3', 'user3@gmail.com', '$2a$10$PAsFv3cmdUQPfFvFkefBEOtPAVYnvL9wkyUw5VLDskdBPKayQjagi', 0);
 
 INSERT INTO "follow" ("user_id_follower", "user_id_followee")
   VALUES (2, 1), (3, 1), (4, 1);

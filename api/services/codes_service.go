@@ -4,7 +4,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/DeepAung/deep-art/.gen/model"
 	"github.com/DeepAung/deep-art/api/repositories"
+	"github.com/DeepAung/deep-art/api/types"
 	"github.com/DeepAung/deep-art/pkg/config"
 	"github.com/DeepAung/deep-art/pkg/httperror"
 )
@@ -49,4 +51,20 @@ func (s *CodesSvc) UseCode(userId int, name string) error {
 
 	// 4. use the code
 	return s.codesRepo.UseCode(userId, int(*code.ID))
+}
+
+func (s *CodesSvc) CreateCode(req types.CodeReq) (model.Codes, error) {
+	return s.codesRepo.CreateCode(req)
+}
+
+func (s *CodesSvc) GetCodes() ([]model.Codes, error) {
+	return s.codesRepo.FindAllCodes()
+}
+
+func (s *CodesSvc) UpdateCode(id int, req types.CodeReq) error {
+	return s.codesRepo.UpdateCode(id, req)
+}
+
+func (s *CodesSvc) DeleteCode(id int) error {
+	return s.codesRepo.DeleteCode(id)
 }

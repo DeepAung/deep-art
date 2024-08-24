@@ -16,7 +16,7 @@ func (t CustomTime) MarshalJSON() ([]byte, error) {
 	return []byte(date), nil
 }
 
-func (t *CustomTime) UnmarshalJSON(b []byte) (err error) {
+func (t *CustomTime) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), "\"")
 
 	date, err := time.Parse(time.RFC3339, s)
@@ -24,5 +24,14 @@ func (t *CustomTime) UnmarshalJSON(b []byte) (err error) {
 		return err
 	}
 	t.Time = date
-	return
+	return nil
+}
+
+func (t *CustomTime) UnmarshalParam(param string) error {
+	date, err := time.Parse("2006-01-02T15:04:05", param)
+	if err != nil {
+		return err
+	}
+	t.Time = date
+	return nil
 }

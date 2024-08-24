@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -48,16 +49,18 @@ func (h *testCodesHandler) CreateCode(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadGateway, err.Error())
 	}
+	log.Printf("===== req: %+v", req)
 
 	if err := utils.Validate(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
-	if err := h.codesRepo.CreateCode(req); err != nil {
+	code, err := h.codesRepo.CreateCode(req)
+	if err != nil {
 		return utils.JSONError(c, err)
 	}
 
-	return c.NoContent(http.StatusCreated)
+	return c.JSON(http.StatusCreated, code)
 }
 
 func (h *testCodesHandler) UpdateCode(c echo.Context) error {

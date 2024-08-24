@@ -160,7 +160,35 @@ func (r *Router) CodesRouter() {
 	svc := services.NewCodesSvc(repo, r.s.cfg)
 	handler := handlers.NewCodesHandler(svc, r.s.cfg)
 
-	r.s.app.POST("/api/codes/use", handler.UseCode, r.mid.OnlyAuthorized(middlewares.SetPayload()))
+	setPayload := middlewares.SetPayload
+	setUserData := middlewares.SetUserData
+
+	r.s.app.POST("/api/codes/use", handler.UseCode, r.mid.OnlyAuthorized(setPayload()))
+
+	r.s.app.POST(
+		"/api/codes",
+		handler.CreateCode,
+		r.mid.OnlyAuthorized(setUserData()),
+		r.mid.OnlyAdmin,
+	)
+	r.s.app.GET(
+		"/api/codes",
+		handler.GetCodes,
+		r.mid.OnlyAuthorized(setUserData()),
+		r.mid.OnlyAdmin,
+	)
+	r.s.app.PUT(
+		"/api/codes/:id",
+		handler.UpdateCode,
+		r.mid.OnlyAuthorized(setUserData()),
+		r.mid.OnlyAdmin,
+	)
+	r.s.app.DELETE(
+		"/api/codes/:id",
+		handler.DeleteCode,
+		r.mid.OnlyAuthorized(setUserData()),
+		r.mid.OnlyAdmin,
+	)
 }
 
 // ------------------------------------------------------------------------- //
