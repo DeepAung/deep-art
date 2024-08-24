@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/DeepAung/deep-art/.gen/model"
 	"github.com/DeepAung/deep-art/api/services"
 	"github.com/DeepAung/deep-art/api/types"
 	"github.com/DeepAung/deep-art/pkg/config"
@@ -53,19 +52,19 @@ func (h *CodesHandler) UseCode(c echo.Context) error {
 func (h *CodesHandler) CreateCode(c echo.Context) error {
 	var req types.CodeReq
 	if err := c.Bind(&req); err != nil {
-		c.Response().Header().Add("HX-Retarget", "#create-error")
+		c.Response().Header().Add("HX-Retarget", "#create-code-error")
 		c.Response().Header().Add("HX-Reswap", "innerHTML")
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
 	}
 	if err := utils.Validate(&req); err != nil {
-		c.Response().Header().Add("HX-Retarget", "#create-error")
+		c.Response().Header().Add("HX-Retarget", "#create-code-error")
 		c.Response().Header().Add("HX-Reswap", "innerHTML")
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
 	}
 
 	code, err := h.codesSvc.CreateCode(req)
 	if err != nil {
-		c.Response().Header().Add("HX-Retarget", "#create-error")
+		c.Response().Header().Add("HX-Retarget", "#create-code-error")
 		c.Response().Header().Add("HX-Reswap", "innerHTML")
 		return utils.RenderError(c, components.Error, err)
 	}
@@ -85,36 +84,31 @@ func (h *CodesHandler) GetCodes(c echo.Context) error {
 func (h *CodesHandler) UpdateCode(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.Response().Header().Add("HX-Retarget", "#update-error")
+		c.Response().Header().Add("HX-Retarget", "#update-code-error")
 		c.Response().Header().Add("HX-Reswap", "innerHTML")
 		return utils.RenderError(c, components.Error, err)
 	}
 
 	var req types.CodeReq
 	if err := c.Bind(&req); err != nil {
-		c.Response().Header().Add("HX-Retarget", "#update-error")
+		c.Response().Header().Add("HX-Retarget", "#update-code-error")
 		c.Response().Header().Add("HX-Reswap", "innerHTML")
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
 	}
 	if err := utils.Validate(&req); err != nil {
-		c.Response().Header().Add("HX-Retarget", "#update-error")
+		c.Response().Header().Add("HX-Retarget", "#update-code-error")
 		c.Response().Header().Add("HX-Reswap", "innerHTML")
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
 	}
 
-	if err := h.codesSvc.UpdateCode(id, req); err != nil {
-		c.Response().Header().Add("HX-Retarget", "#update-error")
+	code, err := h.codesSvc.UpdateCode(id, req)
+	if err != nil {
+		c.Response().Header().Add("HX-Retarget", "#update-code-error")
 		c.Response().Header().Add("HX-Reswap", "innerHTML")
 		return utils.RenderError(c, components.Error, err)
 	}
 
-	ID := int32(id)
-	return utils.Render(c, components.Code(model.Codes{
-		ID:      &ID,
-		Name:    req.Name,
-		Value:   int32(req.Value),
-		ExpTime: req.ExpTime.Time,
-	}), http.StatusOK)
+	return utils.Render(c, components.Code(code), http.StatusOK)
 }
 
 func (h *CodesHandler) DeleteCode(c echo.Context) error {

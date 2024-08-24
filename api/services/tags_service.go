@@ -15,6 +15,26 @@ func NewTagsSvc(tagsRepo *repositories.TagsRepo) *TagsSvc {
 	}
 }
 
-func (s *TagsSvc) FindAllTags() ([]model.Tags, error) {
+func (s *TagsSvc) GetTags() ([]model.Tags, error) {
 	return s.tagsRepo.FindAllTags()
+}
+
+func (s *TagsSvc) CreateTag(name string) (model.Tags, error) {
+	return s.tagsRepo.CreateTag(name)
+}
+
+func (s *TagsSvc) UpdateTag(id int, name string) (model.Tags, error) {
+	if err := s.tagsRepo.UpdateTag(id, name); err != nil {
+		return model.Tags{}, err
+	}
+
+	ID := int32(id)
+	return model.Tags{
+		ID:   &ID,
+		Name: name,
+	}, nil
+}
+
+func (s *TagsSvc) DeleteTag(id int) error {
+	return s.tagsRepo.DeleteTag(id)
 }

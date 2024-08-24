@@ -61,8 +61,18 @@ func (s *CodesSvc) GetCodes() ([]model.Codes, error) {
 	return s.codesRepo.FindAllCodes()
 }
 
-func (s *CodesSvc) UpdateCode(id int, req types.CodeReq) error {
-	return s.codesRepo.UpdateCode(id, req)
+func (s *CodesSvc) UpdateCode(id int, req types.CodeReq) (model.Codes, error) {
+	if err := s.codesRepo.UpdateCode(id, req); err != nil {
+		return model.Codes{}, err
+	}
+
+	ID := int32(id)
+	return model.Codes{
+		ID:      &ID,
+		Name:    req.Name,
+		Value:   int32(req.Value),
+		ExpTime: req.ExpTime.Time,
+	}, nil
 }
 
 func (s *CodesSvc) DeleteCode(id int) error {

@@ -46,7 +46,7 @@ func (h *PagesHandler) CreatorArtDetail(c echo.Context) error {
 		return utils.RenderError(c, pages.Error, err)
 	}
 
-	tags, err := h.tagsSvc.FindAllTags()
+	tags, err := h.tagsSvc.GetTags()
 	if err != nil {
 		fmt.Println("err2: ", err.Error())
 		return utils.RenderError(c, pages.Error, err)

@@ -13,6 +13,8 @@ import (
 	. "github.com/go-jet/jet/v2/sqlite"
 )
 
+var ErrUniqueCodeName = httperror.New("Code name should be unique", http.StatusBadRequest)
+
 type CodesRepo struct {
 	db      *sql.DB
 	timeout time.Duration
@@ -118,7 +120,7 @@ func (r *CodesRepo) CreateCode(req types.CodeReq) (model.Codes, error) {
 	var dest model.Codes
 	err := HandleQueryCtx(stmt, ctx, r.db, &dest, "code")
 	if err != nil && err.Error() == "jet: UNIQUE constraint failed: codes.name" {
-		return model.Codes{}, httperror.New("Code name should be unique", http.StatusBadRequest)
+		return model.Codes{}, ErrUniqueCodeName
 	}
 	return dest, err
 }
@@ -131,7 +133,11 @@ func (r *CodesRepo) UpdateCode(id int, req types.CodeReq) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	return HandleExecCtx(stmt, ctx, r.db, "codes")
+	err := HandleExecCtx(stmt, ctx, r.db, "codes")
+	if err != nil && err.Error() == "UNIQUE constraint failed: codes.name" {
+		return ErrUniqueCodeName
+	}
+	return err
 }
 
 func (r *CodesRepo) DeleteCode(id int) error {

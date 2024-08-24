@@ -153,6 +153,33 @@ func (r *Router) TagsRouter() {
 
 	r.s.app.GET("/api/tags/filter", handler.TagsFilter)
 	r.s.app.GET("/api/tags/options", handler.TagsOptions)
+
+	setUserData := middlewares.SetUserData
+
+	r.s.app.POST(
+		"/api/tags",
+		handler.CreateTag,
+		r.mid.OnlyAuthorized(setUserData()),
+		r.mid.OnlyAdmin,
+	)
+	r.s.app.GET(
+		"/api/tags",
+		handler.GetTags,
+		r.mid.OnlyAuthorized(setUserData()),
+		r.mid.OnlyAdmin,
+	)
+	r.s.app.PUT(
+		"/api/tags/:id",
+		handler.UpdateTag,
+		r.mid.OnlyAuthorized(setUserData()),
+		r.mid.OnlyAdmin,
+	)
+	r.s.app.DELETE(
+		"/api/tags/:id",
+		handler.DeleteTag,
+		r.mid.OnlyAuthorized(setUserData()),
+		r.mid.OnlyAdmin,
+	)
 }
 
 func (r *Router) CodesRouter() {

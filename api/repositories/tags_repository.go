@@ -3,12 +3,16 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"net/http"
 	"time"
 
 	"github.com/DeepAung/deep-art/.gen/model"
 	. "github.com/DeepAung/deep-art/.gen/table"
+	"github.com/DeepAung/deep-art/pkg/httperror"
 	. "github.com/go-jet/jet/v2/sqlite"
 )
+
+var ErrUniqueTagName = httperror.New("Tag name should be unique", http.StatusBadRequest)
 
 type TagsRepo struct {
 	db      *sql.DB
@@ -44,13 +48,18 @@ func (r *TagsRepo) FindOneTagById(id int) (model.Tags, error) {
 	return dest, err
 }
 
-func (r *TagsRepo) CreateTag(name string) error {
-	stmt := Tags.INSERT(Tags.Name).VALUES(name)
+func (r *TagsRepo) CreateTag(name string) (model.Tags, error) {
+	stmt := Tags.INSERT(Tags.Name).VALUES(name).RETURNING(Tags.AllColumns)
 
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	return HandleExecCtx(stmt, ctx, r.db, "tags")
+	var dest model.Tags
+	err := HandleQueryCtx(stmt, ctx, r.db, &dest, "tag")
+	if err != nil && err.Error() == "jet: UNIQUE constraint failed: tags.name" {
+		return model.Tags{}, ErrUniqueTagName
+	}
+	return dest, err
 }
 
 func (r *TagsRepo) UpdateTag(id int, name string) error {
@@ -59,7 +68,11 @@ func (r *TagsRepo) UpdateTag(id int, name string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	return HandleExecCtx(stmt, ctx, r.db, "tags")
+	err := HandleExecCtx(stmt, ctx, r.db, "tags")
+	if err != nil && err.Error() == "UNIQUE constraint failed: tags.name" {
+		return ErrUniqueTagName
+	}
+	return err
 }
 
 func (r *TagsRepo) DeleteTag(id int) error {
