@@ -23,9 +23,10 @@ CREATE TABLE "tokens" (
 CREATE TABLE "oauths" (
   "user_id" INT NOT NULL,
   "provider" VARCHAR NOT NULL,
+  "provider_user_id" VARCHAR NOT NULL,
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY ("user_id", "provider"),
+  PRIMARY KEY ("provider", "provider_user_id"),
   FOREIGN KEY ("user_id") REFERENCES "users" ("id")
 );
 

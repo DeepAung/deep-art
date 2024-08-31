@@ -17,21 +17,12 @@ func (h *UsersHandler) OAuthHandler(c echo.Context) error {
 	addProviderParamInQuery(c)
 
 	if gothUser, err := gothic.CompleteUserAuth(c.Response(), c.Request()); err == nil {
-		return h.oauthCallbackSignin(c, gothUser)
+		return h.oauthCallbackSignin(c, gothUser, "")
 	}
 
-	c.SetCookie(&http.Cookie{
-		Name:  "redirect_to",
-		Value: c.QueryParam("redirect_to"),
-		Path:  "/", Secure: true, HttpOnly: true, SameSite: http.SameSiteLaxMode,
-	})
-	c.SetCookie(&http.Cookie{
-		Name:  "callback_func",
-		Value: c.QueryParam("callback_func"),
-		Path:  "/", Secure: true, HttpOnly: true, SameSite: http.SameSiteLaxMode,
-	})
+	utils.SetCookie(c, "redirect_to", c.QueryParam("redirect_to"), 0)
+	utils.SetCookie(c, "callback_func", c.QueryParam("callback_func"), 0)
 
-	// TODO: test redirect_to cookie
 	gothic.BeginAuthHandler(c.Response(), c.Request())
 	return nil
 }
@@ -48,12 +39,18 @@ func (h *UsersHandler) OAuthCallback(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	redirectTo, err := utils.GetCookie(c, "redirect_to", "")
+	if err != nil {
+		return err
+	}
+	utils.DeleteCookie(c, "redirect_to")
+	utils.DeleteCookie(c, "callback_func")
 
 	switch callbackFunc {
 	case "signin":
-		return h.oauthCallbackSignin(c, gothUser)
+		return h.oauthCallbackSignin(c, gothUser, redirectTo)
 	case "signup":
-		return h.oauthCallbackSignup(c, gothUser)
+		return h.oauthCallbackSignup(c, gothUser, redirectTo)
 	case "connect":
 		return h.oauthCallbackConnect(c, gothUser)
 	case "disconnect":
@@ -66,22 +63,45 @@ func (h *UsersHandler) OAuthCallback(c echo.Context) error {
 // TODO:
 // find user with gothUser.Email check if user is connect OAuth to this provider
 // redirect back
-func (h *UsersHandler) oauthCallbackSignin(c echo.Context, gothUser goth.User) error {
-	redirectTo, err := utils.GetCookie(c, "redirect_to", "/home")
-	if err != nil {
-		return err
+func (h *UsersHandler) oauthCallbackSignin(
+	c echo.Context,
+	gothUser goth.User,
+	redirectTo string,
+) error {
+	if redirectTo == "" {
+		redirectTo = "/home"
 	}
-	_, _ = redirectTo, gothUser
-	return nil
+
+	passport, err := h.usersSvc.OAuthSignin(gothUser, redirectTo)
+	if err != nil {
+		msg, status := httperror.Extract(err)
+		if status >= 500 {
+			slog.Error(err.Error())
+		}
+		return utils.Render(c, components.ErrorWithBackBtn(msg, "/signin"), status)
+	}
+
+	utils.SetTokensCookies(
+		c,
+		passport.Token.Id,
+		passport.Token.AccessToken,
+		passport.Token.RefreshToken,
+		h.cfg.Jwt,
+	)
+
+	return c.Redirect(http.StatusFound, redirectTo)
 }
 
 // TODO:
 // create new user with this gothUser info
 // if there is already the same email (show error / connect&signin)
-func (h *UsersHandler) oauthCallbackSignup(c echo.Context, gothUser goth.User) error {
-	redirectTo, err := utils.GetCookie(c, "redirect_to", "/signin")
-	if err != nil {
-		return err
+func (h *UsersHandler) oauthCallbackSignup(
+	c echo.Context,
+	gothUser goth.User,
+	redirectTo string,
+) error {
+	if redirectTo == "" {
+		redirectTo = "/signin"
 	}
 
 	if _, err := h.usersSvc.OAuthSignup(gothUser, redirectTo); err != nil {
@@ -92,7 +112,7 @@ func (h *UsersHandler) oauthCallbackSignup(c echo.Context, gothUser goth.User) e
 		return utils.Render(c, components.ErrorWithBackBtn(msg, "/signup"), status)
 	}
 
-	return c.Redirect(http.StatusPermanentRedirect, redirectTo)
+	return c.Redirect(http.StatusFound, redirectTo)
 }
 
 // TODO:

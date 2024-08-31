@@ -47,10 +47,26 @@ func (s *UsersSvc) SignIn(email string, password string) (types.Passport, error)
 		return types.Passport{}, err
 	}
 
+	// User only sign-in with OAuth
+	if user.Password == "" {
+		return types.Passport{}, ErrInvalidEmailOrPassword
+	}
+
 	if !utils.Compare(password, user.Password) {
 		return types.Passport{}, ErrInvalidEmailOrPassword
 	}
 
+	return s.generatePassport(types.User{
+		Id:        user.Id,
+		Username:  user.Username,
+		Email:     user.Email,
+		AvatarUrl: user.AvatarUrl,
+		IsAdmin:   user.IsAdmin,
+		Coin:      user.Coin,
+	})
+}
+
+func (s *UsersSvc) generatePassport(user types.User) (types.Passport, error) {
 	payload := mytoken.Payload{
 		UserId:   user.Id,
 		Username: user.Username,
@@ -82,14 +98,7 @@ func (s *UsersSvc) SignIn(email string, password string) (types.Passport, error)
 	}
 
 	passport := types.Passport{
-		User: types.User{
-			Id:        user.Id,
-			Username:  user.Username,
-			Email:     user.Email,
-			AvatarUrl: user.AvatarUrl,
-			IsAdmin:   user.IsAdmin,
-			Coin:      user.Coin,
-		},
+		User: user,
 		Token: types.Token{
 			Id:           tokenId,
 			AccessToken:  accessToken,

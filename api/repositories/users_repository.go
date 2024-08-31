@@ -65,6 +65,55 @@ func (r *UsersRepo) FindOneUserById(id int) (types.User, error) {
 	}, nil
 }
 
+func (r *UsersRepo) FindOneUserByEmail(email string) (types.User, error) {
+	stmt := SELECT(Users.AllColumns).
+		FROM(Users).
+		WHERE(Users.Email.EQ(String(email))).
+		LIMIT(1)
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	var dest model.Users
+	if err := HandleQueryCtxWithErr(stmt, ctx, r.db, &dest, ErrUserNotFound); err != nil {
+		return types.User{}, err
+	}
+
+	return types.User{
+		Id:        int(*dest.ID),
+		Username:  dest.Username,
+		Email:     dest.Email,
+		AvatarUrl: dest.AvatarURL,
+		IsAdmin:   dest.IsAdmin,
+		Coin:      int(dest.Coin),
+	}, nil
+}
+
+func (r *UsersRepo) FindOneUserWithPasswordByEmail(email string) (types.UserWithPassword, error) {
+	stmt := SELECT(Users.AllColumns).
+		FROM(Users).
+		WHERE(Users.Email.EQ(String(email))).
+		LIMIT(1)
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	var dest model.Users
+	if err := HandleQueryCtxWithErr(stmt, ctx, r.db, &dest, ErrUserNotFound); err != nil {
+		return types.UserWithPassword{}, err
+	}
+
+	return types.UserWithPassword{
+		Id:        int(*dest.ID),
+		Username:  dest.Username,
+		Email:     dest.Email,
+		Password:  dest.Password,
+		AvatarUrl: dest.AvatarURL,
+		IsAdmin:   dest.IsAdmin,
+		Coin:      int(dest.Coin),
+	}, nil
+}
+
 func (r *UsersRepo) FindOneCreatorById(id int) (types.Creator, error) {
 	stmt := SELECT(
 		Users.AllColumns,
@@ -91,31 +140,6 @@ func (r *UsersRepo) FindOneCreatorById(id int) (types.Creator, error) {
 		Email:     dest.Email,
 		AvatarURL: dest.AvatarURL,
 		Followers: dest.Followers,
-	}, nil
-}
-
-func (r *UsersRepo) FindOneUserWithPasswordByEmail(email string) (types.UserWithPassword, error) {
-	stmt := SELECT(Users.AllColumns).
-		FROM(Users).
-		WHERE(Users.Email.EQ(String(email))).
-		LIMIT(1)
-
-	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
-	defer cancel()
-
-	var dest model.Users
-	if err := HandleQueryCtxWithErr(stmt, ctx, r.db, &dest, ErrUserNotFound); err != nil {
-		return types.UserWithPassword{}, err
-	}
-
-	return types.UserWithPassword{
-		Id:        int(*dest.ID),
-		Username:  dest.Username,
-		Email:     dest.Email,
-		Password:  dest.Password,
-		AvatarUrl: dest.AvatarURL,
-		IsAdmin:   dest.IsAdmin,
-		Coin:      int(dest.Coin),
 	}, nil
 }
 

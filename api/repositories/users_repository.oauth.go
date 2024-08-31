@@ -8,11 +8,23 @@ import (
 	. "github.com/go-jet/jet/v2/sqlite"
 )
 
-func (r *UsersRepo) CreateOAuth(userId int, provider string) error {
+func (r *UsersRepo) HasOAuth(providerUserId, provider string) (bool, error) {
+	stmt := SELECT(Int(1)).
+		FROM(Oauths).
+		WHERE(Oauths.ProviderUserID.EQ(String(providerUserId)).AND(Oauths.Provider.EQ(String(provider))))
+
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	return r.CreateOAuthWithDB(ctx, r.db, userId, provider)
+	var tmp struct{ int }
+	return HandleHasCtx(stmt, ctx, r.db, &tmp)
+}
+
+func (r *UsersRepo) CreateOAuth(userId int, provider, providerUserId string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	return r.CreateOAuthWithDB(ctx, r.db, userId, provider, providerUserId)
 }
 
 func (r *UsersRepo) DeleteOAuth(userId int, provider string) error {
@@ -27,24 +39,13 @@ func (r *UsersRepo) CreateOAuthWithDB(
 	db qrm.DB,
 	userId int,
 	provider string,
+	providerUserId string,
 ) error {
 	stmt := Oauths.
-		INSERT(Oauths.UserID, Oauths.Provider).
-		VALUES(userId, provider)
+		INSERT(Oauths.UserID, Oauths.Provider, Oauths.ProviderUserID).
+		VALUES(userId, provider, providerUserId)
 
-	err := HandleExecCtx(stmt, ctx, db, "oauths")
-	if err == nil {
-		return nil
-	}
-
-	switch err.Error() {
-	case "jet: UNIQUE constraint failed: users.email":
-		return ErrUniqueEmail
-	case "jet: UNIQUE constraint failed: users.username":
-		return ErrUniqueUsername
-	default:
-		return err
-	}
+	return HandleExecCtx(stmt, ctx, db, "oauths")
 }
 
 // TODO: err handling not found

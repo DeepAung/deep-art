@@ -37,7 +37,7 @@ func SetCookie(c echo.Context, name, value string, maxAge time.Duration) {
 		MaxAge:   int(maxAge.Seconds()),
 		Secure:   true,
 		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 	})
 }
 
@@ -50,7 +50,7 @@ func DeleteCookie(c echo.Context, name string) {
 		MaxAge:   -1,
 		Secure:   true,
 		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 	})
 }
 
