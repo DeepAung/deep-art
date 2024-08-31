@@ -1,0 +1,6 @@
+package components
+
+templ ErrorWithBackBtn(msg, back_url string) {
+	@Error(msg)
+	<a href={ templ.SafeURL(back_url) }>Back</a>
+}

@@ -21,13 +21,11 @@ CREATE TABLE "tokens" (
 );
 
 CREATE TABLE "oauths" (
-  "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "user_id" INT NOT NULL,
-  "social" VARCHAR NOT NULL,
-  "social_id" VARCHAR NOT NULL,
+  "provider" VARCHAR NOT NULL,
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE ("social", "social_id"),
+  PRIMARY KEY ("user_id", "provider"),
   FOREIGN KEY ("user_id") REFERENCES "users" ("id")
 );
 

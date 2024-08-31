@@ -97,10 +97,10 @@ func (s *ArtsSvc) UpdateArtInfo(req types.UpdateArtInfoReq) error {
 
 func (s *ArtsSvc) DeleteArt(artId int) error {
 	ctx, cancel, tx, err := s.artsRepo.BeginTx()
+	defer cancel()
 	if err != nil {
 		return err
 	}
-	defer cancel()
 
 	// delete art
 	if err := s.artsRepo.DeleteArtWithDB(ctx, tx, artId); err != nil {

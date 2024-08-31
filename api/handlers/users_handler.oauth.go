@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
 
+	"github.com/DeepAung/deep-art/pkg/httperror"
 	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/DeepAung/deep-art/views/components"
 	"github.com/labstack/echo/v4"
@@ -82,12 +84,15 @@ func (h *UsersHandler) oauthCallbackSignup(c echo.Context, gothUser goth.User) e
 		return err
 	}
 
-	if _, err := h.usersSvc.OAuthSignup(gothUser); err != nil {
-		return utils.RenderError(c, components.Error, err)
+	if _, err := h.usersSvc.OAuthSignup(gothUser, redirectTo); err != nil {
+		msg, status := httperror.Extract(err)
+		if status >= 500 {
+			slog.Error(err.Error())
+		}
+		return utils.Render(c, components.ErrorWithBackBtn(msg, "/signup"), status)
 	}
 
-	c.Response().Header().Add("HX-Redirect", redirectTo)
-	return nil
+	return c.Redirect(http.StatusPermanentRedirect, redirectTo)
 }
 
 // TODO:

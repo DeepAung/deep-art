@@ -54,37 +54,9 @@ type Token struct {
 
 // Not used yet........
 
-type RefreshTokensReq struct {
-	RefreshToken string `form:"refresh_token" validate:"required"`
-}
-
-type TokenInfo struct {
-	Id     int `form:"id"`
-	UserId int `form:"user_id"`
-}
-
-type AdminTokenRes struct {
-	AdminToken string `form:"admin_token"`
-}
-
-type OAuthReq struct {
-	UserId int        `form:"user_id"`
-	Social SocialEnum `form:"social"`
-}
-
-type OAuthCreateReq struct {
-	UserId   int        `form:"user_id"`
-	Social   SocialEnum `form:"social"`
-	SocialId string     `form:"social_id"`
-}
-
-type OAuthDisconnectReq struct {
-	Social SocialEnum `form:"social"`
-}
-
-type SocialEnum string
+type ProviderEnum string
 
 const (
-	Google SocialEnum = "google"
-	Github SocialEnum = "github"
+	Google ProviderEnum = "google"
+	Github ProviderEnum = "github"
 )

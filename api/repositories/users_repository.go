@@ -3,17 +3,22 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"net/http"
 	"time"
 
 	"github.com/DeepAung/deep-art/.gen/model"
 	. "github.com/DeepAung/deep-art/.gen/table"
 	"github.com/DeepAung/deep-art/api/types"
+	"github.com/DeepAung/deep-art/pkg/httperror"
+	"github.com/go-jet/jet/v2/qrm"
 	. "github.com/go-jet/jet/v2/sqlite"
 )
 
 var (
-	ErrUserNotFound  = ErrNotFound("user")
-	ErrTokenNotFound = ErrNotFound("token")
+	ErrUserNotFound   = ErrNotFound("user")
+	ErrTokenNotFound  = ErrNotFound("token")
+	ErrUniqueEmail    = httperror.New("this email is already use.", http.StatusBadRequest)
+	ErrUniqueUsername = httperror.New("this username is already use.", http.StatusBadRequest)
 )
 
 type UsersRepo struct {
@@ -26,6 +31,14 @@ func NewUsersRepo(db *sql.DB, timeout time.Duration) *UsersRepo {
 		db:      db,
 		timeout: timeout,
 	}
+}
+
+func (r *UsersRepo) BeginTx() (context.Context, context.CancelFunc, *sql.Tx, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+
+	tx, err := r.db.BeginTx(ctx, nil)
+
+	return ctx, cancel, tx, err
 }
 
 func (r *UsersRepo) FindOneUserById(id int) (types.User, error) {
@@ -107,26 +120,42 @@ func (r *UsersRepo) FindOneUserWithPasswordByEmail(email string) (types.UserWith
 }
 
 func (r *UsersRepo) CreateUser(req types.SignUpReq) (types.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	return r.CreateUserWithDB(ctx, r.db, req)
+}
+
+func (r *UsersRepo) CreateUserWithDB(
+	ctx context.Context,
+	db qrm.DB,
+	req types.SignUpReq,
+) (types.User, error) {
 	stmt := Users.INSERT(Users.Username, Users.Email, Users.Password, Users.AvatarURL).
 		VALUES(req.Username, req.Email, req.Password, req.AvatarUrl).
 		RETURNING(Users.AllColumns)
 
-	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
-	defer cancel()
-
 	var dest model.Users
-	if err := HandleQueryCtx(stmt, ctx, r.db, &dest, "user"); err != nil {
-		return types.User{}, err
+	err := HandleQueryCtx(stmt, ctx, db, &dest, "user")
+	if err == nil {
+		return types.User{
+			Id:        int(*dest.ID),
+			Username:  dest.Username,
+			Email:     dest.Email,
+			AvatarUrl: dest.AvatarURL,
+			IsAdmin:   dest.IsAdmin,
+			Coin:      int(dest.Coin),
+		}, nil
 	}
 
-	return types.User{
-		Id:        int(*dest.ID),
-		Username:  dest.Username,
-		Email:     dest.Email,
-		AvatarUrl: dest.AvatarURL,
-		IsAdmin:   dest.IsAdmin,
-		Coin:      int(dest.Coin),
-	}, nil
+	switch err.Error() {
+	case "jet: UNIQUE constraint failed: users.email":
+		return types.User{}, ErrUniqueEmail
+	case "jet: UNIQUE constraint failed: users.username":
+		return types.User{}, ErrUniqueUsername
+	default:
+		return types.User{}, err
+	}
 }
 
 func (r *UsersRepo) UpdateUser(id int, req types.UpdateUserReq) error {
