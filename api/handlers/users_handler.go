@@ -11,6 +11,7 @@ import (
 	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/DeepAung/deep-art/views/components"
 	"github.com/labstack/echo/v4"
+	"github.com/markbates/goth/gothic"
 )
 
 type UsersHandler struct {
@@ -94,8 +95,20 @@ func (h *UsersHandler) SignOut(c echo.Context) error {
 		return utils.RenderError(c, components.Error, err)
 	}
 
-	err = h.usersSvc.SignOut(payload.UserId, tokenId)
-	if err != nil {
+	// try to logout OAuth
+	if provider, err := utils.GetCookie(c, "provider", ""); err == nil && provider != "" {
+		// add provider cookie in query
+		req := c.Request()
+		q := req.URL.Query()
+		q.Add("provider", provider)
+		req.URL.RawQuery = q.Encode()
+		c.SetRequest(req)
+
+		utils.DeleteCookie(c, "provider")
+		gothic.Logout(c.Response(), c.Request())
+	}
+
+	if err = h.usersSvc.SignOut(payload.UserId, tokenId); err != nil {
 		return utils.RenderError(c, components.Error, err)
 	}
 
@@ -174,41 +187,9 @@ func (h *UsersHandler) UpdateTokens(c echo.Context) error {
 		return utils.RenderError(c, components.Error, err)
 	}
 
-	// oldAccessCookie, _ := c.Cookie("accessToken")
-	// oldRefreshCookie, _ := c.Cookie("refreshToken")
-	// fmt.Printf("old cookies %s | %s\n", oldAccessCookie.Value, oldRefreshCookie.Value)
-
 	utils.SetTokensCookies(c, token.Id, token.AccessToken, token.RefreshToken, h.cfg.Jwt)
-	// fmt.Printf("set new cookies to %+v\n", token)
-
-	// // test SetTokensCookies function
-	// accessCookie, _ := c.Cookie("accessToken")
-	// refreshCookie, _ := c.Cookie("refreshToken")
-	// if accessCookie.Value != token.AccessToken {
-	// 	return utils.RenderError(
-	// 		c,
-	// 		components.Error,
-	// 		errors.New(fmt.Sprintf(
-	// 			"accessCookie not equal: cookie=%s | expect=%s",
-	// 			accessCookie.Value,
-	// 			token.AccessToken,
-	// 		)),
-	// 	)
-	// }
-	// if refreshCookie.Value != token.RefreshToken {
-	// 	return utils.RenderError(
-	// 		c,
-	// 		components.Error,
-	// 		errors.New(fmt.Sprintf(
-	// 			"refreshCookie not equal: cookie=%s | expect=%s",
-	// 			refreshCookie.Value,
-	// 			token.RefreshToken,
-	// 		)),
-	// 	)
-	// }
 
 	c.Response().Header().Set("HX-Trigger-After-Settle", "ready")
-	// c.Response().Header().Set("HX-Trigger", "ready")
 
 	return nil
 }

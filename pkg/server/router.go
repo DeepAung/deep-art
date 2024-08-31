@@ -90,7 +90,6 @@ func (r *Router) UsersRouter() {
 	// OAuth
 	r.s.app.GET("/api/auth/:provider", handler.OAuthHandler)
 	r.s.app.GET("/api/auth/:provider/callback", handler.OAuthCallback)
-	r.s.app.GET("/api/auth/:provider/signout", handler.OAuthSignout)
 
 	// Users CRUD
 	r.s.app.PUT("/api/users", handler.UpdateUser, r.mid.OnlyAuthorized(setPayload()))

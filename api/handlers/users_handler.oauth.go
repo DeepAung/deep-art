@@ -88,6 +88,7 @@ func (h *UsersHandler) oauthCallbackSignin(
 		passport.Token.RefreshToken,
 		h.cfg.Jwt,
 	)
+	utils.SetCookie(c, "provider", gothUser.Provider, 0)
 
 	return c.Redirect(http.StatusFound, redirectTo)
 }
@@ -128,13 +129,6 @@ func (h *UsersHandler) oauthCallbackDisconnect(
 	c echo.Context,
 	gothUser goth.User,
 ) error {
-	return nil
-}
-
-// TODO: maybe merge this function with Signout()
-func (h *UsersHandler) OAuthSignout(c echo.Context) error {
-	addProviderParamInQuery(c)
-	gothic.Logout(c.Response(), c.Request())
 	return nil
 }
 
