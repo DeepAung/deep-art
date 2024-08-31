@@ -60,9 +60,6 @@ func (h *UsersHandler) OAuthCallback(c echo.Context) error {
 	}
 }
 
-// TODO:
-// find user with gothUser.Email check if user is connect OAuth to this provider
-// redirect back
 func (h *UsersHandler) oauthCallbackSignin(
 	c echo.Context,
 	gothUser goth.User,
@@ -93,9 +90,6 @@ func (h *UsersHandler) oauthCallbackSignin(
 	return c.Redirect(http.StatusFound, redirectTo)
 }
 
-// TODO:
-// create new user with this gothUser info
-// if there is already the same email (show error / connect&signin)
 func (h *UsersHandler) oauthCallbackSignup(
 	c echo.Context,
 	gothUser goth.User,
@@ -117,18 +111,14 @@ func (h *UsersHandler) oauthCallbackSignup(
 }
 
 // TODO:
-func (h *UsersHandler) oauthCallbackConnect(
-	c echo.Context,
-	gothUser goth.User,
-) error {
+func (h *UsersHandler) oauthCallbackConnect(c echo.Context, gothUser goth.User) error {
+	_, _ = c, gothUser
 	return nil
 }
 
 // TODO:
-func (h *UsersHandler) oauthCallbackDisconnect(
-	c echo.Context,
-	gothUser goth.User,
-) error {
+func (h *UsersHandler) oauthCallbackDisconnect(c echo.Context, gothUser goth.User) error {
+	_, _ = c, gothUser
 	return nil
 }
 
