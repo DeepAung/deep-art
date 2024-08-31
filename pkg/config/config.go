@@ -44,6 +44,7 @@ func (c *Config) Print() {
 	fmt.Println("- GoogleSecret: ", c.OAuth.GoogleSecret)
 	fmt.Println("- GithubKey: ", c.OAuth.GithubKey)
 	fmt.Println("- GithubSecret: ", c.OAuth.GithubSecret)
+	fmt.Println("- SessionSecret: ", c.OAuth.SessionSecret)
 
 	fmt.Println("===========================================")
 }
@@ -85,10 +86,11 @@ type JwtConfig struct {
 }
 
 type OAuthConfig struct {
-	GoogleKey    string
-	GoogleSecret string
-	GithubKey    string
-	GithubSecret string
+	GoogleKey     string
+	GoogleSecret  string
+	GithubKey     string
+	GithubSecret  string
+	SessionSecret string
 }
 
 func loadEnvPath() string {
@@ -135,10 +137,11 @@ func NewConfig() *Config {
 			RefreshExpires: getAsDuration("JWT_REFRESH_EXPIRES"),
 		},
 		OAuth: &OAuthConfig{
-			GoogleKey:    os.Getenv("OAUTH_GOOGLE_KEY"),
-			GoogleSecret: os.Getenv("OAUTH_GOOGLE_SECRET"),
-			GithubKey:    os.Getenv("OAUTH_GITHUB_KEY"),
-			GithubSecret: os.Getenv("OAUTH_GITHUB_SECRET"),
+			GoogleKey:     os.Getenv("OAUTH_GOOGLE_KEY"),
+			GoogleSecret:  os.Getenv("OAUTH_GOOGLE_SECRET"),
+			GithubKey:     os.Getenv("OAUTH_GITHUB_KEY"),
+			GithubSecret:  os.Getenv("OAUTH_GITHUB_SECRET"),
+			SessionSecret: os.Getenv("SESSION_SECRET"),
 		},
 	}
 }

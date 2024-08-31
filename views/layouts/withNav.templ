@@ -44,7 +44,7 @@ templ WithNav(navType navType, user types.User) {
 							<a href="/me" class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700">
 								My Profile
 							</a>
-							<span hx-post="/api/signout" class="cursor-pointer flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700">
+							<span hx-post="/api/auth/signout" class="cursor-pointer flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700">
 								Sign out
 							</span>
 						</div>
@@ -53,7 +53,7 @@ templ WithNav(navType navType, user types.User) {
 			</nav>
 		</header>
 		<main class="flex-auto">
-			<span hx-post="/api/tokens/update" hx-trigger="load, every 55m" hx-swap="none"></span>
+			<span hx-post="/api/auth/update-tokens" hx-trigger="load, every 55m" hx-swap="none"></span>
 			{ children... }
 		</main>
 	}

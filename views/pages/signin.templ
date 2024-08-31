@@ -21,14 +21,14 @@ templ SignIn() {
 							<div class="flex flex-col gap-2">
 								<a
 									class="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:hover:bg-neutral-800"
-									href="#"
+									href="/api/auth/google?callback_func=signin"
 								>
 									<img class="w-4 h-auto" width="46" height="46" src="/static/google-logo.svg" alt="google-logo"/>
 									Sign in with Google
 								</a>
 								<a
 									class="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:hover:bg-neutral-800"
-									href="#"
+									href="/api/auth/github?callback_func=signin"
 								>
 									<img class="w-4 h-auto" width="46" height="46" src="/static/github-logo.svg" alt="github-logo"/>
 									Sign in with Github
@@ -47,7 +47,7 @@ templ SignIn() {
 								return params.get("redirect_to") || ""
 							}
 							</script>
-							<form hx-post="/api/signin" hx-vals="js:{redirect_to: redirectParam()}" hx-target-error="#error-text">
+							<form hx-post="/api/auth/signin" hx-vals="js:{redirect_to: redirectParam()}" hx-target-error="#error-text">
 								<div class="grid gap-y-4">
 									<!-- Form Group -->
 									<div>

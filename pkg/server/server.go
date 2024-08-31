@@ -11,8 +11,13 @@ import (
 	"github.com/DeepAung/deep-art/pkg/storer"
 	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/DeepAung/deep-art/views/pages"
+	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/markbates/goth"
+	"github.com/markbates/goth/gothic"
+	"github.com/markbates/goth/providers/github"
+	"github.com/markbates/goth/providers/google"
 )
 
 type Server struct {
@@ -34,8 +39,23 @@ func NewServer(
 }
 
 func (s *Server) Start() {
+	// Init OAuth
+	gothic.Store = sessions.NewCookieStore([]byte(s.cfg.OAuth.SessionSecret))
+	goth.UseProviders(
+		google.New(
+			s.cfg.OAuth.GoogleKey,
+			s.cfg.OAuth.GoogleSecret,
+			"http://localhost:3000/api/auth/google/callback",
+		),
+		github.New(
+			s.cfg.OAuth.GithubKey,
+			s.cfg.OAuth.GithubSecret,
+			"http://localhost:3000/api/auth/github/callback",
+		),
+	)
+
 	var myStorer storer.Storer
-	if s.cfg.App.StorerType == "local" {
+	if s.cfg.App.StorerType == config.LocalType {
 		myStorer = storer.NewLocalStorer(s.cfg)
 	} else {
 		myStorer = storer.NewGCPStorer(s.cfg)

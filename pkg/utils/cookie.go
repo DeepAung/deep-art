@@ -9,6 +9,20 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+func GetCookie(c echo.Context, name, defaultValue string) (string, error) {
+	cookie, err := c.Cookie(name)
+	if err != nil {
+		return "", err
+	}
+
+	val := cookie.Value
+	if val == "" {
+		val = defaultValue
+	}
+
+	return val, nil
+}
+
 func SetCookie(c echo.Context, name, value string, maxAge time.Duration) {
 	var expires time.Time
 	if maxAge != 0 {

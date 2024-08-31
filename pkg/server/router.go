@@ -77,18 +77,30 @@ func (r *Router) UsersRouter() {
 
 	setPayload := middlewares.SetPayload
 
-	r.s.app.POST("/api/signin", handler.SignIn)
-	r.s.app.POST("/api/signup", handler.SignUp)
-	r.s.app.POST("/api/signout", handler.SignOut, r.mid.OnlyAuthorized(setPayload()))
+	// Auth
+	r.s.app.POST("/api/auth/signin", handler.SignIn)
+	r.s.app.POST("/api/auth/signup", handler.SignUp)
+	r.s.app.POST("/api/auth/signout", handler.SignOut, r.mid.OnlyAuthorized(setPayload()))
+	r.s.app.POST(
+		"/api/auth/update-tokens",
+		handler.UpdateTokens,
+		r.mid.JwtRefreshToken(setPayload()),
+	)
 
+	// OAuth
+	r.s.app.GET("/api/auth/:provider", handler.OAuthHandler)
+	r.s.app.GET("/api/auth/:provider/callback", handler.OAuthCallback)
+	r.s.app.GET("/api/auth/:provider/signout", handler.OAuthSignout)
+
+	// Users CRUD
 	r.s.app.PUT("/api/users", handler.UpdateUser, r.mid.OnlyAuthorized(setPayload()))
 
+	// Etc.
 	r.s.app.POST(
 		"/api/creators/:id/toggle-follow",
 		handler.ToggleFollow,
 		r.mid.OnlyAuthorized(setPayload()),
 	)
-	r.s.app.POST("/api/tokens/update", handler.UpdateTokens, r.mid.JwtRefreshToken(setPayload()))
 }
 
 func (r *Router) ArtsRouter() {
