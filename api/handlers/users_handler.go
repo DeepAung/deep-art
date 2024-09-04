@@ -148,6 +148,20 @@ func (h *UsersHandler) UpdateUser(c echo.Context) error {
 	return nil
 }
 
+func (h *UsersHandler) DeleteMyUser(c echo.Context) error {
+	payload, ok := c.Get("payload").(mytoken.Payload)
+	if !ok {
+		return utils.RenderError(c, components.Error, ErrPayloadNotFound)
+	}
+
+	if err := h.usersSvc.DeleteUser(payload.UserId); err != nil {
+		return utils.RenderError(c, components.Error, err)
+	}
+
+	c.Response().Header().Add("HX-Redirect", "/signin")
+	return nil
+}
+
 func (h *UsersHandler) ToggleFollow(c echo.Context) error {
 	payload, ok := c.Get("payload").(mytoken.Payload)
 	if !ok {

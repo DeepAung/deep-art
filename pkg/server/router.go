@@ -93,6 +93,7 @@ func (r *Router) UsersRouter() {
 
 	// Users CRUD
 	r.s.app.PUT("/api/users", handler.UpdateUser, r.mid.OnlyAuthorized(setPayload()))
+	r.s.app.DELETE("/api/users/me", handler.DeleteMyUser, r.mid.OnlyAuthorized(setPayload()))
 
 	// Etc.
 	r.s.app.POST(
