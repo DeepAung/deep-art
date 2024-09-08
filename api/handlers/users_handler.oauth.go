@@ -5,7 +5,9 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/DeepAung/deep-art/api/middlewares"
 	"github.com/DeepAung/deep-art/pkg/httperror"
+	"github.com/DeepAung/deep-art/pkg/mytoken"
 	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/DeepAung/deep-art/views/components"
 	"github.com/labstack/echo/v4"
@@ -110,16 +112,59 @@ func (h *UsersHandler) oauthCallbackSignup(
 	return c.Redirect(http.StatusFound, redirectTo)
 }
 
-// TODO:
 func (h *UsersHandler) oauthCallbackConnect(c echo.Context, gothUser goth.User) error {
-	_, _ = c, gothUser
-	return nil
+	res := h.mid.OnlyAuthorized(middlewares.SetPayload())(func(c echo.Context) error {
+		return nil
+	})
+	if err := res(c); err != nil {
+		return err
+	}
+
+	payload, ok := c.Get("payload").(mytoken.Payload)
+	if !ok {
+		return utils.RenderError(
+			c,
+			components.Error,
+			ErrPayloadNotFound,
+		)
+	}
+
+	if err := h.usersSvc.OAuthConnect(payload.UserId, gothUser); err != nil {
+		msg, status := httperror.Extract(err)
+		if status >= 500 {
+			slog.Error(err.Error())
+		}
+		return utils.Render(c, components.ErrorWithBackBtn(msg, "/me"), status)
+	}
+	return c.Redirect(http.StatusFound, "/me")
 }
 
 // TODO:
 func (h *UsersHandler) oauthCallbackDisconnect(c echo.Context, gothUser goth.User) error {
-	_, _ = c, gothUser
-	return nil
+	res := h.mid.OnlyAuthorized(middlewares.SetPayload())(func(c echo.Context) error {
+		return nil
+	})
+	if err := res(c); err != nil {
+		return err
+	}
+
+	payload, ok := c.Get("payload").(mytoken.Payload)
+	if !ok {
+		return utils.RenderError(
+			c,
+			components.Error,
+			ErrPayloadNotFound,
+		)
+	}
+
+	if err := h.usersSvc.OAuthDisconnect(payload.UserId, gothUser); err != nil {
+		msg, status := httperror.Extract(err)
+		if status >= 500 {
+			slog.Error(err.Error())
+		}
+		return utils.Render(c, components.ErrorWithBackBtn(msg, "/me"), status)
+	}
+	return c.Redirect(http.StatusFound, "/me")
 }
 
 func addProviderParamInQuery(c echo.Context) {

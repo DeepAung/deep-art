@@ -253,6 +253,3 @@ func (s *UsersSvc) Follow(followerId, followeeId int) error {
 func (s *UsersSvc) UnFollow(followerId, followeeId int) error {
 	return s.usersRepo.DeleteFollow(followerId, followeeId)
 }
-
-func (s *UsersSvc) ConnectOAuth()    {}
-func (s *UsersSvc) DisconnectOAuth() {}

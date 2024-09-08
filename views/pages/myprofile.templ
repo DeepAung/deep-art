@@ -4,33 +4,63 @@ import "github.com/DeepAung/deep-art/api/types"
 import "github.com/DeepAung/deep-art/views/layouts"
 import "github.com/DeepAung/deep-art/views/components"
 
-templ MyProfile(me types.User) {
+templ MyProfile(me types.User, oauth types.OAuthInfo) {
 	@layouts.WithNav(layouts.Buyer, me) {
 		<script src="/static/js/arts.js"></script>
-		<div class="container px-4 mx-auto ">
+		<div class="space-y-8">
 			<!-- my profile section -->
-			<section class="flex gap-6 items-center justify-center">
-				@components.Avatar(me.AvatarUrl, "My Profile", 120)
-				<form hx-put="/api/users" hx-encoding="multipart/form-data" class="flex-auto max-w-sm">
-					<label for="file-input" class="block text-sm font-medium mb-2 dark:text-white">Avatar</label>
-					<input
-						x-data
-						x-init="$el.value = null"
-						type="file"
-						name="avatar"
-						id="file-input"
-						class="mb-2 block w-full border border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 file:bg-gray-50 file:border-0 file:me-4 file:py-3 file:px-4 dark:file:bg-neutral-700 dark:file:text-neutral-400"
-					/>
-					<label for="input-label" class="block text-sm font-medium mb-2 dark:text-white">Username</label>
-					<input type="text" name="username" value={ me.Username } class="mb-2 py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"/>
-					<label class="block text-sm font-medium mb-2 dark:text-white">Email</label>
-					<p class="mb-2 py-3 px-4 block w-full rounded-lg text-sm focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">{ me.Email }</p>
-					<input type="submit" value="Update" class="cursor-pointer mb-2 py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none"/>
-					<button hx-confirm="Are you sure you want to delete this account?" hx-delete="/api/users/me" class="cursor-pointer mb-2 py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">Delete Account</button>
-				</form>
+			<section class="max-w-2xl mx-auto">
+				<h2 class="text-2xl font-semibold text-center mb-2">Profile Info</h2>
+				<div class="flex gap-6 items-center justify-center">
+					@components.Avatar(me.AvatarUrl, "My Profile", 120)
+					<form hx-put="/api/users" hx-encoding="multipart/form-data" hx-target-error="#update-user-error" class="flex-auto max-w-sm">
+						<label for="file-input" class="block text-sm font-medium mb-2 dark:text-white">Avatar</label>
+						<input
+							x-data
+							x-init="$el.value = null"
+							type="file"
+							name="avatar"
+							id="file-input"
+							class="mb-2 block w-full border border-gray-200 shadow-sm rounded-lg text-sm focus:z-10 focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 file:bg-gray-50 file:border-0 file:me-4 file:py-3 file:px-4 dark:file:bg-neutral-700 dark:file:text-neutral-400"
+						/>
+						<label for="input-label" class="block text-sm font-medium mb-2 dark:text-white">Username</label>
+						<input type="text" name="username" value={ me.Username } class="mb-2 py-3 px-4 block w-full border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"/>
+						<label class="block text-sm font-medium mb-2 dark:text-white">Email</label>
+						<p class="mb-2 py-3 px-4 block w-full rounded-lg text-sm focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600">{ me.Email }</p>
+						<p id="update-user-error"></p>
+						<input type="submit" value="Update" class="cursor-pointer mb-2 py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none"/>
+						<button hx-confirm="Are you sure you want to delete this account?" hx-delete="/api/users/me" class="cursor-pointer mb-2 py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">Delete Account</button>
+					</form>
+				</div>
+			</section>
+			<section class="max-w-xl mx-auto">
+				<h2 class="text-2xl font-semibold text-center mb-2">OAuth Connects</h2>
+				<div class="flex gap-2 mb-4">
+					<span class="flex-auto w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:hover:bg-neutral-800">
+						<img class="w-4 h-auto" width="46" height="46" src="/static/google-logo.svg" alt="google-logo"/>
+						Google
+					</span>
+					if oauth.ConnectGoogle {
+						<a href="/api/auth/google?callback_func=disconnect" class="w-36 py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">Disconnect</a>
+					} else {
+						<a href="/api/auth/google?callback_func=connect" class="w-36 py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:hover:bg-neutral-800">Connect</a>
+					}
+				</div>
+				<div class="flex gap-2 mb-4">
+					<span class="flex-auto w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:hover:bg-neutral-800">
+						<img class="w-4 h-auto" width="46" height="46" src="/static/github-logo.svg" alt="github-logo"/>
+						Github
+					</span>
+					if oauth.ConnectGithub {
+						<a href="/api/auth/github?callback_func=disconnect" class="w-36 py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:pointer-events-none">Disconnect</a>
+					} else {
+						<a href="/api/auth/github?callback_func=connect" class="w-36 py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-800 dark:text-white dark:hover:bg-neutral-800">Connect</a>
+					}
+				</div>
 			</section>
 			<!-- arts section -->
-			<section class="mt-4">
+			<section class="px-4 mx-auto">
+				<h2 class="text-2xl font-semibold text-center mb-2">Arts</h2>
 				<nav class="border-b border-gray-200 dark:border-neutral-700">
 					<div x-data x-init="$store.manyArtsURL = '/api/arts-with-art-type?artType=starred'" class="-mb-0.5 flex justify-center space-x-6" aria-label="Tabs" role="tablist">
 						<button @click="$store.manyArtsURL = '/api/arts-with-art-type?artType=starred'" type="button" class="hs-tab-active:font-semibold hs-tab-active:border-blue-600 hs-tab-active:text-blue-600 py-4 px-1 inline-flex items-center gap-x-2 border-b-2 border-transparent text-sm whitespace-nowrap text-gray-500 hover:text-blue-600 focus:outline-none focus:text-blue-600 disabled:opacity-50 disabled:pointer-events-none dark:text-neutral-400 dark:hover:text-blue-500 active" id="horizontal-alignment-item-1" data-hs-tab="#horizontal-alignment-1" aria-controls="horizontal-alignment-1" role="tab">

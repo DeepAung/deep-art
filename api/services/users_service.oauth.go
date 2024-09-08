@@ -15,6 +15,25 @@ var ErrOAuthSignin = httperror.New(
 	http.StatusBadRequest,
 )
 
+func (s *UsersSvc) GetOAuthInfo(userId int) (types.OAuthInfo, error) {
+	oauths, err := s.usersRepo.FindAllOAuthProvider(userId)
+	if err != nil {
+		return types.OAuthInfo{}, err
+	}
+
+	var oauthInfo types.OAuthInfo
+	for _, oauth := range oauths {
+		switch oauth.Provider {
+		case "google":
+			oauthInfo.ConnectGoogle = true
+		case "github":
+			oauthInfo.ConnectGithub = true
+		}
+	}
+
+	return oauthInfo, nil
+}
+
 func (s *UsersSvc) OAuthSignup(gothUser goth.User, redirectTo string) (types.User, error) {
 	req := types.SignUpReq{
 		Username:        gothUser.Name,
@@ -61,4 +80,12 @@ func (s *UsersSvc) OAuthSignin(gothUser goth.User, redirectTo string) (types.Pas
 	}
 
 	return s.generatePassport(user)
+}
+
+func (s *UsersSvc) OAuthConnect(userId int, gothUser goth.User) error {
+	return s.usersRepo.CreateOAuth(userId, gothUser.Provider, gothUser.UserID)
+}
+
+func (s *UsersSvc) OAuthDisconnect(userId int, gothUser goth.User) error {
+	return s.usersRepo.DeleteOAuth(userId, gothUser.Provider)
 }

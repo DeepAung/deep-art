@@ -94,5 +94,10 @@ func (h *PagesHandler) MyProfile(c echo.Context) error {
 		return utils.RenderError(c, pages.Error, ErrUserDataNotFound)
 	}
 
-	return utils.Render(c, pages.MyProfile(me), http.StatusOK)
+	oauthInfo, err := h.usersSvc.GetOAuthInfo(me.Id)
+	if err != nil {
+		return utils.RenderError(c, pages.Error, err)
+	}
+
+	return utils.Render(c, pages.MyProfile(me, oauthInfo), http.StatusOK)
 }

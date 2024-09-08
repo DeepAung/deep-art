@@ -17,7 +17,7 @@ CREATE TABLE "tokens" (
   "refresh_token" VARCHAR NOT NULL,
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY ("user_id") REFERENCES "users" ("id")
+  FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE
 );
 
 CREATE TABLE "oauths" (
@@ -27,7 +27,8 @@ CREATE TABLE "oauths" (
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY ("provider", "provider_user_id"),
-  FOREIGN KEY ("user_id") REFERENCES "users" ("id")
+  UNIQUE ("user_id", "provider"),
+  FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE
 );
 
 -- follower is follwing followee
@@ -38,8 +39,8 @@ CREATE TABLE "follow" (
   "user_id_followee" INT NOT NULL,
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY ("user_id_follower", "user_id_followee"),
-  FOREIGN KEY ("user_id_follower") REFERENCES "users" ("id"),
-  FOREIGN KEY ("user_id_followee") REFERENCES "users" ("id")
+  FOREIGN KEY ("user_id_follower") REFERENCES "users" ("id") ON DELETE CASCADE,
+  FOREIGN KEY ("user_id_followee") REFERENCES "users" ("id") ON DELETE CASCADE
 );
 
 CREATE TABLE "arts" (
@@ -52,14 +53,14 @@ CREATE TABLE "arts" (
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE ("name", "creator_id"),
-  FOREIGN KEY ("creator_id") REFERENCES "users" ("id")
+  FOREIGN KEY ("creator_id") REFERENCES "users" ("id") ON DELETE CASCADE
 );
 
 CREATE TABLE "downloaded_arts" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "art_id" INT NOT NULL,
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY ("art_id") REFERENCES "arts" ("id")
+  FOREIGN KEY ("art_id") REFERENCES "arts" ("id") ON DELETE CASCADE
 );
 
 CREATE TABLE "users_starred_arts" (
@@ -67,16 +68,16 @@ CREATE TABLE "users_starred_arts" (
   "art_id" INT NOT NULL,
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY ("user_id", "art_id"),
-  FOREIGN KEY ("user_id") REFERENCES "users" ("id"),
-  FOREIGN KEY ("art_id") REFERENCES "arts" ("id")
+  FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE,
+  FOREIGN KEY ("art_id") REFERENCES "arts" ("id") ON DELETE CASCADE
 );
 
 CREATE TABLE "users_bought_arts" (
   "user_id" INT NOT NULL,
   "art_id" INT NOT NULL,
   PRIMARY KEY ("user_id", "art_id"),
-  FOREIGN KEY ("user_id") REFERENCES "users" ("id"),
-  FOREIGN KEY ("art_id") REFERENCES "arts" ("id")
+  FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE,
+  FOREIGN KEY ("art_id") REFERENCES "arts" ("id") ON DELETE CASCADE
 );
 
 CREATE TABLE "tags" (
@@ -88,8 +89,8 @@ CREATE TABLE "arts_tags" (
   "art_id" INT NOT NULL,
   "tag_id" INT NOT NULL,
   PRIMARY KEY ("art_id", "tag_id"),
-  FOREIGN KEY ("art_id") REFERENCES "arts" ("id"),
-  FOREIGN KEY ("tag_id") REFERENCES "tags" ("id")
+  FOREIGN KEY ("art_id") REFERENCES "arts" ("id") ON DELETE CASCADE,
+  FOREIGN KEY ("tag_id") REFERENCES "tags" ("id") ON DELETE CASCADE
 );
 
 CREATE TABLE "files" (
@@ -100,7 +101,7 @@ CREATE TABLE "files" (
   "url" VARCHAR NOT NULL,
   "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY ("art_id") REFERENCES "arts" ("id")
+  FOREIGN KEY ("art_id") REFERENCES "arts" ("id") ON DELETE CASCADE
 );
 
 CREATE TABLE "codes" (
@@ -114,8 +115,8 @@ CREATE TABLE "users_used_codes" (
   "user_id" INT NOT NULL,
   "code_id" INT NOT NULL,
   PRIMARY KEY ("user_id", "code_id"),
-  FOREIGN KEY ("user_id") REFERENCES "users" ("id"),
-  FOREIGN KEY ("code_id") REFERENCES "codes" ("id")
+  FOREIGN KEY ("user_id") REFERENCES "users" ("id") ON DELETE CASCADE,
+  FOREIGN KEY ("code_id") REFERENCES "codes" ("id") ON DELETE CASCADE
 );
 
 CREATE TRIGGER [update_timestamp_users] AFTER UPDATE ON "users" FOR EACH ROW WHEN NEW."updated_at" < OLD."updated_at"

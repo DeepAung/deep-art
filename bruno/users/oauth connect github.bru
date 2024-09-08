@@ -1,0 +1,15 @@
+meta {
+  name: oauth connect github
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{url}}/api/auth/github?callback_func=connect
+  body: none
+  auth: none
+}
+
+query {
+  callback_func: connect
+}

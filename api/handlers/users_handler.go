@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/DeepAung/deep-art/api/middlewares"
 	"github.com/DeepAung/deep-art/api/services"
 	"github.com/DeepAung/deep-art/api/types"
 	"github.com/DeepAung/deep-art/pkg/config"
@@ -16,12 +17,18 @@ import (
 
 type UsersHandler struct {
 	usersSvc *services.UsersSvc
+	mid      *middlewares.Middleware
 	cfg      *config.Config
 }
 
-func NewUsersHandler(usersSvc *services.UsersSvc, cfg *config.Config) *UsersHandler {
+func NewUsersHandler(
+	usersSvc *services.UsersSvc,
+	mid *middlewares.Middleware,
+	cfg *config.Config,
+) *UsersHandler {
 	return &UsersHandler{
 		usersSvc: usersSvc,
+		mid:      mid,
 		cfg:      cfg,
 	}
 }

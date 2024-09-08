@@ -52,6 +52,15 @@ type Token struct {
 	RefreshToken string `form:"refresh_token"`
 }
 
+type OAuthInfo struct {
+	ConnectGoogle bool
+	ConnectGithub bool
+}
+
+type OAuthProvider struct {
+	Provider string `alias:"Oauths.Provider"`
+}
+
 // Not used yet........
 
 type ProviderEnum string

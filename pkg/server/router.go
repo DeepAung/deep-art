@@ -73,7 +73,7 @@ func (r *Router) PagesRouter() {
 func (r *Router) UsersRouter() {
 	repo := repositories.NewUsersRepo(r.s.db, r.s.cfg.App.Timeout)
 	svc := services.NewUsersSvc(repo, r.storer, r.s.cfg)
-	handler := handlers.NewUsersHandler(svc, r.s.cfg)
+	handler := handlers.NewUsersHandler(svc, r.mid, r.s.cfg)
 
 	setPayload := middlewares.SetPayload
 
