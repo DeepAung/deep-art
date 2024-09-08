@@ -1,3 +1,5 @@
+PRAGMA foreign_keys=off;
+
 CREATE TABLE "users" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
   "username" VARCHAR UNIQUE NOT NULL,
@@ -133,3 +135,5 @@ BEGIN UPDATE "arts" SET "updated_at"=CURRENT_TIMESTAMP WHERE id=OLD.id; END;
 
 CREATE TRIGGER [update_timestamp_files] AFTER UPDATE ON "files" FOR EACH ROW WHEN NEW."updated_at" < OLD."updated_at"
 BEGIN UPDATE "files" SET "updated_at"=CURRENT_TIMESTAMP WHERE id=OLD.id; END;
+
+PRAGMA foreign_keys=on;

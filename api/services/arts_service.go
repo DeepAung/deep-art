@@ -102,17 +102,23 @@ func (s *ArtsSvc) DeleteArt(artId int) error {
 		return err
 	}
 
+	// if we delete art all files linked to art will be deleted too
+	// so we get all linked files and art's cover before deleting the art
+	files, err := s.artsRepo.FindManyFilesByArtId(artId)
+	if err != nil {
+		return err
+	}
+	coverURL, err := s.artsRepo.FindOneCoverURL(artId)
+	if err != nil {
+		return err
+	}
+
 	// delete art
 	if err := s.artsRepo.DeleteArtWithDB(ctx, tx, artId); err != nil {
 		return err
 	}
 
 	// delete files
-	files, err := s.artsRepo.FindManyFilesByArtId(artId)
-	if err != nil {
-		return err
-	}
-
 	var filesDest []string
 	for _, file := range files {
 		fileInfo := utils.NewUrlInfoByURL(s.cfg.App.BasePath, file.URL)
@@ -123,10 +129,6 @@ func (s *ArtsSvc) DeleteArt(artId int) error {
 	}
 
 	// delete cover
-	coverURL, err := s.artsRepo.FindOneCoverURL(artId)
-	if err != nil {
-		return err
-	}
 	coverInfo := utils.NewUrlInfoByURL(s.cfg.App.BasePath, coverURL)
 	if err := s.storer.DeleteFiles([]string{coverInfo.Dest()}); err != nil {
 		return err

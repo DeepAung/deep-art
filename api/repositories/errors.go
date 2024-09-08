@@ -23,9 +23,13 @@ var (
 func HandleExecCtx(
 	stmt Statement,
 	ctx context.Context,
-	db qrm.Executable,
+	db qrm.DB,
 	table string,
 ) error {
+	if _, err := RawStatement("PRAGMA foreign_keys=on;").ExecContext(ctx, db); err != nil {
+		return err
+	}
+
 	result, err := stmt.ExecContext(ctx, db)
 	if err != nil {
 		return err
@@ -44,9 +48,13 @@ func HandleExecCtx(
 func HandleExecCtxWithErr(
 	stmt Statement,
 	ctx context.Context,
-	db qrm.Executable,
+	db qrm.DB,
 	noRowsAffectedErr error,
 ) error {
+	if _, err := RawStatement("PRAGMA foreign_keys=on;").ExecContext(ctx, db); err != nil {
+		return err
+	}
+
 	result, err := stmt.ExecContext(ctx, db)
 	if err != nil {
 		return err
@@ -65,10 +73,14 @@ func HandleExecCtxWithErr(
 func HandleQueryCtx(
 	stmt Statement,
 	ctx context.Context,
-	db qrm.Queryable,
+	db qrm.DB,
 	dest interface{},
 	name string,
 ) error {
+	if _, err := RawStatement("PRAGMA foreign_keys=on;").ExecContext(ctx, db); err != nil {
+		return err
+	}
+
 	if err := stmt.QueryContext(ctx, db, dest); err != nil {
 		if errors.Is(err, qrm.ErrNoRows) {
 			return ErrNotFound(name)
@@ -82,10 +94,14 @@ func HandleQueryCtx(
 func HandleQueryCtxWithErr(
 	stmt Statement,
 	ctx context.Context,
-	db qrm.Queryable,
+	db qrm.DB,
 	dest interface{},
 	notFoundErr error,
 ) error {
+	if _, err := RawStatement("PRAGMA foreign_keys=on;").ExecContext(ctx, db); err != nil {
+		return err
+	}
+
 	if err := stmt.QueryContext(ctx, db, dest); err != nil {
 		if errors.Is(err, qrm.ErrNoRows) {
 			return notFoundErr
@@ -99,9 +115,13 @@ func HandleQueryCtxWithErr(
 func HandleHasCtx(
 	stmt Statement,
 	ctx context.Context,
-	db qrm.Queryable,
+	db qrm.DB,
 	dest interface{},
 ) (bool, error) {
+	if _, err := RawStatement("PRAGMA foreign_keys=on;").ExecContext(ctx, db); err != nil {
+		return false, err
+	}
+
 	if err := stmt.QueryContext(ctx, db, dest); err != nil {
 		if errors.Is(err, qrm.ErrNoRows) {
 			return false, nil

@@ -68,7 +68,7 @@ func (r *UsersRepo) CreateOAuthWithDB(
 		VALUES(userId, provider, providerUserId)
 
 	err := HandleExecCtx(stmt, ctx, db, "oauths")
-	if err.Error() == "UNIQUE constraint failed: oauths.provider, oauths.provider_user_id" {
+	if err != nil && err.Error() == "UNIQUE constraint failed: oauths.provider, oauths.provider_user_id" {
 		return ErrAlreadyConnect
 	}
 	return err
@@ -85,7 +85,7 @@ func (r *UsersRepo) DeleteOAuthWithDB(
 		WHERE(Oauths.UserID.EQ(Int(int64(userId))).AND(Oauths.Provider.EQ(String(provider))))
 
 	err := HandleExecCtx(stmt, ctx, db, "oauths")
-	if err.Error() == "500: table oauths no rows affected" {
+	if err != nil && err.Error() == "500: table oauths no rows affected" {
 		return ErrNotConnectYet
 	}
 	return err
