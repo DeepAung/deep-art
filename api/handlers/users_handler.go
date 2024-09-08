@@ -8,12 +8,15 @@ import (
 	"github.com/DeepAung/deep-art/api/services"
 	"github.com/DeepAung/deep-art/api/types"
 	"github.com/DeepAung/deep-art/pkg/config"
+	"github.com/DeepAung/deep-art/pkg/httperror"
 	"github.com/DeepAung/deep-art/pkg/mytoken"
 	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/DeepAung/deep-art/views/components"
 	"github.com/labstack/echo/v4"
 	"github.com/markbates/goth/gothic"
 )
+
+var PasswordNotTheSame = httperror.New("Password is not the same", http.StatusBadRequest)
 
 type UsersHandler struct {
 	usersSvc *services.UsersSvc
@@ -69,6 +72,9 @@ func (h *UsersHandler) SignUp(c echo.Context) error {
 	}
 	if err := utils.Validate(&req); err != nil {
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
+	}
+	if req.Password != req.ConfirmPassword {
+		return utils.RenderError(c, components.Error, PasswordNotTheSame)
 	}
 	if req.RedirectTo == "" {
 		req.RedirectTo = "/signin"
@@ -212,5 +218,39 @@ func (h *UsersHandler) UpdateTokens(c echo.Context) error {
 
 	c.Response().Header().Set("HX-Trigger-After-Settle", "ready")
 
+	return nil
+}
+
+func (h *UsersHandler) SetPasswordAndDisconnect(c echo.Context) error {
+	payload, ok := c.Get("payload").(mytoken.Payload)
+	if !ok {
+		return utils.RenderError(
+			c,
+			components.Error,
+			ErrPayloadNotFound,
+		)
+	}
+
+	var req types.SetPasswordReq
+	if err := c.Bind(&req); err != nil {
+		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
+	}
+	if err := utils.Validate(&req); err != nil {
+		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
+	}
+	if req.Password != req.ConfirmPassword {
+		return utils.RenderError(c, components.Error, PasswordNotTheSame)
+	}
+
+	provider := c.QueryParam("provider")
+	if provider == "" {
+		return utils.Render(c, components.Error("invalid provider"), http.StatusBadRequest)
+	}
+
+	if err := h.usersSvc.SetPassword(payload.UserId, req.Password); err != nil {
+		return utils.RenderError(c, components.Error, err)
+	}
+
+	c.Response().Header().Add("HX-Redirect", "/api/auth/"+provider+"?callback_func=disconnect")
 	return nil
 }

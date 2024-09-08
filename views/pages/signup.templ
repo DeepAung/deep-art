@@ -44,7 +44,7 @@ templ SignUp() {
 							<script>
 							function redirectParam(){
 								let params = new URLSearchParams(window.location.search)
-								return params.get("redirect_to")
+								return params.get("redirect_to") || ""
 							}
 							</script>
 							<form hx-post="/api/auth/signup" hx-vals="js:{redirect_to: redirectParam()}" hx-target-error="#error-text">

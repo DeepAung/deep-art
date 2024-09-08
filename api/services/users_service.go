@@ -177,6 +177,10 @@ func (s *UsersSvc) HasRefreshToken(userId int, refreshToken string) (bool, error
 	return s.usersRepo.HasRefreshToken(userId, refreshToken)
 }
 
+func (s *UsersSvc) HasPassword(userId int) (bool, error) {
+	return s.usersRepo.HasPassword(userId)
+}
+
 func (s *UsersSvc) GetUser(id int) (types.User, error) {
 	return s.usersRepo.FindOneUserById(id)
 }
@@ -215,6 +219,15 @@ func (s *UsersSvc) UpdateUser(id int, avatar *multipart.FileHeader, req types.Up
 	}
 
 	return nil
+}
+
+func (s *UsersSvc) SetPassword(userId int, password string) error {
+	hashedPassword, err := utils.Hash(password)
+	if err != nil {
+		return err
+	}
+
+	return s.usersRepo.UpdateUserPassword(userId, hashedPassword)
 }
 
 func (s *UsersSvc) DeleteUser(id int) error {

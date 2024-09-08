@@ -9,6 +9,8 @@ import (
 	"github.com/DeepAung/deep-art/api/services"
 	"github.com/DeepAung/deep-art/pkg/httperror"
 	"github.com/DeepAung/deep-art/pkg/storer"
+	"github.com/DeepAung/deep-art/pkg/utils"
+	"github.com/DeepAung/deep-art/views/pages"
 	"github.com/labstack/echo/v4"
 )
 
@@ -85,6 +87,11 @@ func (r *Router) UsersRouter() {
 		"/api/auth/update-tokens",
 		handler.UpdateTokens,
 		r.mid.JwtRefreshToken(setPayload()),
+	)
+	r.s.app.POST(
+		"/api/auth/set-password-and-disconnect",
+		handler.SetPasswordAndDisconnect,
+		r.mid.OnlyAuthorized(setPayload()),
 	)
 
 	// OAuth
@@ -248,6 +255,7 @@ func (r *Router) TestRouter() {
 	r.testFilesRouter(test)
 	r.testArtsRouter(test)
 	r.testUsersRouter(test)
+	r.testPagesRouter(test)
 }
 
 func (r *Router) testTagsRouter(testGroup *echo.Group) {
@@ -304,4 +312,11 @@ func (r *Router) testUsersRouter(testGroup *echo.Group) {
 
 	usersGroup := testGroup.Group("/users")
 	usersGroup.GET("/creators/:id", handler.GetCreator)
+}
+
+func (r *Router) testPagesRouter(testGroup *echo.Group) {
+	pagesGroup := testGroup.Group("/pages")
+	pagesGroup.GET("/set-password-and-disconnect", func(c echo.Context) error {
+		return utils.Render(c, pages.SetPasswordAndDisconnect("github"), http.StatusOK)
+	})
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/DeepAung/deep-art/pkg/mytoken"
 	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/DeepAung/deep-art/views/components"
+	"github.com/DeepAung/deep-art/views/pages"
 	"github.com/labstack/echo/v4"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
@@ -157,6 +158,22 @@ func (h *UsersHandler) oauthCallbackDisconnect(c echo.Context, gothUser goth.Use
 		)
 	}
 
+	oauthInfo, err := h.usersSvc.GetOAuthInfo(payload.UserId)
+	if err != nil {
+		msg, status := httperror.Extract(err)
+		if status >= 500 {
+			slog.Error(err.Error())
+		}
+		return utils.Render(c, components.ErrorWithBackBtn(msg, "/me"), status)
+	}
+	hasPassword, err := h.usersSvc.HasPassword(payload.UserId)
+	if err != nil {
+		return err
+	}
+	if !hasPassword && (oauthInfo.ConnectGoogle != oauthInfo.ConnectGithub) {
+		return utils.Render(c, pages.SetPasswordAndDisconnect(gothUser.Provider), http.StatusOK)
+	}
+
 	if err := h.usersSvc.OAuthDisconnect(payload.UserId, gothUser); err != nil {
 		msg, status := httperror.Extract(err)
 		if status >= 500 {
@@ -164,6 +181,7 @@ func (h *UsersHandler) oauthCallbackDisconnect(c echo.Context, gothUser goth.Use
 		}
 		return utils.Render(c, components.ErrorWithBackBtn(msg, "/me"), status)
 	}
+
 	return c.Redirect(http.StatusFound, "/me")
 }
 

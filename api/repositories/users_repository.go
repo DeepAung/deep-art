@@ -193,6 +193,17 @@ func (r *UsersRepo) UpdateUser(id int, req types.UpdateUserReq) error {
 	return HandleExecCtx(stmt, ctx, r.db, "users")
 }
 
+func (r *UsersRepo) UpdateUserPassword(id int, password string) error {
+	stmt := Users.UPDATE(Users.Password).
+		SET(password).
+		WHERE(Users.ID.EQ(Int(int64(id))))
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	return HandleExecCtx(stmt, ctx, r.db, "users")
+}
+
 func (r *UsersRepo) DeleteUser(id int) error {
 	stmt := Users.DELETE().
 		WHERE(Users.ID.EQ(Int(int64(id))))
@@ -267,6 +278,20 @@ func (r *UsersRepo) HasRefreshToken(userId int, refreshToken string) (bool, erro
 
 	var tmp struct{ int }
 	return HandleHasCtx(stmt, ctx, r.db, &tmp)
+}
+
+func (r *UsersRepo) HasPassword(userId int) (bool, error) {
+	stmt := SELECT(Users.Password).FROM(Users).WHERE(Users.ID.EQ(Int(int64(userId))))
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	var user model.Users
+	if err := HandleQueryCtx(stmt, ctx, r.db, &user, "user"); err != nil {
+		return false, err
+	}
+
+	return user.Password != "", nil
 }
 
 func (r *UsersRepo) FindOneTokenId(userId int, refreshToken string) (int, error) {
