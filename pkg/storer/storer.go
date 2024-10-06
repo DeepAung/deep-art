@@ -1,15 +1,14 @@
 package storer
 
-import "mime/multipart"
+import (
+	"io"
+)
 
 type Storer interface {
-	UploadFiles(files []*multipart.FileHeader, dir string) ([]FileRes, error)
-	DeleteFiles(destinations []string) error
-}
-
-type FileReq struct {
-	file *multipart.FileHeader
-	dir  string
+	UploadFile(file io.Reader, dest string) (FileRes, error)
+	DeleteFile(dest string) error
+	UploadFiles(files []io.Reader, dests []string) ([]FileRes, error)
+	DeleteFiles(dests []string) error
 }
 
 type FileRes interface {

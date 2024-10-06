@@ -8,7 +8,7 @@ tailwind:
 tailwind.reset:
 	npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css
 templ:
-	templ generate --watch --proxy="http://localhost:3000"
+	templ generate --watch --proxy="http://localhost:3000" --open-browser=false
 tidy:
 	npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --minify
 	templ generate

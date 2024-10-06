@@ -2,8 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -12,19 +15,27 @@ import (
 	"github.com/DeepAung/deep-art/pkg/config"
 	"github.com/DeepAung/deep-art/pkg/httperror"
 	"github.com/DeepAung/deep-art/pkg/mytoken"
+	"github.com/DeepAung/deep-art/pkg/storer"
 	"github.com/DeepAung/deep-art/pkg/utils"
 	"github.com/DeepAung/deep-art/views/components"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
 type ArtsHandler struct {
 	artsSvc *services.ArtsSvc
+	storer  storer.Storer
 	cfg     *config.Config
 }
 
-func NewArtsHandler(artsSvc *services.ArtsSvc, cfg *config.Config) *ArtsHandler {
+func NewArtsHandler(
+	artsSvc *services.ArtsSvc,
+	storer storer.Storer,
+	cfg *config.Config,
+) *ArtsHandler {
 	return &ArtsHandler{
 		artsSvc: artsSvc,
+		storer:  storer,
 		cfg:     cfg,
 	}
 }
@@ -108,52 +119,87 @@ func (h *ArtsHandler) DeleteArt(c echo.Context) error {
 }
 
 func (h *ArtsHandler) DownloadArt(c echo.Context) error {
-	renderWentWrongError := func() error {
-		return utils.Render(
-			c,
-			components.Error("something went wrong. please try again."),
-			http.StatusInternalServerError,
-		)
-	}
-
 	artId, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return utils.RenderError(c, components.Error, err)
 	}
 
-	art, err := h.artsSvc.FindOneArt(artId)
+	url := utils.Join(h.cfg.App.BasePath, fmt.Sprintf("zip-files/%d.zip", artId))
+	res, err := http.Get(url)
 	if err != nil {
-		return utils.RenderError(c, components.Error, err)
+		return err
 	}
+	defer res.Body.Close()
 
-	dests := make([]string, len(art.Files))
-	urls := make([]string, len(art.Files))
-	for i, file := range art.Files {
-		dests[i] = "tmp/" + file.Filename
-		urls[i] = file.URL
-		if h.cfg.App.StorerType == config.LocalType {
-			urls[i] = "http://" + c.Request().Host + urls[i]
+	if res.StatusCode == 404 {
+		id := uuid.New().String()
+		folderPath := "tmp/" + id
+		zipName := fmt.Sprintf("%d.zip", artId)
+		zipDest := utils.Join(folderPath, zipName)
+
+		if err := os.MkdirAll(folderPath, os.ModePerm); err != nil {
+			return err
 		}
+		defer os.RemoveAll(folderPath)
+
+		art, err := h.artsSvc.FindOneArt(artId)
+		if err != nil {
+			return err
+		}
+
+		filespath := make([]string, len(art.Files))
+		urls := make([]string, len(art.Files))
+		for i := range len(art.Files) {
+			filespath[i] = utils.Join(folderPath, art.Files[i].Filename)
+			urls[i] = art.Files[i].URL
+		}
+
+		if err = utils.DownloadFiles(filespath, urls); err != nil {
+			return err
+		}
+
+		// create zip file locally
+		if err = utils.CreateZipFile(filespath, zipDest, zipName); err != nil {
+			return err
+		}
+
+		// sent zip file to user
+		if err := c.Attachment(zipDest, zipName); err != nil {
+			return err
+		}
+
+		// upload zip file to bucket
+		f, err := os.Open(zipDest)
+		if err != nil {
+			return err
+		}
+		if _, err := h.storer.UploadFile(f, "zip-files/"+zipName); err != nil {
+			slog.Error(err.Error())
+			return nil
+		}
+
+		if err := h.artsSvc.AddDownloadedArt(artId); err != nil {
+			slog.Error(err.Error())
+			return nil
+		}
+
+		return nil
 	}
 
-	err, filespath := utils.DownloadFiles(dests, urls)
-	if err != nil {
-		tryDeleteFiles(err, filespath) // Rollback stuff
-		return renderWentWrongError()
+	if res.StatusCode == 200 {
+		c.Response().
+			Header().
+			Add("Content-Disposition", fmt.Sprintf(`attachment; filename="%d.zip"`, artId))
+
+		b, err := io.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+		c.Response().Write(b)
+		return nil
 	}
 
-	var zipDest, zipName string
-	if zipDest, zipName, err = utils.CreateZipFile(dests, art.Name); err != nil {
-		tryDeleteFiles(err, append(filespath, zipDest))
-		return renderWentWrongError()
-	}
-
-	if err := c.Attachment(zipDest, zipName); err != nil {
-		tryDeleteFiles(err, append(filespath, zipDest))
-		return renderWentWrongError()
-	}
-
-	return utils.DeleteFiles(append(filespath, zipDest))
+	return c.NoContent(http.StatusInternalServerError)
 }
 
 func tryDeleteFiles(causeErr error, files []string) {

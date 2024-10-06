@@ -34,10 +34,12 @@ templ ArtDetail(user types.User, art types.Art, isFollowing, isStarred, isBought
 						@components.BuyButton(int(*art.ID), int(art.Price), isBought)
 					}
 					@components.StarButton(int(*art.ID), isStarred)
-					<a href={ templ.SafeURL(fmt.Sprintf("/api/arts/%d/download", int(*art.ID))) } type="button" class="py-3 px-4 inline-flex items-center gap-x-2 font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none" disabled?={ art.Price != 0 && !isBought }>
-						<i class="fa-solid fa-download"></i>
-						Download
-					</a>
+					if art.Price == 0 || isBought {
+						<a href={ templ.SafeURL(fmt.Sprintf("/api/arts/%d/download", int(*art.ID))) } type="button" class="py-3 px-4 inline-flex items-center gap-x-2 font-semibold rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
+							<i class="fa-solid fa-download"></i>
+							Download
+						</a>
+					}
 				</div>
 			</div>
 			<h1 class="text-4xl text-center font-bold text-gray-800">{ art.Name }</h1>

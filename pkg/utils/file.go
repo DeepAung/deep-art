@@ -75,15 +75,15 @@ func NewUrlInfoByURL(basePath string, url string) UrlInfo {
 	return u
 }
 
-func DownloadFiles(filespath, urls []string) (error, []string) {
+func DownloadFiles(filespath, urls []string) error {
 	for i := range len(filespath) {
 		err := DownloadFile(filespath[i], urls[i])
 		if err != nil {
-			return err, filespath[:i]
+			return err
 		}
 	}
 
-	return nil, filespath
+	return nil
 }
 
 func DeleteFiles(filespath []string) error {
@@ -121,35 +121,32 @@ func DownloadFile(filepath, url string) error {
 	return err
 }
 
-func CreateZipFile(filespath []string, zipname string) (zipDest string, zipName string, err error) {
-	zipDest = "tmp/" + zipname + ".zip"
-	zipName = zipname + ".zip"
-
-	var archive *os.File
-	if archive, err = os.Create(zipDest); err != nil {
-		return
+func CreateZipFile(filespath []string, zipDest, zipName string) error {
+	archive, err := os.Create(zipDest)
+	if err != nil {
+		return err
 	}
 	defer archive.Close()
 
 	zipWriter := zip.NewWriter(archive)
+	defer zipWriter.Close()
 	for _, filepath := range filespath {
-		var f *os.File
-		if f, err = os.Open(filepath); err != nil {
-			return
+		f, err := os.Open(filepath)
+		if err != nil {
+			return err
 		}
 		defer f.Close()
 
-		var w io.Writer
-		zipFilename := zipname + "/" + fb.Base(filepath)
-		if w, err = zipWriter.Create(zipFilename); err != nil {
-			return
+		zipFilename := strings.Split(zipName, ".")[0] + "/" + fb.Base(filepath)
+		w, err := zipWriter.Create(zipFilename)
+		if err != nil {
+			return err
 		}
 
 		if _, err = io.Copy(w, f); err != nil {
-			return
+			return err
 		}
 	}
-	zipWriter.Close()
 
-	return zipDest, zipName, nil
+	return nil
 }

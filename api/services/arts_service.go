@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"io"
 	"mime/multipart"
 	"net/http"
 
@@ -57,34 +58,33 @@ func (s *ArtsSvc) CreateArt(creatorId int, dto types.FullArtDTO) error {
 
 	// upload cover
 	coverDir := fmt.Sprint("/arts/cover/", artId)
-	coverRes, err := s.storer.UploadFiles([]*multipart.FileHeader{dto.Cover}, coverDir)
+	coverRes, err := uploadFile(s.storer, dto.Cover, coverDir)
 	if err != nil {
 		return err
 	}
-	coverDest := []string{coverRes[0].Dest()}
+	coverDest := coverRes.Dest()
 
 	// upload files
 	filesDir := fmt.Sprint("/arts/files/", artId)
-	filesRes, err := s.storer.UploadFiles(dto.Files, filesDir)
+	filesRes, err := uploadFiles(s.storer, dto.Files, filesDir)
 	if err != nil {
-		_ = s.storer.DeleteFiles(coverDest) // rollback process
+		_ = s.storer.DeleteFile(coverDest) // rollback process
 		return err
 	}
 	filesDest := utils.Map(filesRes, func(t storer.FileRes) string { return t.Dest() })
 
-	coverURL := coverRes[0].Url()
 	filesURL := utils.Map(filesRes, func(t storer.FileRes) string { return t.Url() })
 	filesname := utils.Map(filesRes, func(t storer.FileRes) string { return t.Filename() })
 
 	// update art
 	updateReq := types.UpdateArtFilesReq{
 		ArtId:     artId,
-		CoverURL:  coverURL,
+		CoverURL:  coverRes.Url(),
 		FilesURL:  filesURL,
 		FilesName: filesname,
 	}
 	if err := s.artsRepo.UpdateArtCoverAndFilesWithDB(ctx, tx, updateReq); err != nil {
-		_ = s.storer.DeleteFiles(append(filesDest, coverDest...)) // rollback process
+		_ = s.storer.DeleteFiles(append(filesDest, coverDest)) // rollback process
 		return err
 	}
 
@@ -130,7 +130,7 @@ func (s *ArtsSvc) DeleteArt(artId int) error {
 
 	// delete cover
 	coverInfo := utils.NewUrlInfoByURL(s.cfg.App.BasePath, coverURL)
-	if err := s.storer.DeleteFiles([]string{coverInfo.Dest()}); err != nil {
+	if err := s.storer.DeleteFile(coverInfo.Dest()); err != nil {
 		return err
 	}
 
@@ -159,7 +159,7 @@ func (s *ArtsSvc) UploadFiles(artId int, files []*multipart.FileHeader) error {
 		return err
 	}
 
-	if _, err := s.storer.UploadFiles(files, filesDir); err != nil {
+	if _, err := uploadFiles(s.storer, files, filesDir); err != nil {
 		return err
 	}
 
@@ -183,7 +183,7 @@ func (s *ArtsSvc) DeleteFile(artId, fileId int) error {
 	}
 
 	fileInfo := utils.NewUrlInfoByURL(s.cfg.App.BasePath, file.URL)
-	if err := s.storer.DeleteFiles([]string{fileInfo.Dest()}); err != nil {
+	if err := s.storer.DeleteFile(fileInfo.Dest()); err != nil {
 		// there is no image but we want to delete it. so just do nothing
 		return tx.Commit()
 	}
@@ -211,10 +211,10 @@ func (s *ArtsSvc) ReplaceCover(artId int, cover *multipart.FileHeader) error {
 		return err
 	}
 
-	if err := s.storer.DeleteFiles([]string{oldCoverInfo.Dest()}); err != nil {
+	if err := s.storer.DeleteFile(oldCoverInfo.Dest()); err != nil {
 		return err
 	}
-	if _, err := s.storer.UploadFiles([]*multipart.FileHeader{cover}, newCoverInfo.Dir()); err != nil {
+	if _, err := uploadFile(s.storer, cover, newCoverInfo.Dir()); err != nil {
 		return err
 	}
 
@@ -248,6 +248,10 @@ func (s *ArtsSvc) FindManyCreatedArts(
 
 func (s *ArtsSvc) FindOneArt(id int) (types.Art, error) {
 	return s.artsRepo.FindOneArt(id)
+}
+
+func (s *ArtsSvc) AddDownloadedArt(artId int) error {
+	return s.artsRepo.InsertDownloadedArt(artId)
 }
 
 func (s *ArtsSvc) BuyArt(userId, artId, price int) error {
@@ -312,4 +316,42 @@ func (s *ArtsSvc) Owned(userId, artId int) (bool, error) {
 	}
 
 	return creatorId == userId, nil
+}
+
+// -------------------------------------------------------------- //
+
+func uploadFile(
+	storer storer.Storer,
+	file *multipart.FileHeader,
+	dir string,
+) (storer.FileRes, error) {
+	f, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	return storer.UploadFile(f, utils.Join(dir, file.Filename))
+}
+
+func uploadFiles(
+	storer storer.Storer,
+	files []*multipart.FileHeader,
+	dir string,
+) ([]storer.FileRes, error) {
+	files2 := make([]io.Reader, len(files))
+	for i := range files {
+		f, err := files[i].Open()
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+	}
+
+	dests := make([]string, len(files))
+	for i := range len(dests) {
+		dests[i] = utils.Join(dir, files[i].Filename)
+	}
+
+	return storer.UploadFiles(files2, dests)
 }

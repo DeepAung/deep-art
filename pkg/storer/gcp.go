@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"mime/multipart"
 
 	"cloud.google.com/go/storage"
 	"github.com/DeepAung/deep-art/pkg/config"
@@ -21,18 +20,34 @@ func NewGCPStorer(cfg *config.Config) Storer {
 	}
 }
 
-func (s *GCPStorer) UploadFiles(files []*multipart.FileHeader, dir string) ([]FileRes, error) {
+func (s *GCPStorer) UploadFile(file io.Reader, dest string) (FileRes, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), s.cfg.App.Timeout)
 	defer cancel()
 
 	client, err := storage.NewClient(ctx)
 	if err != nil {
-		return []FileRes{}, fmt.Errorf("storage.NewClient: %w", err)
+		return nil, fmt.Errorf("storage.NewClient failed: %w", err)
+	}
+	defer client.Close()
+
+	return s.uploadFile(ctx, client, file, dest)
+}
+
+func (s *GCPStorer) UploadFiles(files []io.Reader, dests []string) ([]FileRes, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), s.cfg.App.Timeout)
+	defer cancel()
+
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return []FileRes{}, fmt.Errorf("storage.NewClient failed: %w", err)
 	}
 	defer client.Close()
 
 	length := len(files)
-	jobCh := make(chan *multipart.FileHeader, length)
+	jobCh := make(chan struct {
+		file io.Reader
+		dest string
+	}, length)
 	resCh := make(chan FileRes, length)
 	errCh := make(chan error, length)
 
@@ -40,29 +55,30 @@ func (s *GCPStorer) UploadFiles(files []*multipart.FileHeader, dir string) ([]Fi
 	numWorkers := 5
 	for range numWorkers {
 		go func() {
-			for file := range jobCh {
+			for job := range jobCh {
 				select {
 				case <-ctx.Done():
-					errCh <- fmt.Errorf("upload file cancelled")
+					errCh <- fmt.Errorf("upload file cancelled (timeout)")
 					return
 				default:
+					res, err := s.uploadFile(ctx, client, job.file, job.dest)
+					if err != nil {
+						errCh <- err
+						return
+					}
+					errCh <- nil
+					resCh <- res
 				}
-
-				res, err := s.uploadFile(ctx, cancel, client, file, dir)
-				if err != nil {
-					errCh <- err
-					return
-				}
-
-				errCh <- nil
-				resCh <- res
 			}
 		}()
 	}
 
 	// assign jobs
-	for _, file := range files {
-		jobCh <- file
+	for i, file := range files {
+		jobCh <- struct {
+			file io.Reader
+			dest string
+		}{file: file, dest: dests[i]}
 	}
 	close(jobCh)
 
@@ -80,13 +96,51 @@ func (s *GCPStorer) UploadFiles(files []*multipart.FileHeader, dir string) ([]Fi
 	return results, nil
 }
 
+func (s *GCPStorer) uploadFile(
+	ctx context.Context,
+	client *storage.Client,
+	file io.Reader,
+	dest string,
+) (FileRes, error) {
+	bucket := s.cfg.App.GcpBucket
+	if dest[0] == '/' {
+		dest = dest[1:]
+	}
+
+	o := client.Bucket(bucket).Object(dest)
+
+	wc := o.NewWriter(ctx)
+	if _, err := io.Copy(wc, file); err != nil {
+		return nil, fmt.Errorf("io.Copy failed: %w", err)
+	}
+	if err := wc.Close(); err != nil {
+		return nil, fmt.Errorf("Writer.Close failed: %w", err)
+	}
+
+	fmt.Printf("Blob %v uploaded.\n", dest)
+	return utils.NewUrlInfoByDest(s.cfg.App.BasePath, dest), nil
+}
+
+func (s *GCPStorer) DeleteFile(dest string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), s.cfg.App.Timeout)
+	defer cancel()
+
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return fmt.Errorf("storage.NewClient failed: %w", err)
+	}
+	defer client.Close()
+
+	return s.deleteFile(ctx, client, dest)
+}
+
 func (s *GCPStorer) DeleteFiles(dests []string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), s.cfg.App.Timeout)
 	defer cancel()
 
 	client, err := storage.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("storage.NewClient: %w", err)
+		return fmt.Errorf("storage.NewClient failed: %w", err)
 	}
 	defer client.Close()
 
@@ -101,12 +155,12 @@ func (s *GCPStorer) DeleteFiles(dests []string) error {
 			for dest := range jobCh {
 				select {
 				case <-ctx.Done():
-					errCh <- fmt.Errorf("delete file cancelled")
+					errCh <- fmt.Errorf("delete file cancelled (timeout)")
 					return
 				default:
 				}
 
-				err := s.deleteFile(ctx, cancel, client, dest)
+				err := s.deleteFile(ctx, client, dest)
 				if err != nil {
 					errCh <- err
 					return
@@ -134,57 +188,26 @@ func (s *GCPStorer) DeleteFiles(dests []string) error {
 	return nil
 }
 
-func (s *GCPStorer) uploadFile(
-	ctx context.Context,
-	cancel func(),
-	client *storage.Client,
-	file *multipart.FileHeader,
-	dir string,
-) (FileRes, error) {
-	f, err := file.Open()
-	if err != nil {
-		cancel()
-		return nil, fmt.Errorf("file.Open: %w", err)
-	}
-	defer f.Close()
-
-	bucket := s.cfg.App.GcpBucket
-	dest := utils.Join(dir, file.Filename)
-	o := client.Bucket(bucket).Object(dest)
-
-	wc := o.NewWriter(ctx)
-	if _, err = io.Copy(wc, f); err != nil {
-		cancel()
-		return nil, fmt.Errorf("io.Copy: %w", err)
-	}
-	if err := wc.Close(); err != nil {
-		cancel()
-		return nil, fmt.Errorf("Writer.Close: %w", err)
-	}
-
-	fmt.Printf("Blob %v uploaded.\n", dest)
-	return utils.NewUrlInfoByDest(s.cfg.App.BasePath, dest), nil
-}
-
 func (s *GCPStorer) deleteFile(
 	ctx context.Context,
-	cancel func(),
 	client *storage.Client,
 	dest string,
 ) error {
+	if dest[0] == '/' {
+		dest = dest[1:]
+	}
+
 	bucket := s.cfg.App.GcpBucket
 	o := client.Bucket(bucket).Object(dest)
 
 	attrs, err := o.Attrs(ctx)
 	if err != nil {
-		cancel()
-		return fmt.Errorf("object.Attrs: %w", err)
+		return fmt.Errorf("object.Attrs failed: %w", err)
 	}
 	o = o.If(storage.Conditions{GenerationMatch: attrs.Generation})
 
 	if err := o.Delete(ctx); err != nil {
-		cancel()
-		return fmt.Errorf("Object(%q).Delete: %w", dest, err)
+		return fmt.Errorf("Object(%q).Delete failed: %w", dest, err)
 	}
 
 	fmt.Printf("Blob %v deleted.\n", dest)

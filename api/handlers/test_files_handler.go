@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"io"
 	"net/http"
 
 	"github.com/DeepAung/deep-art/pkg/storer"
@@ -30,7 +31,20 @@ func (h *TestFilesHandler) UploadFiles(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, "no files field")
 	}
 
-	res, err := h.storer.UploadFiles(files, dir)
+	files2 := make([]io.Reader, len(files))
+	dests := make([]string, len(files))
+	for i := range len(files) {
+		f, err := files[i].Open()
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		files2[i] = f
+		dests[i] = utils.Join(dir, files[i].Filename)
+	}
+
+	res, err := h.storer.UploadFiles(files2, dests)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err.Error())
 	}

@@ -113,7 +113,7 @@ func (r *Router) UsersRouter() {
 func (r *Router) ArtsRouter() {
 	repo := repositories.NewArtsRepo(r.storer, r.s.db, r.s.cfg.App.Timeout)
 	svc := services.NewArtsSvc(repo, r.storer, r.s.cfg)
-	handler := handlers.NewArtsHandler(svc, r.s.cfg)
+	handler := handlers.NewArtsHandler(svc, r.storer, r.s.cfg)
 
 	setPayload := middlewares.SetPayload
 

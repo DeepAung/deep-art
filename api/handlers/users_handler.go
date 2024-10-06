@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"mime/multipart"
 	"net/http"
 	"strconv"
 
@@ -148,12 +149,13 @@ func (h *UsersHandler) UpdateUser(c echo.Context) error {
 	if err != nil {
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
 	}
-	files, ok := form.File["avatar"]
-	if !ok {
-		return utils.Render(c, components.Error("no \"avatar\" field"), http.StatusBadRequest)
+
+	var file *multipart.FileHeader = nil
+	if files, ok := form.File["avatar"]; ok {
+		file = files[0]
 	}
 
-	if err = h.usersSvc.UpdateUser(payload.UserId, files[0], req); err != nil {
+	if err = h.usersSvc.UpdateUser(payload.UserId, file, req); err != nil {
 		return utils.RenderError(c, components.Error, err)
 	}
 

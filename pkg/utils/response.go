@@ -27,7 +27,7 @@ func RenderError(c echo.Context, errorComponent func(msg string) templ.Component
 
 func Render(c echo.Context, component templ.Component, status int) error {
 	c.Response().Status = status
-	err := component.Render(c.Request().Context(), c.Response())
+	err := component.Render(c.Request().Context(), c.Response().Writer)
 	if err == nil {
 		return nil
 	}

@@ -557,6 +557,15 @@ func (r *ArtsRepo) BuyArt(userId, artId, price int) error {
 	return tx.Commit()
 }
 
+func (r *ArtsRepo) InsertDownloadedArt(artId int) error {
+	stmt := DownloadedArts.INSERT(DownloadedArts.ArtID).VALUES(Int(int64(artId)))
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	return HandleExecCtx(stmt, ctx, r.db, "downloaded_arts")
+}
+
 func (r *ArtsRepo) HasUsersStarredArts(userId, artId int) (bool, error) {
 	stmt := SELECT(Int(1)).
 		FROM(UsersStarredArts).

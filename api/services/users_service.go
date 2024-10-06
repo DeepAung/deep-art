@@ -195,26 +195,39 @@ func (s *UsersSvc) UpdateUser(id int, avatar *multipart.FileHeader, req types.Up
 		return err
 	}
 
+	if avatar == nil {
+		req.AvatarUrl = user.AvatarUrl
+		if err = s.usersRepo.UpdateUser(id, req); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	// delete old avatar
 	if user.AvatarUrl != "" {
 		dest := utils.NewUrlInfoByURL(s.cfg.App.BasePath, user.AvatarUrl).Dest()
-		if err := s.storer.DeleteFiles([]string{dest}); err != nil {
+		if err := s.storer.DeleteFile(dest); err != nil {
 			return err
 		}
 	}
 
 	// upload new avatar
-	dir := fmt.Sprint("/users/", id)
-	res, err := s.storer.UploadFiles([]*multipart.FileHeader{avatar}, dir)
+	dest := fmt.Sprintf("/users/%d/%s", id, avatar.Filename)
+	f, err := avatar.Open()
+	if err != nil {
+		return err
+	}
+	res, err := s.storer.UploadFile(f, dest)
+	f.Close()
 	if err != nil {
 		return err
 	}
 
 	// update user field (username, avatarUrl)
-	req.AvatarUrl = res[0].Url()
+	req.AvatarUrl = res.Url()
 	if err = s.usersRepo.UpdateUser(id, req); err != nil {
-		dest := fmt.Sprint("/users/", id, "/", res[0].Filename())
-		_ = s.storer.DeleteFiles([]string{dest})
+		dest := fmt.Sprint("/users/", id, "/", res.Filename())
+		_ = s.storer.DeleteFile(dest)
 		return err
 	}
 

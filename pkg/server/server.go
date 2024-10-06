@@ -54,12 +54,7 @@ func (s *Server) Start() {
 		),
 	)
 
-	var myStorer storer.Storer
-	if s.cfg.App.StorerType == config.LocalType {
-		myStorer = storer.NewLocalStorer(s.cfg)
-	} else {
-		myStorer = storer.NewGCPStorer(s.cfg)
-	}
+	myStorer := storer.NewGCPStorer(s.cfg)
 	mid := s.InitMiddleware(myStorer)
 
 	s.app.Static("/static", "static")

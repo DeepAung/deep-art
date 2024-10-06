@@ -19,10 +19,6 @@ import (
 func (h *UsersHandler) OAuthHandler(c echo.Context) error {
 	addProviderParamInQuery(c)
 
-	if gothUser, err := gothic.CompleteUserAuth(c.Response(), c.Request()); err == nil {
-		return h.oauthCallbackSignin(c, gothUser, "")
-	}
-
 	utils.SetCookie(c, "redirect_to", c.QueryParam("redirect_to"), 0)
 	utils.SetCookie(c, "callback_func", c.QueryParam("callback_func"), 0)
 
