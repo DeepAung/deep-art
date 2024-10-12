@@ -44,7 +44,7 @@ func AdminHome(user types.User) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div hx-get=\"/api/codes\" hx-trigger=\"ready from:body\"><h2 class=\"text-2xl text-center font-bold my-3\">Create & Edit Codes</h2><div class=\"flex flex-row gap-3 justify-center\"><div id=\"arts-spinner\" class=\"animate-spin text-center inline-block size-6 border-[3px] border-current border-t-transparent text-blue-600 rounded-full dark:text-blue-500\" role=\"status\" aria-label=\"loading\"></div><span>Loading...</span></div></div><hr class=\"my-8\"><div hx-get=\"/api/tags\" hx-trigger=\"ready from:body\"><h2 class=\"text-2xl text-center font-bold my-3\">Create & Edit Tags</h2><div class=\"flex flex-row gap-3 justify-center\"><div id=\"arts-spinner\" class=\"animate-spin text-center inline-block size-6 border-[3px] border-current border-t-transparent text-blue-600 rounded-full dark:text-blue-500\" role=\"status\" aria-label=\"loading\"></div><span>Loading...</span></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

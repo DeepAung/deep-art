@@ -136,7 +136,6 @@ func (h *UsersHandler) oauthCallbackConnect(c echo.Context, gothUser goth.User) 
 	return c.Redirect(http.StatusFound, "/me")
 }
 
-// TODO:
 func (h *UsersHandler) oauthCallbackDisconnect(c echo.Context, gothUser goth.User) error {
 	res := h.mid.OnlyAuthorized(middlewares.SetPayload())(func(c echo.Context) error {
 		return nil

@@ -45,7 +45,7 @@ func CreatorHome(user types.User) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 1)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString("<div class=\"flex px-3 gap-5 items-center justify-between text-4xl sm:justify-center sm:gap-[200px]\"><h1 class=\"text-center font-bold my-3\">Your Arts</h1><a href=\"/creator/arts/create\"><i class=\"fa-solid fa-circle-plus hover:text-green-600\"></i></a></div><script x-data x-init=\"$store.manyArtsURL = &#39;/api/arts-with-art-type?artType=created&amp;withEdit=true&#39;\" src=\"/static/js/arts.js\"></script> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

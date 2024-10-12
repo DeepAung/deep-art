@@ -13,7 +13,6 @@ import (
 
 type Config struct {
 	App   *AppConfig
-	Db    *DbConfig
 	Jwt   *JwtConfig
 	OAuth *OAuthConfig
 }
@@ -25,13 +24,9 @@ func (c *Config) Print() {
 	fmt.Println("- Address: ", c.App.Address)
 	fmt.Println("- Timeout: ", c.App.Timeout)
 	fmt.Println("- BodyLimit: ", c.App.BodyLimit)
-	fmt.Println("- FileLimit: ", c.App.FileLimit)
 	fmt.Println("- CorsOrigins: ", c.App.CorsOrigins)
 	fmt.Println("- GcpBucket: ", c.App.GcpBucket)
 	fmt.Println("- BasePath: ", c.App.BasePath)
-
-	fmt.Println("Db")
-	fmt.Println("- Url: ", c.Db.Url)
 
 	fmt.Println("Jwt")
 	fmt.Println("- SecretKey: ", c.Jwt.SecretKey)
@@ -52,14 +47,9 @@ type AppConfig struct {
 	Address     string
 	Timeout     time.Duration
 	BodyLimit   string
-	FileLimit   string
 	CorsOrigins []string
 	GcpBucket   string
 	BasePath    string
-}
-
-type DbConfig struct {
-	Url string
 }
 
 type JwtConfig struct {
@@ -97,13 +87,9 @@ func NewConfig() *Config {
 			Address:     os.Getenv("APP_ADDRESS"),
 			Timeout:     getAsDuration("APP_TIMEOUT"),
 			BodyLimit:   os.Getenv("APP_BODY_LIMIT"),
-			FileLimit:   os.Getenv("APP_FILE_LIMIT"),
 			CorsOrigins: strings.Split(os.Getenv("APP_CORS_ORIGINS"), " "),
 			GcpBucket:   os.Getenv("APP_GCP_BUCKET"),
 			BasePath:    os.Getenv("APP_BASE_PATH"),
-		},
-		Db: &DbConfig{
-			Url: os.Getenv("DB_URL"),
 		},
 		Jwt: &JwtConfig{
 			SecretKey:      []byte(os.Getenv("JWT_SECRET_KEY")),

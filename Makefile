@@ -9,10 +9,6 @@ tailwind.reset:
 	npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css
 templ:
 	templ generate --watch --proxy="http://localhost:3000" --open-browser=false
-tidy:
-	npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --minify
-	templ generate
-	go mod tidy
 
 migrate.goto:
 	migrate -database $(DATABASE_URL) -source $(MIGRATION_URL) -verbose goto $(VERSION)
@@ -29,3 +25,17 @@ migrate.reset:
 
 jet:
 	jet -source=sqlite -dsn="./db.db" -schema=dvds -path=./.gen
+
+tidy:
+	make migrate.reset
+	make jet
+	npx tailwindcss -i ./static/css/input.css -o ./static/css/output.css --minify
+	templ generate
+	go mod tidy
+docker.build: tidy
+	docker build --pull -t deep-art:latest .
+docker.run:
+	docker run --env-file .env.prod -p 3000:3000 --name deep-art deep-art:latest
+docker.push:
+	docker tag deep-art:latest $(IMAGE_URL)
+	docker push $(IMAGE_URL)

@@ -45,12 +45,12 @@ func (s *Server) Start() {
 		google.New(
 			s.cfg.OAuth.GoogleKey,
 			s.cfg.OAuth.GoogleSecret,
-			"http://localhost:3000/api/auth/google/callback",
+			s.cfg.App.Address+"/api/auth/google/callback",
 		),
 		github.New(
 			s.cfg.OAuth.GithubKey,
 			s.cfg.OAuth.GithubSecret,
-			"http://localhost:3000/api/auth/github/callback",
+			s.cfg.App.Address+"/api/auth/github/callback",
 		),
 	)
 
