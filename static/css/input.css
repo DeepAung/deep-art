@@ -4,14 +4,26 @@
 @tailwind components;
 @tailwind utilities;
 
-.htmx-indicator {
-  opacity: 0;
+.htmx-indicator-spinner {
+  display: none;
 }
 
-.htmx-request .htmx-indicator {
-  opacity: 1;
+.htmx-request .htmx-indicator-spinner {
+  display: block;
 }
 
-.htmx-request.htmx-indicator {
-  opacity: 1;
+.htmx-request.htmx-indicator-spinner {
+  display: block;
+}
+
+.htmx-indicator-button {
+  display: block;
+}
+
+.htmx-request .htmx-indicator-button {
+  display: none;
+}
+
+.htmx-request.htmx-indicator-button {
+  display: none;
 }

@@ -5,11 +5,16 @@ import "github.com/DeepAung/deep-art/api/types"
 
 templ CreatorCreateArt(user types.User) {
 	@layouts.WithNav(layouts.Creator, user) {
-		<form hx-post="/api/arts" hx-target-error="#create-art-error" hx-encoding="multipart/form-data" class="max-w-xl mx-auto px-4 pt-4 flex flex-col gap-4">
+		<form hx-post="/api/arts" hx-indicator="#create-art-div" hx-target-error="#create-art-error" hx-encoding="multipart/form-data" class="max-w-xl mx-auto px-4 pt-4 flex flex-col gap-4">
 			<div id="create-art-error"></div>
 			<div class="flex items-center justify-between">
 				<span class="font-bold text-2xl">Create Art</span>
-				<input type="submit" value="Create" class="py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:pointer-events-none"/>
+				<div id="create-art-div">
+					<input type="submit" value="Create" class="htmx-indicator-button py-3 px-4 inline-flex items-center gap-x-2 text-sm font-semibold rounded-lg border border-transparent bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:pointer-events-none"/>
+					<div id="arts-spinner" class="htmx-indicator-spinner animate-spin inline-block size-6 border-[3px] border-current border-t-transparent text-blue-600 rounded-full dark:text-blue-500" role="status" aria-label="loading">
+						<span class="sr-only">Loading...</span>
+					</div>
+				</div>
 			</div>
 			<div>
 				<label for="name" class="block text-sm font-medium mb-2 dark:text-white">Name</label>
