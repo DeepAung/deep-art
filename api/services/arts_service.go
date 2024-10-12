@@ -345,6 +345,7 @@ func uploadFiles(
 		if err != nil {
 			return nil, err
 		}
+		files2[i] = f
 		defer f.Close()
 	}
 
