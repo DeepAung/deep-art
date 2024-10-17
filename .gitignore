@@ -38,5 +38,5 @@ vendor
 /static/storage
 setup.lua
 node_modules/
-db.db
+*.db
 .gen/

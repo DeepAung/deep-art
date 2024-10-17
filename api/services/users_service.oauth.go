@@ -34,14 +34,13 @@ func (s *UsersSvc) GetOAuthInfo(userId int) (types.OAuthInfo, error) {
 	return oauthInfo, nil
 }
 
-func (s *UsersSvc) OAuthSignup(gothUser goth.User, redirectTo string) (types.User, error) {
+func (s *UsersSvc) OAuthSignup(gothUser goth.User) (types.User, error) {
 	req := types.SignUpReq{
 		Username:        gothUser.Name,
 		Email:           gothUser.Email,
 		Password:        "",
 		ConfirmPassword: "",
 		AvatarUrl:       gothUser.AvatarURL,
-		RedirectTo:      redirectTo,
 	}
 
 	ctx, cancel, tx, err := s.usersRepo.BeginTx()

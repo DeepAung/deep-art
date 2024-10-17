@@ -98,7 +98,7 @@ func (h *UsersHandler) oauthCallbackSignup(
 		redirectTo = "/signin"
 	}
 
-	if _, err := h.usersSvc.OAuthSignup(gothUser, redirectTo); err != nil {
+	if _, err := h.usersSvc.OAuthSignup(gothUser); err != nil {
 		msg, status := httperror.Extract(err)
 		if status >= 500 {
 			slog.Error(err.Error())

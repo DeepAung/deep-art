@@ -107,10 +107,15 @@ func NewConfig() *Config {
 }
 
 func getAsDuration(key string) time.Duration {
+	var num int = 0
+	var err error
+
 	val := os.Getenv(key)
-	num, err := strconv.Atoi(val)
-	if err != nil {
-		log.Fatalf("config.go: convert string to int error. (\"%s\"=\"%s\")\n", key, val)
+	if val != "" {
+		num, err = strconv.Atoi(val)
+		if err != nil {
+			log.Fatalf("config.go: convert string to int error. (\"%s\"=\"%s\")\n", key, val)
+		}
 	}
 
 	return time.Duration(num) * time.Second

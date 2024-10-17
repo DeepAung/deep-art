@@ -36,14 +36,18 @@ type SetPasswordReq struct {
 	ConfirmPassword string `form:"confirm_password" validate:"required"`
 }
 
+type SignUpDTO struct {
+	SignUpReq
+
+	RedirectTo string `form:"redirect_to"`
+}
+
 type SignUpReq struct {
 	Username        string `form:"username"         validate:"required"`
 	Email           string `form:"email"            validate:"required,email"`
 	Password        string `form:"password"         validate:"required"`
 	ConfirmPassword string `form:"confirm_password" validate:"required"`
 	AvatarUrl       string `form:"avatar_url"`
-
-	RedirectTo string `form:"redirect_to"`
 }
 
 type UpdateUserReq struct {

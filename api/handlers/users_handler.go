@@ -67,26 +67,26 @@ func (h *UsersHandler) SignIn(c echo.Context) error {
 }
 
 func (h *UsersHandler) SignUp(c echo.Context) error {
-	var req types.SignUpReq
-	if err := c.Bind(&req); err != nil {
+	var dto types.SignUpDTO
+	if err := c.Bind(&dto); err != nil {
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
 	}
-	if err := utils.Validate(&req); err != nil {
+	if err := utils.Validate(&dto); err != nil {
 		return utils.Render(c, components.Error(err.Error()), http.StatusBadRequest)
 	}
-	if req.Password != req.ConfirmPassword {
+	if dto.Password != dto.ConfirmPassword {
 		return utils.RenderError(c, components.Error, PasswordNotTheSame)
 	}
-	if req.RedirectTo == "" {
-		req.RedirectTo = "/signin"
+	if dto.RedirectTo == "" {
+		dto.RedirectTo = "/signin"
 	}
 
-	_, err := h.usersSvc.SignUp(req)
+	_, err := h.usersSvc.SignUp(dto.SignUpReq)
 	if err != nil {
 		return utils.RenderError(c, components.Error, err)
 	}
 
-	c.Response().Header().Add("HX-Redirect", req.RedirectTo)
+	c.Response().Header().Add("HX-Redirect", dto.RedirectTo)
 	return nil
 }
 
