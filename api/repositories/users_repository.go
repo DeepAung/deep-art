@@ -15,10 +15,14 @@ import (
 )
 
 var (
-	ErrUserNotFound   = ErrNotFound("user")
-	ErrTokenNotFound  = ErrNotFound("token")
-	ErrUniqueEmail    = httperror.New("this email is already use.", http.StatusBadRequest)
-	ErrUniqueUsername = httperror.New("this username is already use.", http.StatusBadRequest)
+	ErrUserNotFound               = ErrNotFound("user")
+	ErrTokenNotFound              = ErrNotFound("token")
+	ErrUniqueEmail                = httperror.New("this email is already use.", http.StatusBadRequest)
+	ErrUniqueUsername             = httperror.New("this username is already use.", http.StatusBadRequest)
+	ErrEmptyUsername              = httperror.New("cannot set username to empty", http.StatusBadRequest)
+	ErrNotExistFollowerFolloweeId = httperror.New("follower or followee not exist", http.StatusBadRequest)
+	ErrUniqueFollow               = httperror.New("this follow already happen", http.StatusBadRequest)
+	ErrNotExistUserId             = httperror.New("user id not exist", http.StatusBadRequest)
 )
 
 type UsersRepo struct {
@@ -39,6 +43,45 @@ func (r *UsersRepo) BeginTx() (context.Context, context.CancelFunc, *sql.Tx, err
 	tx, err := r.db.BeginTx(ctx, nil)
 
 	return ctx, cancel, tx, err
+}
+
+func (r *UsersRepo) CreateUser(req types.SignUpReq) (types.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	return r.CreateUserWithDB(ctx, r.db, req)
+}
+
+func (r *UsersRepo) CreateUserWithDB(
+	ctx context.Context,
+	db qrm.DB,
+	req types.SignUpReq,
+) (types.User, error) {
+	stmt := Users.INSERT(Users.Username, Users.Email, Users.Password, Users.AvatarURL).
+		VALUES(req.Username, req.Email, req.Password, req.AvatarUrl).
+		RETURNING(Users.AllColumns)
+
+	var dest model.Users
+	err := HandleQueryCtx(stmt, ctx, db, &dest, "user")
+	if err == nil {
+		return types.User{
+			Id:        int(*dest.ID),
+			Username:  dest.Username,
+			Email:     dest.Email,
+			AvatarUrl: dest.AvatarURL,
+			IsAdmin:   dest.IsAdmin,
+			Coin:      int(dest.Coin),
+		}, nil
+	}
+
+	switch err.Error() {
+	case "jet: UNIQUE constraint failed: users.email":
+		return types.User{}, ErrUniqueEmail
+	case "jet: UNIQUE constraint failed: users.username":
+		return types.User{}, ErrUniqueUsername
+	default:
+		return types.User{}, err
+	}
 }
 
 func (r *UsersRepo) FindOneUserById(id int) (types.User, error) {
@@ -143,43 +186,18 @@ func (r *UsersRepo) FindOneCreatorById(id int) (types.Creator, error) {
 	}, nil
 }
 
-func (r *UsersRepo) CreateUser(req types.SignUpReq) (types.User, error) {
+func (r *UsersRepo) HasPassword(userId int) (bool, error) {
+	stmt := SELECT(Users.Password).FROM(Users).WHERE(Users.ID.EQ(Int(int64(userId))))
+
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	return r.CreateUserWithDB(ctx, r.db, req)
-}
-
-func (r *UsersRepo) CreateUserWithDB(
-	ctx context.Context,
-	db qrm.DB,
-	req types.SignUpReq,
-) (types.User, error) {
-	stmt := Users.INSERT(Users.Username, Users.Email, Users.Password, Users.AvatarURL).
-		VALUES(req.Username, req.Email, req.Password, req.AvatarUrl).
-		RETURNING(Users.AllColumns)
-
-	var dest model.Users
-	err := HandleQueryCtx(stmt, ctx, db, &dest, "user")
-	if err == nil {
-		return types.User{
-			Id:        int(*dest.ID),
-			Username:  dest.Username,
-			Email:     dest.Email,
-			AvatarUrl: dest.AvatarURL,
-			IsAdmin:   dest.IsAdmin,
-			Coin:      int(dest.Coin),
-		}, nil
+	var user model.Users
+	if err := HandleQueryCtx(stmt, ctx, r.db, &user, "user"); err != nil {
+		return false, err
 	}
 
-	switch err.Error() {
-	case "jet: UNIQUE constraint failed: users.email":
-		return types.User{}, ErrUniqueEmail
-	case "jet: UNIQUE constraint failed: users.username":
-		return types.User{}, ErrUniqueUsername
-	default:
-		return types.User{}, err
-	}
+	return user.Password != "", nil
 }
 
 func (r *UsersRepo) UpdateUser(id int, req types.UpdateUserReq) error {
@@ -190,7 +208,19 @@ func (r *UsersRepo) UpdateUser(id int, req types.UpdateUserReq) error {
 	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
 	defer cancel()
 
-	return HandleExecCtx(stmt, ctx, r.db, "users")
+	err := HandleExecCtx(stmt, ctx, r.db, "users")
+	if err == nil {
+		return nil
+	}
+
+	switch err.Error() {
+	case "UNIQUE constraint failed: users.username":
+		return ErrUniqueUsername
+	case "CHECK constraint failed: username":
+		return ErrEmptyUsername
+	default:
+		return err
+	}
 }
 
 func (r *UsersRepo) UpdateUserPassword(id int, password string) error {
@@ -214,6 +244,29 @@ func (r *UsersRepo) DeleteUser(id int) error {
 	return HandleExecCtx(stmt, ctx, r.db, "users")
 }
 
+func (r *UsersRepo) CreateFollow(followerId, followeeId int) error {
+	stmt := Follow.
+		INSERT(Follow.UserIDFollower, Follow.UserIDFollowee).
+		VALUES(followerId, followeeId)
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	err := HandleExecCtx(stmt, ctx, r.db, "follow")
+	if err == nil {
+		return nil
+	}
+
+	switch err.Error() {
+	case "FOREIGN KEY constraint failed":
+		return ErrNotExistFollowerFolloweeId
+	case "UNIQUE constraint failed: follow.user_id_follower, follow.user_id_followee":
+		return ErrUniqueFollow
+	default:
+		return err
+	}
+}
+
 func (r *UsersRepo) HasFollow(followerId, followeeId int) (bool, error) {
 	stmt := SELECT(Int(1)).
 		FROM(Follow).
@@ -229,17 +282,6 @@ func (r *UsersRepo) HasFollow(followerId, followeeId int) (bool, error) {
 	return HandleHasCtx(stmt, ctx, r.db, &tmp)
 }
 
-func (r *UsersRepo) CreateFollow(followerId, followeeId int) error {
-	stmt := Follow.
-		INSERT(Follow.UserIDFollower, Follow.UserIDFollowee).
-		VALUES(followerId, followeeId)
-
-	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
-	defer cancel()
-
-	return HandleExecCtx(stmt, ctx, r.db, "follow")
-}
-
 func (r *UsersRepo) DeleteFollow(followerId, followeeId int) error {
 	stmt := Follow.DELETE().WHERE(
 		Follow.UserIDFollower.EQ(Int(int64(followerId))).
@@ -250,6 +292,31 @@ func (r *UsersRepo) DeleteFollow(followerId, followeeId int) error {
 	defer cancel()
 
 	return HandleExecCtx(stmt, ctx, r.db, "follow")
+}
+
+func (r *UsersRepo) CreateToken(userId int, accessToken, refreshToken string) (id int, err error) {
+	stmt := Tokens.INSERT(Tokens.UserID, Tokens.AccessToken, Tokens.RefreshToken).
+		VALUES(userId, accessToken, refreshToken).
+		RETURNING(Tokens.ID)
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+
+	var res model.Tokens
+
+	if err = HandleQueryCtx(stmt, ctx, r.db, &res, "token"); err == nil {
+		id = int(*res.ID)
+		return
+	}
+
+	switch err.Error() {
+	case "jet: FOREIGN KEY constraint failed":
+		err = ErrNotExistUserId
+		return
+	default:
+		return
+	}
+
 }
 
 func (r *UsersRepo) HasAccessToken(userId int, accessToken string) (bool, error) {
@@ -280,20 +347,6 @@ func (r *UsersRepo) HasRefreshToken(userId int, refreshToken string) (bool, erro
 	return HandleHasCtx(stmt, ctx, r.db, &tmp)
 }
 
-func (r *UsersRepo) HasPassword(userId int) (bool, error) {
-	stmt := SELECT(Users.Password).FROM(Users).WHERE(Users.ID.EQ(Int(int64(userId))))
-
-	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
-	defer cancel()
-
-	var user model.Users
-	if err := HandleQueryCtx(stmt, ctx, r.db, &user, "user"); err != nil {
-		return false, err
-	}
-
-	return user.Password != "", nil
-}
-
 func (r *UsersRepo) FindOneTokenId(userId int, refreshToken string) (int, error) {
 	stmt := SELECT(Tokens.ID).
 		FROM(Tokens).
@@ -307,22 +360,6 @@ func (r *UsersRepo) FindOneTokenId(userId int, refreshToken string) (int, error)
 
 	var res model.Tokens
 	if err := HandleQueryCtxWithErr(stmt, ctx, r.db, &res, ErrTokenNotFound); err != nil {
-		return 0, err
-	}
-
-	return int(*res.ID), nil
-}
-
-func (r *UsersRepo) CreateToken(userId int, accessToken, refreshToken string) (id int, err error) {
-	stmt := Tokens.INSERT(Tokens.UserID, Tokens.AccessToken, Tokens.RefreshToken).
-		VALUES(userId, accessToken, refreshToken).
-		RETURNING(Tokens.ID)
-
-	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
-	defer cancel()
-
-	var res model.Tokens
-	if err := HandleQueryCtx(stmt, ctx, r.db, &res, "token"); err != nil {
 		return 0, err
 	}
 

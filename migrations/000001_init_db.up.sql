@@ -2,7 +2,7 @@ PRAGMA foreign_keys=off;
 
 CREATE TABLE "users" (
   "id" INTEGER PRIMARY KEY AUTOINCREMENT,
-  "username" VARCHAR UNIQUE NOT NULL,
+  "username" VARCHAR UNIQUE CHECK("username" != '') NOT NULL,
   "email" VARCHAR UNIQUE NOT NULL,
   "password" VARCHAR NOT NULL,
   "avatar_url" VARCHAR NOT NULL DEFAULT '',

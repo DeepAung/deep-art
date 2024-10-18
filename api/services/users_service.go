@@ -239,6 +239,10 @@ func (s *UsersSvc) SetPassword(userId int, password string) error {
 	if err != nil {
 		return err
 	}
+	// TODO:
+	// if password == "" {
+	// 	return errors.New("cannot set empty password")
+	// }
 
 	return s.usersRepo.UpdateUserPassword(userId, hashedPassword)
 }

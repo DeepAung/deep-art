@@ -12,7 +12,7 @@ import (
 
 var (
 	ErrNoRowsAffected = func(table string) error {
-		return httperror.New("table "+table+" no rows affected", http.StatusInternalServerError)
+		return httperror.New("table "+table+" no rows affected", http.StatusBadRequest)
 	}
 
 	ErrNotFound = func(name string) error {

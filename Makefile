@@ -25,6 +25,8 @@ migrate.reset:
 
 jet:
 	jet -source=sqlite -dsn="./db.db" -schema=dvds -path=./.gen
+jet.test:
+	jet -source=sqlite -dsn="./test.db" -schema=dvds -path=./.gen
 
 tidy:
 	make migrate.reset
