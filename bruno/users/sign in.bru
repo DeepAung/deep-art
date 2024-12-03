@@ -14,3 +14,11 @@ body:form-urlencoded {
   email: i.deepaung@gmail.com
   password: password
 }
+
+script:post-response {
+  const cookies = res.getHeader('set-cookie');
+  
+  if(cookies) {
+    bru.setVar("cookie", cookies.join('; '));
+  }
+}

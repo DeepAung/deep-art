@@ -73,13 +73,12 @@ func loadEnvPath() string {
 	return os.Args[1]
 }
 
-func NewConfig() *Config {
-	path := loadEnvPath()
+func NewConfig(path string) *Config {
+	if path == "" {
+		path = loadEnvPath()
+	}
 	if path != "" {
-		err := godotenv.Load(path)
-		if err != nil {
-			log.Fatal("config.go: load env file failed: ", err.Error())
-		}
+		_ = godotenv.Load(path)
 	}
 
 	return &Config{

@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	cfg := config.NewConfig()
+	cfg := config.NewConfig("")
 
 	db := db.InitDB("db.db")
 	app := echo.New()

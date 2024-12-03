@@ -3,38 +3,24 @@ package repositories_test
 import (
 	"database/sql"
 	"fmt"
-	"log"
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/DeepAung/deep-art/api/repositories"
 	"github.com/DeepAung/deep-art/api/types"
-	"github.com/DeepAung/deep-art/pkg/db"
+	"github.com/DeepAung/deep-art/pkg/asserts"
 	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 var (
-	sourceURL   = "file:///home/deepaung/projects/deep-art/migrations"
-	databaseURL = "sqlite3:///home/deepaung/projects/deep-art/test.db"
-	databaseDir = "/home/deepaung/projects/deep-art/test.db"
-	testDB      *sql.DB
-	migrateDB   *migrate.Migrate
-	repo        *repositories.UsersRepo
+	testDB    *sql.DB
+	migrateDB *migrate.Migrate
+	repo      *repositories.UsersRepo
 )
 
 func init() {
-	var err error
-
-	testDB = db.InitDB(databaseDir)
-	if migrateDB, err = migrate.New(sourceURL, databaseURL); err != nil {
-		log.Fatalf("migrate.New: %v", err)
-	}
-
-	resetDB(migrateDB)
-
+	testDB, migrateDB = repositories.NewTestDB()
+	repositories.ResetDB(migrateDB)
 	repo = repositories.NewUsersRepo(testDB, 1*time.Second)
 }
 
@@ -86,9 +72,9 @@ func Test_UsersRepo_CreateUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			user, err := repo.CreateUser(tt.input)
-			assertEqualError(t, err, tt.expectedError)
+			asserts.EqualError(t, err, tt.expectedError)
 			if err == nil {
-				assertEqual(t, "user", user, tt.expectedUser)
+				asserts.Equal(t, "user", user, tt.expectedUser)
 			}
 		})
 	}
@@ -126,8 +112,8 @@ func Test_UsersRepo_FindOneUserById(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			user, err := repo.FindOneUserById(tt.inputId)
 
-			assertEqualError(t, err, tt.expectedError)
-			assertEqual(t, "user", user, tt.expectedUser)
+			asserts.EqualError(t, err, tt.expectedError)
+			asserts.Equal(t, "user", user, tt.expectedUser)
 		})
 	}
 }
@@ -164,8 +150,8 @@ func Test_UsersRepo_FindOneUserByEmail(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			user, err := repo.FindOneUserByEmail(tt.inputEmail)
 
-			assertEqualError(t, err, tt.expectedError)
-			assertEqual(t, "user", user, tt.expectedUser)
+			asserts.EqualError(t, err, tt.expectedError)
+			asserts.Equal(t, "user", user, tt.expectedUser)
 		})
 	}
 }
@@ -192,7 +178,7 @@ func Test_UsersRepo_FindOneUserWithPasswordByEmail(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			user, err := repo.FindOneUserByEmail(tt.inputEmail)
 
-			assertEqualError(t, err, tt.expectedError)
+			asserts.EqualError(t, err, tt.expectedError)
 			if (err == nil) && (user == types.User{}) {
 				t.Fatalf("expected to have user but got %v", types.User{})
 			}
@@ -222,7 +208,7 @@ func Test_UsersRepo_FindOneCreatorById(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			user, err := repo.FindOneCreatorById(tt.inputId)
 
-			assertEqualError(t, err, tt.expectedError)
+			asserts.EqualError(t, err, tt.expectedError)
 			if (err == nil) && (user == types.Creator{}) {
 				t.Fatalf("expected to have creator but got %v", types.User{})
 			}
@@ -248,8 +234,8 @@ func Test_UsersRepo_HasPassword(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("HasPassword(%d)", tt.userId), func(t *testing.T) {
 			has, err := repo.HasPassword(tt.userId)
-			assertEqualError(t, err, tt.expectedError)
-			assertEqual(t, "has", has, tt.expectedHas)
+			asserts.EqualError(t, err, tt.expectedError)
+			asserts.Equal(t, "has", has, tt.expectedHas)
 		})
 	}
 }
@@ -301,7 +287,7 @@ func Test_UsersRepo_UpdateUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := repo.UpdateUser(tt.inputId, tt.inputReq)
-			assertEqualError(t, err, tt.expectedError)
+			asserts.EqualError(t, err, tt.expectedError)
 		})
 	}
 }
@@ -311,7 +297,7 @@ func Test_UsersRepo_UpdateUserPassword(t *testing.T) {
 	inputPassword := "password02"
 
 	err := repo.UpdateUserPassword(inputId, inputPassword)
-	assertEqualError(t, err, nil)
+	asserts.EqualError(t, err, nil)
 }
 
 func Test_UsersRepo_DeleteUser(t *testing.T) {
@@ -335,7 +321,7 @@ func Test_UsersRepo_DeleteUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := repo.DeleteUser(tt.inputId)
-			assertEqualError(t, err, tt.expectedError)
+			asserts.EqualError(t, err, tt.expectedError)
 		})
 	}
 }
@@ -376,7 +362,7 @@ func Test_UsersRepo_CreateFollow(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := repo.CreateFollow(tt.followerId, tt.followeeId)
-			assertEqualError(t, err, tt.expectedError)
+			asserts.EqualError(t, err, tt.expectedError)
 		})
 	}
 }
@@ -399,8 +385,8 @@ func Test_UsersRepo_HasFollow(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("HasFollow(%d, %d)", tt.followerId, tt.followeeId), func(t *testing.T) {
 			has, err := repo.HasFollow(tt.followerId, tt.followeeId)
-			assertEqualError(t, err, nil)
-			assertEqual(t, "has", has, tt.expectedHas)
+			asserts.EqualError(t, err, nil)
+			asserts.Equal(t, "has", has, tt.expectedHas)
 		})
 	}
 }
@@ -435,7 +421,7 @@ func Test_UsersRepo_DeleteFollow(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := repo.DeleteFollow(tt.followerId, tt.followeeId)
-			assertEqualError(t, err, tt.expectedError)
+			asserts.EqualError(t, err, tt.expectedError)
 		})
 	}
 }
@@ -467,7 +453,7 @@ func Test_UserRepo_CreateToken(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := repo.CreateToken(tt.userId, tt.accessToken, tt.refreshToken)
-			assertEqualError(t, err, tt.expectedError)
+			asserts.EqualError(t, err, tt.expectedError)
 		})
 	}
 }
@@ -488,8 +474,8 @@ func Test_UsersRepo_HasAccessToken(t *testing.T) {
 		name := fmt.Sprintf("HasAccessToken(%d, %s)", tt.userId, tt.accessToken)
 		t.Run(name, func(t *testing.T) {
 			has, err := repo.HasAccessToken(tt.userId, tt.accessToken)
-			assertEqualError(t, err, nil)
-			assertEqual(t, "has", has, tt.expectedHas)
+			asserts.EqualError(t, err, nil)
+			asserts.Equal(t, "has", has, tt.expectedHas)
 		})
 	}
 }
@@ -510,8 +496,8 @@ func Test_UsersRepo_HasRefreshToken(t *testing.T) {
 		name := fmt.Sprintf("HasRefreshToken(%d, %s)", tt.userId, tt.refreshToken)
 		t.Run(name, func(t *testing.T) {
 			has, err := repo.HasRefreshToken(tt.userId, tt.refreshToken)
-			assertEqualError(t, err, nil)
-			assertEqual(t, "has", has, tt.expectedHas)
+			asserts.EqualError(t, err, nil)
+			asserts.Equal(t, "has", has, tt.expectedHas)
 		})
 	}
 }
@@ -550,9 +536,9 @@ func Test_UsersRepo_FindOneTokenId(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			id, err := repo.FindOneTokenId(tt.userId, tt.refreshToken)
-			assertEqualError(t, err, tt.expectedError)
+			asserts.EqualError(t, err, tt.expectedError)
 			if err == nil {
-				assertEqual(t, "token id", id, tt.expectedId)
+				asserts.Equal(t, "token id", id, tt.expectedId)
 			}
 		})
 	}
@@ -585,7 +571,7 @@ func Test_UsersRepo_UpdateTokens(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := repo.UpdateTokens(tt.tokenId, tt.accessToken, tt.refreshToken)
-			assertEqualError(t, err, tt.expectedError)
+			asserts.EqualError(t, err, tt.expectedError)
 		})
 	}
 }
@@ -620,40 +606,7 @@ func Test_UsersRepo_DeleteToken(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := repo.DeleteToken(tt.userId, tt.tokenId)
-			assertEqualError(t, err, tt.expectedError)
+			asserts.EqualError(t, err, tt.expectedError)
 		})
-	}
-}
-
-func assertEqual(t *testing.T, name string, got, expect any) {
-	t.Helper()
-
-	if !reflect.DeepEqual(got, expect) {
-		t.Fatalf("assert equal %q, expect=%v, got=%v", name, expect, got)
-	}
-}
-
-func assertEqualError(t *testing.T, got, expect error) {
-	t.Helper()
-
-	if got == nil && expect == nil { // case (nil, nil)
-		return
-	}
-
-	if (got == nil) != (expect == nil) { // case (nil, notnil) or (notnil, nil)
-		t.Fatalf("assert equal error, expect=%v, got=%v", expect, got)
-	}
-
-	if got.Error() != expect.Error() { // case (notnil, notnil)
-		t.Fatalf("assert equal error, expect=%v, got=%v", expect, got)
-	}
-}
-
-func resetDB(m *migrate.Migrate) {
-	if err := m.Down(); err != nil && err != migrate.ErrNoChange {
-		log.Fatalf("initAndResetDb: m.Down: %v", err)
-	}
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Fatalf("initAndResetDb: m.Up: %v", err)
 	}
 }
