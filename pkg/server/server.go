@@ -58,7 +58,6 @@ func (s *Server) Start() {
 	mid := s.InitMiddleware(myStorer)
 
 	s.app.Static("/static", "static")
-	s.app.Static("/node_modules", "node_modules")
 
 	s.InitRouter(mid, myStorer)
 
