@@ -10,7 +10,7 @@ import (
 func main() {
 	cfg := config.NewConfig("")
 
-	db := db.InitDB("db.db")
+	db := db.InitDB(cfg.DB.Path)
 	app := echo.New()
 
 	server.NewServer(app, db, cfg).Start()

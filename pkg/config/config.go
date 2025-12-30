@@ -13,6 +13,7 @@ import (
 
 type Config struct {
 	App   *AppConfig
+	DB    *DBConfig
 	Jwt   *JwtConfig
 	OAuth *OAuthConfig
 }
@@ -52,6 +53,10 @@ type AppConfig struct {
 	BasePath    string
 }
 
+type DBConfig struct {
+	Path string
+}
+
 type JwtConfig struct {
 	SecretKey      []byte
 	AccessExpires  time.Duration
@@ -89,6 +94,9 @@ func NewConfig(path string) *Config {
 			CorsOrigins: strings.Split(os.Getenv("APP_CORS_ORIGINS"), " "),
 			GcpBucket:   os.Getenv("APP_GCP_BUCKET"),
 			BasePath:    os.Getenv("APP_BASE_PATH"),
+		},
+		DB: &DBConfig{
+			Path: os.Getenv("DB_PATH"),
 		},
 		Jwt: &JwtConfig{
 			SecretKey:      []byte(os.Getenv("JWT_SECRET_KEY")),
