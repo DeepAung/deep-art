@@ -39,4 +39,3 @@ vendor
 setup.lua
 node_modules/
 *.db
-.gen/
