@@ -1,5 +1,5 @@
 # Build.
-FROM golang:1.22-alpine AS build-stage
+FROM golang:1.23-alpine AS build-stage
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN apk add build-base
