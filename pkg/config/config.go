@@ -24,13 +24,12 @@ func (c *Config) Print() {
 	fmt.Println("App")
 	fmt.Println("- Address: ", c.App.Address)
 	fmt.Println("- Timeout: ", c.App.Timeout)
-	fmt.Println("- BodyLimit: ", c.App.BodyLimit)
 	fmt.Println("- CorsOrigins: ", c.App.CorsOrigins)
 	fmt.Println("- GcpBucket: ", c.App.GcpBucket)
 	fmt.Println("- BasePath: ", c.App.BasePath)
 
 	fmt.Println("Jwt")
-	fmt.Println("- SecretKey: ", c.Jwt.SecretKey)
+	fmt.Println("- SecretKey: ", string(c.Jwt.SecretKey))
 	fmt.Println("- AccessExpires: ", c.Jwt.AccessExpires)
 	fmt.Println("- RefreshExpires: ", c.Jwt.RefreshExpires)
 
@@ -47,7 +46,6 @@ func (c *Config) Print() {
 type AppConfig struct {
 	Address     string
 	Timeout     time.Duration
-	BodyLimit   string
 	CorsOrigins []string
 	GcpBucket   string
 	BasePath    string
@@ -90,7 +88,6 @@ func NewConfig(path string) *Config {
 		App: &AppConfig{
 			Address:     os.Getenv("APP_ADDRESS"),
 			Timeout:     getAsDuration("APP_TIMEOUT"),
-			BodyLimit:   os.Getenv("APP_BODY_LIMIT"),
 			CorsOrigins: strings.Split(os.Getenv("APP_CORS_ORIGINS"), " "),
 			GcpBucket:   os.Getenv("APP_GCP_BUCKET"),
 			BasePath:    os.Getenv("APP_BASE_PATH"),

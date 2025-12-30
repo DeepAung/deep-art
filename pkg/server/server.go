@@ -74,7 +74,6 @@ func (s *Server) InitMiddleware(storer storer.Storer) *middlewares.Middleware {
 
 	s.app.Use(mid.Logger())
 	s.app.Use(middleware.Recover())
-	s.app.Use(middleware.BodyLimit(s.cfg.App.BodyLimit))
 	s.app.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
 		Skipper: middleware.DefaultSkipper,
 		Timeout: s.cfg.App.Timeout,
